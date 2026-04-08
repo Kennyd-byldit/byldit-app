@@ -99,7 +99,7 @@ export default function GaragePage() {
             Ask me about your garage...
           </div>
           <div style={{ width: 38, height: 38, borderRadius: '50%', border: '2px solid var(--orange)', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
-            <div style={{ width: "100%", height: "100%", background: "var(--dark-blue)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 800, fontSize: "1rem" }}>W</div>
+            <img src="https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png" alt="Walt" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
         </div>
       </div>
