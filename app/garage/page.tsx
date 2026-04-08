@@ -64,7 +64,7 @@ export default function GaragePage() {
           </div>
 
           {/* 4. CTA */}
-          <div style={{ background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, padding: '12px 16px', textAlign: 'center', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer', marginBottom: 10 }}>
+          <div style={{ background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 50, padding: '12px 16px', textAlign: 'center', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer', marginBottom: 10 }}>
             <p style={{ color: 'white', fontWeight: 700, fontSize: '0.95rem' }}>Pick Up Where I Left Off →</p>
             <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.7rem', marginTop: 2 }}>Step 14 · {mockVehicle.project.currentStep}</p>
           </div>
