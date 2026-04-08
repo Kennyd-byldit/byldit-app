@@ -68,7 +68,7 @@ export default function MeetWaltPage() {
           </div>
 
           {/* CTA */}
-          <button style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer', onClick: () => window.location.href = '/build-profile' }}>
+          <button style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }} onClick={() => window.location.href = '/build-profile'}>
             Let&apos;s go →
           </button>
 
