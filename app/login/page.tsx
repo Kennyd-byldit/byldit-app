@@ -10,6 +10,15 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+async function getRedirectPath(userId: string): Promise<string> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('onboarded')
+    .eq('id', userId)
+    .single()
+  return data?.onboarded ? '/garage' : '/meet-walt'
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -21,22 +30,30 @@ export default function LoginPage() {
     setLoading(true)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/garage` }
+      options: { redirectTo: `${window.location.origin}/auth/callback` }
     })
-    if (error) setError(error.message)
-    setLoading(false)
+    if (error) { setError(error.message); setLoading(false) }
   }
 
   const handleEmail = async () => {
     if (!email || !password) return
     setLoading(true)
     setError('')
-    const { error } = mode === 'signup'
-      ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/garage` } })
-      : await supabase.auth.signInWithPassword({ email, password })
-    if (error) setError(error.message)
-    else if (mode === 'signin') window.location.href = '/garage'
-    else setError('Check your email to confirm your account!')
+    if (mode === 'signup') {
+      const { error } = await supabase.auth.signUp({
+        email, password,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
+      })
+      if (error) setError(error.message)
+      else setError('Check your email to confirm your account!')
+    } else {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) setError(error.message)
+      else if (data.user) {
+        const path = await getRedirectPath(data.user.id)
+        window.location.href = path
+      }
+    }
     setLoading(false)
   }
 
@@ -53,30 +70,25 @@ export default function LoginPage() {
       </header>
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '28px 24px' }}>
         <div style={{ maxWidth: 420, margin: '0 auto', width: '100%' }}>
-
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <p className={yellowtail.className} style={{ fontSize: '2.2rem', color: 'var(--light-blue)', lineHeight: 1, marginBottom: 6 }}>Get Started</p>
             <p style={{ fontSize: '0.85rem', color: 'var(--secondary-text)' }}>Your build. Your way.</p>
           </div>
-
           <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)}
             style={{ width: '100%', padding: '14px 18px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', color: 'var(--navy)', outline: 'none', display: 'block', marginBottom: 12 }} />
           <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleEmail() }}
             style={{ width: '100%', padding: '14px 18px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', color: 'var(--navy)', outline: 'none', display: 'block', marginBottom: 18 }} />
-
-          {error && <p style={{ color: error.includes('Check') ? 'var(--light-blue)' : 'red', fontSize: '0.8rem', marginBottom: 12, textAlign: 'center' }}>{error}</p>}
-
+          {error && <p style={{ color: error.includes('Check') ? 'var(--light-blue)' : '#e74c3c', fontSize: '0.8rem', marginBottom: 12, textAlign: 'center' }}>{error}</p>}
           <button onClick={handleEmail} disabled={loading}
             style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer', marginBottom: 18 }}>
             {loading ? 'Loading...' : mode === 'signup' ? 'Create Account' : 'Sign In'}
           </button>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             <span style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', whiteSpace: 'nowrap' }}>or</span>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
-
           <button onClick={handleGoogle} disabled={loading}
             style={{ width: '100%', padding: '14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.95rem', fontWeight: 700, color: 'var(--dark-blue)', fontFamily: 'var(--font-nunito)', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
             <svg width="20" height="20" viewBox="0 0 48 48">
@@ -87,14 +99,13 @@ export default function LoginPage() {
             </svg>
             Continue with Google
           </button>
-
           <p style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--secondary-text)' }}>
             {mode === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
-            <span onClick={() => { setMode(mode === 'signup' ? 'signin' : 'signup'); setError('') }} style={{ color: 'var(--light-blue)', fontWeight: 700, cursor: 'pointer' }}>
+            <span onClick={() => { setMode(mode === 'signup' ? 'signin' : 'signup'); setError('') }}
+              style={{ color: 'var(--light-blue)', fontWeight: 700, cursor: 'pointer' }}>
               {mode === 'signup' ? 'Log in' : 'Sign up free'}
             </span>
           </p>
-
         </div>
       </main>
     </div>
