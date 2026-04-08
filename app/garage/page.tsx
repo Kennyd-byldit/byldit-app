@@ -18,7 +18,7 @@ const mockVehicle = {
 
 export default function GaragePage() {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
 
       {/* App Header */}
       <header style={{ background: "var(--dark-blue)", padding: "12px 20px 14px", textAlign: "center", position: "fixed", top: 0, left: 0, right: 0, zIndex: 100 }}>

@@ -38,3 +38,8 @@ body {
   width: 100%;
   text-align: center;
 }
+
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
