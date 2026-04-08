@@ -1,7 +1,13 @@
 'use client'
 import { useState } from 'react'
+import { createClient } from '@supabase/supabase-js'
 
 const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 const WaltMsg = ({ text }: { text: React.ReactNode }) => (
   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
@@ -17,17 +23,17 @@ const UserReply = ({ text }: { text: string }) => (
 )
 
 const expOptions = [
-  { emoji: '🔰', label: 'Just getting started' },
-  { emoji: '🔧', label: 'Handle the basics' },
-  { emoji: '⚙️', label: 'Done this before' },
-  { emoji: '🏆', label: 'Blindfolded' },
+  { emoji: '\u{1F530}', label: 'Just getting started' },
+  { emoji: '\u{1F527}', label: 'Handle the basics' },
+  { emoji: '\u2699\uFE0F', label: 'Done this before' },
+  { emoji: '\u{1F3C6}', label: 'Blindfolded' },
 ]
 
 const reasonOptions = [
-  { emoji: '🚗', label: 'Project in the garage' },
-  { emoji: '🔍', label: 'About to buy one' },
-  { emoji: '🔧', label: 'Specific project' },
-  { emoji: '🛠️', label: 'Mid-build, need help' },
+  { emoji: '\u{1F697}', label: 'Project in the garage' },
+  { emoji: '\u{1F50D}', label: 'About to buy one' },
+  { emoji: '\u{1F527}', label: 'Specific project' },
+  { emoji: '\u{1F6E0}\uFE0F', label: 'Mid-build, need help' },
 ]
 
 export default function BuildProfilePage() {
@@ -35,6 +41,23 @@ export default function BuildProfilePage() {
   const [name, setName] = useState('')
   const [exp, setExp] = useState('')
   const [reason, setReason] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handleFinish = async () => {
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        name,
+        experience: exp,
+        reason,
+        onboarded: true,
+        updated_at: new Date().toISOString(),
+      })
+    }
+    window.location.href = '/garage'
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
@@ -110,14 +133,16 @@ export default function BuildProfilePage() {
                 <div><p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--dark-blue)' }}>{name}</p><p style={{ fontSize: '0.75rem', color: 'var(--light-blue)' }}>Add photo</p></div>
               </div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                <input placeholder="Age" style={{ flex: 1, padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.85rem', fontFamily: 'var(--font-nunito)', outline: 'none' }} />
-                <input placeholder="City, State" style={{ flex: 2, padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.85rem', fontFamily: 'var(--font-nunito)', outline: 'none' }} />
+                <input placeholder="Age" style={{ flex: 1, padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }} />
+                <input placeholder="City, State" style={{ flex: 2, padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }} />
               </div>
-              <input placeholder="Bio &#x2014; Tell us about yourself..." style={{ width: '100%', padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: '0.85rem', fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 10 }} />
-              <input placeholder="Dream build &#x2014; What's your dream vehicle?" style={{ width: '100%', padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: '0.85rem', fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 18 }} />
+              <input placeholder="Bio &#x2014; Tell us about yourself..." style={{ width: '100%', padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 10 }} />
+              <input placeholder="Dream build &#x2014; What's your dream vehicle?" style={{ width: '100%', padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 18 }} />
               <div style={{ display: 'flex', gap: 10 }}>
-                <button style={{ flex: 1, padding: '12px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>Skip</button>
-                <button style={{ flex: 1, padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>Head to my garage &#x2192;</button>
+                <button onClick={handleFinish} disabled={saving} style={{ flex: 1, padding: '12px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>Skip</button>
+                <button onClick={handleFinish} disabled={saving} style={{ flex: 1, padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
+                  {saving ? 'Saving...' : 'Head to my garage \u2192'}
+                </button>
               </div>
             </>
           )}
@@ -133,13 +158,7 @@ export default function BuildProfilePage() {
       </div>
       <nav style={{ background: 'white', borderTop: '1px solid var(--border)', padding: '6px 0 4px', flexShrink: 0 }}>
         <div style={{ display: 'flex', maxWidth: 480, margin: '0 auto' }}>
-          {[
-            { icon: '🏠', label: 'Garage', active: true },
-            { icon: '🔧', label: 'Projects', active: false },
-            { icon: '🔩', label: 'Parts', active: false },
-            { icon: '📋', label: "Walt's Notes", active: false },
-            { icon: '⋯', label: 'More', active: false },
-          ].map(item => (
+          {[{ icon: '\u{1F3E0}', label: 'Garage', active: true }, { icon: '\u{1F527}', label: 'Projects', active: false }, { icon: '\u{1F529}', label: 'Parts', active: false }, { icon: '\u{1F4CB}', label: "Walt's Notes", active: false }, { icon: '\u22EF', label: 'More', active: false }].map(item => (
             <div key={item.label} style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}>
               <div style={{ fontSize: '1.1rem' }}>{item.icon}</div>
               <div style={{ fontSize: '0.55rem', fontWeight: item.active ? 700 : 400, color: item.active ? 'var(--orange)' : 'var(--secondary-text)' }}>{item.label}</div>
