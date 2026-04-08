@@ -62,7 +62,7 @@ export default function BuildProfilePage() {
           {step === 1 && (
             <div style={{ marginLeft: 38, marginBottom: 16 }}>
               <input type="text" placeholder="Your first name" value={name} onChange={e => setName(e.target.value)}
-                style={{ width: '100%', padding: '12px 16px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.95rem', fontFamily: 'var(--font-nunito)', outline: 'none' }}
+                style={{ width: '100%', padding: '12px 16px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }}
                 onKeyDown={e => { if (e.key === 'Enter' && name) setStep(2) }} />
               {name && <button onClick={() => setStep(2)} style={{ marginTop: 10, width: '100%', padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>That&apos;s me &#x2192;</button>}
             </div>
