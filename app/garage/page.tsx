@@ -78,16 +78,6 @@ export default function GaragePage() {
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '12px 14px', paddingBottom: 20 }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
 
-          {/* Welcome Back */}
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <p className={yellowtail.className} style={{ fontSize: '1.5rem', color: 'var(--light-blue)', lineHeight: 1 }}>Welcome Back,</p>
-            <p style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--dark-blue)', letterSpacing: -0.5, lineHeight: 1.15 }}>{userName}</p>
-            <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginTop: 4 }}>
-              {mockVehicle.daysSince} days since your last session ·{' '}
-              <span style={{ fontWeight: 800, color: 'var(--orange)' }}>{mockVehicle.flagged} items flagged</span>
-            </p>
-          </div>
-
           {/* Betty Lou Photo Card */}
           <div style={{ height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
             <Image src={mockVehicle.photo} alt={mockVehicle.nickname} fill style={{ objectFit: 'cover', objectPosition: 'center 35%' }} />
@@ -109,6 +99,17 @@ export default function GaragePage() {
             </div>
             <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--orange)' }}>{mockVehicle.project.progress}%</span>
           </div>
+
+          {/* Welcome Back */}
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <p className={yellowtail.className} style={{ fontSize: '1.5rem', color: 'var(--light-blue)', lineHeight: 1 }}>Welcome Back,</p>
+            <p style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--dark-blue)', letterSpacing: -0.5, lineHeight: 1.15 }}>{userName}</p>
+            <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginTop: 4 }}>
+              {mockVehicle.daysSince} days since your last session ·{' '}
+              <span style={{ fontWeight: 800, color: 'var(--orange)' }}>{mockVehicle.flagged} items flagged</span>
+            </p>
+          </div>
+
 
           {/* CTA */}
           <div style={{ background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 50, padding: '12px 16px', textAlign: 'center', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer', marginBottom: 10 }}>
