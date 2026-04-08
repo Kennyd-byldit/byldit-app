@@ -1,3 +1,4 @@
+'use client'
 const WALT_AVATAR = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 
 const capabilities = [
