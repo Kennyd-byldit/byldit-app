@@ -98,8 +98,8 @@ export default function GaragePage() {
           <div style={{ flex: 1, background: 'var(--bg)', borderRadius: 25, padding: '10px 16px', fontSize: '0.85rem', color: '#aaa', fontFamily: 'var(--font-nunito)' }}>
             Ask me about your garage...
           </div>
-          <div style={{ width: 38, height: 38, borderRadius: '50%', border: '2px solid var(--orange)', background: 'linear-gradient(135deg, var(--orange), var(--gold))', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: '1.1rem' }}>
-            🔧
+          <div style={{ width: 38, height: 38, borderRadius: '50%', border: '2px solid var(--orange)', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
+            <img src='/avatars/walt-v1.png' alt='Walt' style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </div>
       </div>
