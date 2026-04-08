@@ -21,14 +21,14 @@ export default function GaragePage() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
 
       {/* App Header */}
-      <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', textAlign: 'center' }}>
+      <header style={{ background: "var(--dark-blue)", padding: "12px 20px 14px", textAlign: "center", position: "fixed", top: 0, left: 0, right: 0, zIndex: 100 }}>
         <span style={{ fontFamily: 'var(--font-barlow)', fontSize: '1.8rem', fontWeight: 800, fontStyle: 'italic', color: 'white' }}>
           BYLD<span style={{ fontFamily: 'var(--font-nunito)', fontWeight: 300, fontStyle: 'normal', color: 'var(--light-blue)' }}>it</span>
         </span>
       </header>
 
       {/* Scrollable content */}
-      <main style={{ padding: '12px 14px', maxWidth: 480, margin: '0 auto', paddingBottom: 120 }}>
+      <main style={{ padding: '12px 14px', paddingTop: 72, maxWidth: 480, margin: '0 auto', paddingBottom: 120 }}>
 
         {/* 1. Betty Lou Photo Card */}
         <div style={{ height: 160, margin: '0 0 8px', borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
