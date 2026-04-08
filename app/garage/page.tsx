@@ -1,5 +1,4 @@
 import Image from 'next/image'
-import Link from 'next/link'
 
 // Temporary mock data — will be replaced with real Supabase data
 const mockUser = { name: 'Kenny' }
@@ -35,7 +34,6 @@ export default function GaragePage() {
           fontWeight: 800,
           fontStyle: 'italic',
           color: 'white',
-          letterSpacing: '-0.5px',
         }}>
           BYLD
           <span style={{ fontFamily: 'var(--font-nunito)', fontWeight: 300, fontStyle: 'normal', color: 'var(--light-blue)' }}>it</span>
@@ -43,25 +41,25 @@ export default function GaragePage() {
       </header>
 
       {/* Content */}
-      <main style={{ padding: '20px 16px', maxWidth: 480, margin: '0 auto', paddingBottom: 100 }}>
+      <main style={{ padding: '20px 16px', maxWidth: 480, margin: '0 auto', paddingBottom: 120 }}>
 
-        {/* Welcome Back */}
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: '1.6rem', fontWeight: 300, color: 'var(--dark-blue)' }}>
+        {/* Welcome Back — free floating, centered, above the card */}
+        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: '1.4rem', fontWeight: 300, color: 'var(--dark-blue)' }}>
             Welcome Back,
           </p>
-          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: '1.8rem', fontWeight: 800, color: 'var(--dark-blue)' }}>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: '1.6rem', fontWeight: 800, color: 'var(--dark-blue)' }}>
             {mockUser.name}
           </p>
         </div>
 
-        {/* Betty Lou Photo Card */}
+        {/* Betty Lou Photo Card — separate card below welcome */}
         <div style={{
           background: 'white',
           borderRadius: 16,
           overflow: 'hidden',
           boxShadow: '0 4px 16px rgba(36,80,122,0.1)',
-          marginBottom: 16,
+          marginBottom: 12,
           position: 'relative',
         }}>
           {/* ACTIVE BUILD badge */}
@@ -71,7 +69,7 @@ export default function GaragePage() {
             right: 10,
             background: 'var(--orange)',
             color: 'white',
-            fontSize: '0.65rem',
+            fontSize: '0.6rem',
             fontWeight: 700,
             padding: '3px 10px',
             borderRadius: 20,
@@ -82,7 +80,7 @@ export default function GaragePage() {
           </div>
 
           {/* Vehicle Photo */}
-          <div style={{ position: 'relative', height: 200 }}>
+          <div style={{ position: 'relative', height: 180 }}>
             <Image
               src={mockVehicle.photo}
               alt={mockVehicle.nickname}
@@ -95,13 +93,13 @@ export default function GaragePage() {
               bottom: 0,
               left: 0,
               right: 0,
-              padding: '40px 14px 12px',
+              padding: '32px 14px 10px',
               background: 'linear-gradient(transparent, rgba(0,0,0,0.65))',
             }}>
-              <p style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+              <p style={{ color: 'white', fontWeight: 800, fontSize: '1rem', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
                 {mockVehicle.nickname}
               </p>
-              <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.75rem' }}>
+              <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.7rem' }}>
                 {mockVehicle.year} {mockVehicle.make} {mockVehicle.model}
               </p>
             </div>
@@ -117,7 +115,7 @@ export default function GaragePage() {
                 {mockVehicle.project.progress}%
               </span>
             </div>
-            <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 12 }}>
+            <p style={{ fontSize: '0.68rem', color: 'var(--secondary-text)', marginBottom: 12 }}>
               {mockVehicle.project.phase} · Next: {mockVehicle.project.currentStep}
             </p>
           </div>
@@ -130,8 +128,8 @@ export default function GaragePage() {
           </div>
         </div>
 
-        {/* Stat Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+        {/* Stat Cards — 4 across in a single row */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           {[
             { label: 'My Plan', value: mockVehicle.stats.myPlan, color: 'var(--dark-blue)' },
             { label: "Walt's Notes", value: mockVehicle.stats.waltsNotes, color: 'var(--orange)' },
@@ -139,15 +137,17 @@ export default function GaragePage() {
             { label: 'Up Next', value: mockVehicle.stats.upNext, color: 'var(--light-blue)' },
           ].map((stat) => (
             <div key={stat.label} style={{
+              flex: 1,
               background: 'white',
               borderRadius: 12,
-              padding: '10px 12px',
+              padding: '8px 4px',
               textAlign: 'center',
               border: `1.5px solid ${stat.color}`,
               cursor: 'pointer',
+              minWidth: 0,
             }}>
-              <p style={{ fontSize: '1.4rem', fontWeight: 800, color: stat.color }}>{stat.value}</p>
-              <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>{stat.label}</p>
+              <p style={{ fontSize: '1.1rem', fontWeight: 800, color: stat.color }}>{stat.value}</p>
+              <p style={{ fontSize: '0.5rem', color: 'var(--secondary-text)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.2 }}>{stat.label}</p>
             </div>
           ))}
         </div>
@@ -168,16 +168,14 @@ export default function GaragePage() {
       {/* Walt Input Bar */}
       <div style={{
         position: 'fixed',
-        bottom: 60,
+        bottom: 58,
         left: 0,
         right: 0,
         background: 'white',
         padding: '8px 16px',
         borderTop: '1px solid var(--border)',
-        maxWidth: 480,
-        margin: '0 auto',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 480, margin: '0 auto' }}>
           <div style={{
             flex: 1,
             background: 'var(--bg)',
@@ -200,7 +198,7 @@ export default function GaragePage() {
             justifyContent: 'center',
             cursor: 'pointer',
             flexShrink: 0,
-            fontSize: '1.2rem',
+            fontSize: '1.1rem',
           }}>
             🔧
           </div>
@@ -215,30 +213,29 @@ export default function GaragePage() {
         right: 0,
         background: 'white',
         borderTop: '1px solid var(--border)',
-        padding: '8px 0 4px',
-        display: 'flex',
-        maxWidth: 480,
-        margin: '0 auto',
+        padding: '6px 0 4px',
       }}>
-        {[
-          { icon: '🏠', label: 'Garage', active: true },
-          { icon: '🔧', label: 'Projects', active: false },
-          { icon: '🔩', label: 'Parts', active: false },
-          { icon: '📋', label: "Walt's Notes", active: false },
-          { icon: '⋯', label: 'More', active: false },
-        ].map((item) => (
-          <div key={item.label} style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}>
-            <div style={{ fontSize: '1.2rem' }}>{item.icon}</div>
-            <div style={{
-              fontSize: '0.6rem',
-              fontWeight: item.active ? 700 : 400,
-              color: item.active ? 'var(--orange)' : 'var(--secondary-text)',
-              fontFamily: 'var(--font-nunito)',
-            }}>
-              {item.label}
+        <div style={{ display: 'flex', maxWidth: 480, margin: '0 auto' }}>
+          {[
+            { icon: '🏠', label: 'Garage', active: true },
+            { icon: '🔧', label: 'Projects', active: false },
+            { icon: '🔩', label: 'Parts', active: false },
+            { icon: '📋', label: "Walt's Notes", active: false },
+            { icon: '⋯', label: 'More', active: false },
+          ].map((item) => (
+            <div key={item.label} style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}>
+              <div style={{ fontSize: '1.1rem' }}>{item.icon}</div>
+              <div style={{
+                fontSize: '0.55rem',
+                fontWeight: item.active ? 700 : 400,
+                color: item.active ? 'var(--orange)' : 'var(--secondary-text)',
+                fontFamily: 'var(--font-nunito)',
+              }}>
+                {item.label}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </nav>
 
     </div>
