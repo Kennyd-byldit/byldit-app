@@ -210,16 +210,16 @@ export default function GaragePage() {
                   <div
                     key={v.id}
                     onClick={() => console.log('vehicle tapped:', v.id)}
-                    style={{ background: 'white', borderRadius: 14, padding: '14px 16px', marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+                    style={{ background: 'white', borderRadius: 14, padding: '12px 14px', marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
                   >
-                    <div style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}>
+                    <div style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', flexShrink: 0 }}>
                       <img src={getVehiclePhoto(v)} alt={v.nickname || v.make} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--dark-blue)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {v.nickname || `${v.year} ${v.make} ${v.model}`}
                       </p>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)', marginTop: 3 }}>{v.year} {v.make} {v.model}</p>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--secondary-text)', marginTop: 3 }}>{v.year} {v.make} {v.model}</p>
                     </div>
                     <button
                       onClick={e => { e.stopPropagation(); setPrimary(v.id) }}
