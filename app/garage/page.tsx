@@ -35,7 +35,7 @@ const WaltBar = () => (
   </div>
 )
 
-type Vehicle = { id: string, nickname: string, year: number, make: string, model: string }
+type Vehicle = { id: string, nickname: string, year: number, make: string, model: string, is_primary: boolean }
 
 export default function GaragePage() {
   const [userName, setUserName] = useState('')
@@ -50,12 +50,13 @@ export default function GaragePage() {
 
       const [{ data: profile }, { data: vehicleData }, { data: projects }] = await Promise.all([
         supabase.from('profiles').select('name').eq('id', user.id).single(),
-        supabase.from('vehicles').select('id, nickname, year, make, model').eq('user_id', user.id),
+        supabase.from('vehicles').select('id, nickname, year, make, model, is_primary').eq('user_id', user.id),
         supabase.from('projects').select('id').eq('user_id', user.id).eq('status', 'active').limit(1),
       ])
 
       setUserName(profile?.name || user.email?.split('@')[0] || 'there')
-      setVehicles(vehicleData || [])
+      const sorted = (vehicleData || []).sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
+      setVehicles(sorted)
       setHasActiveProject((projects?.length ?? 0) > 0)
       setLoading(false)
     }
@@ -71,7 +72,8 @@ export default function GaragePage() {
     </div>
   )
 
-  const firstVehicle = vehicles[0]
+  const featuredVehicle = vehicles[0]
+  const otherVehicles = vehicles.slice(1)
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
@@ -119,29 +121,30 @@ export default function GaragePage() {
             <>
               {/* ====================================================
                   LOCKED LAYOUT ORDER (Apr 5, KD approved)
-                  1. Vehicle photo card
+                  1. Featured vehicle photo card
                   2. Progress bar (active project only)
                   3. Welcome / Welcome Back
                   4. CTA button
                   5. Stat cards (active project only)
-                  6. + Add to My Garage
+                  6. Additional vehicle cards (non-featured)
+                  7. + Add to My Garage
                   ==================================================== */}
 
               {/* 1. Vehicle Photo Card */}
               <div style={{ height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)', background: 'var(--border)' }}>
-                {firstVehicle && (
-                  <Image src="/photos/f250-hiboy-68.jpg" alt={firstVehicle.nickname || firstVehicle.make} fill style={{ objectFit: 'cover', objectPosition: 'center 35%' }} />
+                {featuredVehicle && (
+                  <Image src="/photos/f250-hiboy-68.jpg" alt={featuredVehicle.nickname || featuredVehicle.make} fill style={{ objectFit: 'cover', objectPosition: 'center 35%' }} />
                 )}
                 {hasActiveProject && (
                   <div style={{ position: 'absolute', top: 8, right: 10, background: 'var(--orange)', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>ACTIVE BUILD</div>
                 )}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
                   <p style={{ color: 'white', fontWeight: 800, fontSize: '1.2rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
-                    {firstVehicle?.nickname || (firstVehicle ? firstVehicle.year + ' ' + firstVehicle.make + ' ' + firstVehicle.model : 'My Vehicle')}
+                    {featuredVehicle?.nickname || (featuredVehicle ? featuredVehicle.year + ' ' + featuredVehicle.make + ' ' + featuredVehicle.model : 'My Vehicle')}
                   </p>
-                  {firstVehicle && (
+                  {featuredVehicle && (
                     <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.65rem', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
-                      {firstVehicle.year} {firstVehicle.make} {firstVehicle.model}
+                      {featuredVehicle.year} {featuredVehicle.make} {featuredVehicle.model}
                     </p>
                   )}
                 </div>
@@ -197,7 +200,22 @@ export default function GaragePage() {
                 </div>
               )}
 
-              {/* 6. Add to My Garage */}
+              {/* 6. Additional vehicle cards */}
+              {otherVehicles.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+                  {otherVehicles.map(v => (
+                    <div key={v.id} style={{ background: 'white', borderRadius: 14, padding: '10px 14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--bg)', border: '1px dashed var(--light-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>🚗</div>
+                      <div>
+                        <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--dark-blue)' }}>{v.nickname || v.year + ' ' + v.make + ' ' + v.model}</p>
+                        <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginTop: 1 }}>{v.year} {v.make} {v.model}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 7. Add to My Garage */}
               <div style={{ border: '2px dashed var(--light-blue)', borderRadius: 25, padding: '11px', textAlign: 'center', cursor: 'pointer' }}>
                 <span style={{ color: 'var(--light-blue)', fontWeight: 700, fontSize: '0.9rem' }}>+ Add to My Garage</span>
               </div>
