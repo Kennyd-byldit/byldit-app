@@ -37,6 +37,13 @@ const WaltBar = () => (
 
 type Vehicle = { id: string, nickname: string, year: number, make: string, model: string, is_primary: boolean }
 
+const getVehiclePhoto = (vehicle: Vehicle): string => {
+  const key = `${vehicle.year}-${vehicle.make}-${vehicle.model}`.toLowerCase()
+  if (key.includes("ranger")) return "/photos/ranger-2025.jpg"
+  if (key.includes("f-250") || key.includes("f250")) return "/photos/f250-hiboy-68.jpg"
+  return "/photos/f250-hiboy-68.jpg" // default fallback
+}
+
 export default function GaragePage() {
   const [userName, setUserName] = useState('')
   const [userId, setUserId] = useState('')
@@ -131,7 +138,7 @@ export default function GaragePage() {
             <>
               {/* 1. Hero Photo Card */}
               <div style={{ height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)', background: 'var(--border)' }}>
-                <Image src="/photos/f250-hiboy-68.jpg" alt={primaryVehicle?.nickname || 'My Vehicle'} fill style={{ objectFit: 'cover', objectPosition: 'center 35%' }} />
+                <Image src={primaryVehicle ? getVehiclePhoto(primaryVehicle) : "/photos/f250-hiboy-68.jpg"} alt={primaryVehicle?.nickname || 'My Vehicle'} fill style={{ objectFit: 'cover', objectPosition: 'center 35%' }} />
                 {hasActiveProject && (
                   <div style={{ position: 'absolute', top: 8, right: 10, background: 'var(--orange)', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>ACTIVE BUILD</div>
                 )}
