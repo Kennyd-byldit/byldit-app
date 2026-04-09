@@ -43,9 +43,10 @@ export default function BuildProfilePage() {
   const [name, setName] = useState('')
   const [exp, setExp] = useState('')
   const [reason, setReason] = useState('')
-  const [vehicles, setVehicles] = useState<{year: string, make: string, model: string, nickname: string}[]>([])
-  const [newVehicle, setNewVehicle] = useState({ year: '', make: '', model: '', nickname: '' })
+  const [vehicles, setVehicles] = useState<{year: string, make: string, model: string, nickname: string, color: string, trim: string, engine: string, transmission: string, drivetrain: string, fuel_type: string, mileage: string, condition: string, title_status: string, notes: string}[]>([])
+  const [newVehicle, setNewVehicle] = useState({ year: '', make: '', model: '', nickname: '', color: '', trim: '', engine: '', transmission: '', drivetrain: '', fuel_type: '', mileage: '', condition: '', title_status: '', notes: '' })
   const [addingVehicle, setAddingVehicle] = useState(false)
+  const [showMoreDetails, setShowMoreDetails] = useState(false)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
 
@@ -56,8 +57,9 @@ export default function BuildProfilePage() {
   const addVehicle = () => {
     if (!newVehicle.year || !newVehicle.make || !newVehicle.model) return
     setVehicles(prev => [...prev, newVehicle])
-    setNewVehicle({ year: '', make: '', model: '', nickname: '' })
+    setNewVehicle({ year: '', make: '', model: '', nickname: '', color: '', trim: '', engine: '', transmission: '', drivetrain: '', fuel_type: '', mileage: '', condition: '', title_status: '', notes: '' })
     setAddingVehicle(false)
+    setShowMoreDetails(false)
   }
 
   const handleFinish = async () => {
@@ -70,7 +72,8 @@ export default function BuildProfilePage() {
         onboarded: true, updated_at: new Date().toISOString(),
       })
       // Save vehicles
-      for (const v of vehicles) {
+      for (let i = 0; i < vehicles.length; i++) {
+        const v = vehicles[i]
         await supabase.from('vehicles').insert({
           user_id: user.id,
           year: parseInt(v.year),
@@ -78,6 +81,16 @@ export default function BuildProfilePage() {
           model: v.model,
           nickname: v.nickname || `${v.year} ${v.make} ${v.model}`,
           type: 'build',
+          color: v.color || null,
+          engine: v.engine || null,
+          transmission: v.transmission || null,
+          drivetrain: v.drivetrain || null,
+          fuel_type: v.fuel_type || null,
+          mileage: v.mileage ? parseInt(v.mileage) : null,
+          condition: v.condition || null,
+          title_status: v.title_status || null,
+          notes: v.notes || null,
+          is_primary: i === 0,
         })
       }
     }
@@ -236,6 +249,7 @@ export default function BuildProfilePage() {
           {/* Add vehicle form */}
           {addingVehicle ? (
             <div style={{ background: 'white', borderRadius: 14, padding: '14px', marginBottom: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              {/* Phase A — Core Identity */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                 <input placeholder="Year" value={newVehicle.year} onChange={e => setNewVehicle(p => ({...p, year: e.target.value}))}
                   style={{ flex: 1, padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }} />
@@ -245,10 +259,71 @@ export default function BuildProfilePage() {
               <input placeholder="Model" value={newVehicle.model} onChange={e => setNewVehicle(p => ({...p, model: e.target.value}))}
                 style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 8, boxSizing: 'border-box' }} />
               <input placeholder='Nickname (e.g. "Betty Lou") — optional' value={newVehicle.nickname} onChange={e => setNewVehicle(p => ({...p, nickname: e.target.value}))}
-                style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 12, boxSizing: 'border-box' }} />
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => setAddingVehicle(false)} style={{ flex: 1, padding: '10px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary-text)', cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>Cancel</button>
-                <button onClick={addVehicle} style={{ flex: 2, padding: '10px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 4px 14px rgba(232,117,10,0.25)', cursor: 'pointer' }}>Add vehicle →</button>
+                style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 8, boxSizing: 'border-box' }} />
+              <input placeholder="Color (e.g. Red, Oxford White)" value={newVehicle.color} onChange={e => setNewVehicle(p => ({...p, color: e.target.value}))}
+                style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 10, boxSizing: 'border-box' }} />
+
+              {/* More Details toggle — only show when year/make/model filled */}
+              {(newVehicle.year && newVehicle.make && newVehicle.model) && (
+                <>
+                  <div onClick={() => setShowMoreDetails(p => !p)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0', cursor: 'pointer', color: 'var(--light-blue)', fontSize: '0.85rem', fontWeight: 600, borderTop: '1px solid var(--border)', marginBottom: showMoreDetails ? 12 : 0 }}>
+                    <span style={{ fontSize: '1rem' }}>{showMoreDetails ? '−' : '＋'}</span>
+                    <span>More Details (optional)</span>
+                  </div>
+
+                  {/* Phase B — More Details */}
+                  {showMoreDetails && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 4 }}>
+                      <input placeholder="Trim/Package (e.g. XLT, Sport, Base)" value={newVehicle.trim} onChange={e => setNewVehicle(p => ({...p, trim: e.target.value}))}
+                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' }} />
+                      <input placeholder="Engine (e.g. 390 FE V8, 5.0 Coyote swap)" value={newVehicle.engine} onChange={e => setNewVehicle(p => ({...p, engine: e.target.value}))}
+                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' }} />
+                      <input placeholder="Transmission (e.g. 4-speed manual, 10-speed auto)" value={newVehicle.transmission} onChange={e => setNewVehicle(p => ({...p, transmission: e.target.value}))}
+                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' }} />
+                      <select value={newVehicle.drivetrain} onChange={e => setNewVehicle(p => ({...p, drivetrain: e.target.value}))}
+                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', color: newVehicle.drivetrain ? 'var(--dark-blue)' : '#aaa' }}>
+                        <option value="">Drivetrain</option>
+                        <option value="2WD">2WD</option>
+                        <option value="4WD">4WD</option>
+                        <option value="AWD">AWD</option>
+                      </select>
+                      <select value={newVehicle.fuel_type} onChange={e => setNewVehicle(p => ({...p, fuel_type: e.target.value}))}
+                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', color: newVehicle.fuel_type ? 'var(--dark-blue)' : '#aaa' }}>
+                        <option value="">Fuel Type</option>
+                        <option value="Gas">Gas</option>
+                        <option value="Diesel">Diesel</option>
+                        <option value="Electric">Electric</option>
+                        <option value="Hybrid">Hybrid</option>
+                      </select>
+                      <input type="number" placeholder="Mileage (e.g. 87000)" value={newVehicle.mileage} onChange={e => setNewVehicle(p => ({...p, mileage: e.target.value}))}
+                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' }} />
+                      <select value={newVehicle.condition} onChange={e => setNewVehicle(p => ({...p, condition: e.target.value}))}
+                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', color: newVehicle.condition ? 'var(--dark-blue)' : '#aaa' }}>
+                        <option value="">Condition</option>
+                        <option value="Daily driver">Daily driver</option>
+                        <option value="Weekend car">Weekend car</option>
+                        <option value="Project (non-running)">Project (non-running)</option>
+                        <option value="Stored">Stored</option>
+                      </select>
+                      <select value={newVehicle.title_status} onChange={e => setNewVehicle(p => ({...p, title_status: e.target.value}))}
+                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', color: newVehicle.title_status ? 'var(--dark-blue)' : '#aaa' }}>
+                        <option value="">Title Status (optional)</option>
+                        <option value="Clean">Clean</option>
+                        <option value="Salvage">Salvage</option>
+                        <option value="Rebuilt">Rebuilt</option>
+                      </select>
+                      <textarea placeholder="Anything Walt should know — mods, issues, history..." value={newVehicle.notes} onChange={e => setNewVehicle(p => ({...p, notes: e.target.value}))}
+                        rows={3}
+                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box', resize: 'vertical' }} />
+                    </div>
+                  )}
+                </>
+              )}
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <button onClick={() => { setAddingVehicle(false); setShowMoreDetails(false) }} style={{ flex: 1, padding: '10px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary-text)', cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>Cancel</button>
+                <button onClick={addVehicle} style={{ flex: 2, padding: '10px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 4px 14px rgba(232,117,10,0.25)', cursor: 'pointer' }}>Add vehicle &#x2192;</button>
               </div>
             </div>
           ) : (
