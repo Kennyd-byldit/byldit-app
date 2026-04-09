@@ -210,9 +210,9 @@ export default function GaragePage() {
                   <div
                     key={v.id}
                     onClick={() => console.log('vehicle tapped:', v.id)}
-                    style={{ background: 'white', borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                    style={{ background: 'white', borderRadius: 14, padding: '8px 8px 8px 8px', marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
                   >
-                    <img src={getVehiclePhoto(v)} alt={v.nickname || v.make} style={{ width: 110, alignSelf: 'stretch', objectFit: 'cover', objectPosition: 'center', borderRadius: '14px 0 0 14px', flexShrink: 0 }} />
+                    <img src={getVehiclePhoto(v)} alt={v.nickname || v.make} style={{ width: 110, height: 70, objectFit: 'cover', objectPosition: 'center', borderRadius: '10px', flexShrink: 0 }} />
                     <div style={{ flex: 1, padding: '10px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                       <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {v.nickname || `${v.year} ${v.make} ${v.model}`}
