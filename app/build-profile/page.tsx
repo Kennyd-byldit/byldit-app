@@ -94,7 +94,7 @@ export default function BuildProfilePage() {
         })
       }
     }
-    window.location.href = '/garage'
+    window.location.replace('/garage')
   }
 
   const AppHeader = () => (
@@ -205,9 +205,9 @@ export default function BuildProfilePage() {
                 <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--bg)', border: '2px dashed var(--light-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>📷</div>
                 <div><p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--dark-blue)' }}>{name}</p><p style={{ fontSize: '0.75rem', color: 'var(--light-blue)' }}>Add photo</p></div>
               </div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                <input placeholder="Age" style={{ flex: 1, padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }} />
-                <input placeholder="City, State" style={{ flex: 2, padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }} />
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'hidden' }}>
+                <input placeholder="Age" style={{ flex: 1, minWidth: 0, boxSizing: 'border-box', padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }} />
+                <input placeholder="City, State" style={{ flex: 2, minWidth: 0, boxSizing: 'border-box', padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }} />
               </div>
               <input placeholder="Bio &#x2014; Tell us about yourself..." style={{ width: '100%', padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 10 }} />
               <input placeholder="Dream build &#x2014; What's your dream vehicle?" style={{ width: '100%', padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 18 }} />
@@ -369,14 +369,18 @@ export default function BuildProfilePage() {
             ))}
           </div>
 
-          <WaltMsg text={<>Perfect. I&apos;ve got everything I need, {name}. Let&apos;s build something great.</>} />
+          {selectedTools.length > 0 && (
+            <>
+              <WaltMsg text={<>Perfect. I&apos;ve got everything I need, {name}. Let&apos;s build something great.</>} />
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-            <button onClick={handleFinish} disabled={saving} style={{ flex: 1, padding: '12px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>Skip</button>
-            <button onClick={handleFinish} disabled={saving} style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
-              {saving ? 'Setting up...' : 'Head to my garage →'}
-            </button>
-          </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                <button onClick={handleFinish} disabled={saving} style={{ flex: 1, padding: '12px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>Skip</button>
+                <button onClick={handleFinish} disabled={saving} style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
+                  {saving ? 'Setting up...' : 'Head to my garage →'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </main>
       <WaltBar placeholder="Ask me anything..." />
