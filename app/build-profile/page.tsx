@@ -137,10 +137,10 @@ export default function BuildProfilePage() {
 
   // ── STEP 1 & OPTIONAL DETAILS ──────────────────────────────────────────────
   if (step <= 4) return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
       <AppHeader />
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
-        <div style={{ maxWidth: 480, margin: '0 auto' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', overflowX: 'hidden', width: '100%' }}>
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>Build Your Profile</p>
           <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 14 }}>Step 1 of 3</p>
           {(name || exp || reason) && (
@@ -226,10 +226,10 @@ export default function BuildProfilePage() {
 
   // ── STEP 2: WHAT'S IN YOUR GARAGE? ────────────────────────────────────────
   if (step === 5) return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
       <AppHeader />
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
-        <div style={{ maxWidth: 480, margin: '0 auto' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', overflowX: 'hidden', width: '100%' }}>
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>What&apos;s in your garage?</p>
           <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 14 }}>Step 2 of 3</p>
 
@@ -252,9 +252,9 @@ export default function BuildProfilePage() {
               {/* Phase A — Core Identity */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                 <input placeholder="Year" value={newVehicle.year} onChange={e => setNewVehicle(p => ({...p, year: e.target.value}))}
-                  style={{ flex: 1, padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }} />
+                  style={{ flex: 1, minWidth: 0, padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' } as React.CSSProperties} />
                 <input placeholder="Make" value={newVehicle.make} onChange={e => setNewVehicle(p => ({...p, make: e.target.value}))}
-                  style={{ flex: 2, padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }} />
+                  style={{ flex: 2, minWidth: 0, padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' } as React.CSSProperties} />
               </div>
               <input placeholder="Model" value={newVehicle.model} onChange={e => setNewVehicle(p => ({...p, model: e.target.value}))}
                 style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 8, boxSizing: 'border-box' }} />
@@ -351,10 +351,10 @@ export default function BuildProfilePage() {
 
   // ── STEP 3: YOUR SETUP ────────────────────────────────────────────────────
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
       <AppHeader />
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
-        <div style={{ maxWidth: 480, margin: '0 auto' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', overflowX: 'hidden', width: '100%' }}>
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>Your Setup</p>
           <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 14 }}>Step 3 of 3</p>
 
