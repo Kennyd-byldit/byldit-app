@@ -63,6 +63,7 @@ export default function GaragePage() {
   const [userName, setUserName] = useState('')
   const [hasVehicles, setHasVehicles] = useState(false)
   const [firstVehicle, setFirstVehicle] = useState<{nickname: string, year: number, make: string, model: string} | null>(null)
+  const [hasActiveProject, setHasActiveProject] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -74,6 +75,9 @@ export default function GaragePage() {
       setUserName(profile?.name || user.email?.split('@')[0] || 'there')
       setHasVehicles((vehicles?.length ?? 0) > 0)
       if (vehicles && vehicles.length > 0) setFirstVehicle(vehicles[0])
+      // Check for active project
+      const { data: projects } = await supabase.from('projects').select('id').eq('user_id', user.id).eq('status', 'active').limit(1)
+      setHasActiveProject((projects?.length ?? 0) > 0)
       setLoading(false)
     }
     loadUser()
@@ -98,15 +102,15 @@ export default function GaragePage() {
             <>
               {/* ====================================================
                   LOCKED LAYOUT ORDER (Apr 5, KD approved) — DO NOT REORDER
-                  1. Betty Lou photo card
-                  2. Progress bar
+                  1. Vehicle photo card
+                  2. Progress bar (active project only)
                   3. Welcome Back, [name]
-                  4. CTA button
-                  5. 4 stat cards
+                  4. CTA button (active project only)
+                  5. 4 stat cards (active project only)
                   6. + Add to My Garage
                   ==================================================== */}
 
-              {/* 1. Betty Lou Photo Card */}
+              {/* 1. Vehicle Photo Card */}
               <div style={{ height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
                 <Image src={mockVehicle.photo} alt={mockVehicle.nickname} fill style={{ objectFit: 'cover', objectPosition: 'center 35%' }} />
                 <div style={{ position: 'absolute', top: 8, right: 10, background: 'var(--orange)', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>ACTIVE BUILD</div>
