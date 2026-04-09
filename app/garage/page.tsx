@@ -34,7 +34,13 @@ const WaltBar = () => (
   </div>
 )
 
-type Vehicle = { id: string, nickname: string, year: number, make: string, model: string, is_primary: boolean }
+type Vehicle = { id: string, nickname: string, year: number, make: string, model: string, is_primary: boolean, color: string|null, engine: string|null, transmission: string|null, drivetrain: string|null, fuel_type: string|null, mileage: number|null, condition: string|null }
+
+const getCompletion = (v: Vehicle) => {
+  const fields = [v.color, v.engine, v.transmission, v.drivetrain, v.fuel_type, v.mileage, v.condition]
+  const filled = fields.filter(Boolean).length
+  return Math.round((filled / fields.length) * 100)
+}
 
 const getVehiclePhoto = (vehicle: Vehicle): string => {
   const make = vehicle.make?.toLowerCase() || ""
@@ -52,6 +58,14 @@ export default function GaragePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Push a state so back button stays on garage
+    window.history.pushState(null, "", window.location.href)
+    const handlePop = () => { window.history.pushState(null, "", window.location.href) }
+    window.addEventListener("popstate", handlePop)
+    return () => window.removeEventListener("popstate", handlePop)
+  }, [])
+
+  useEffect(() => {
     async function loadUser() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login'; return }
@@ -60,7 +74,7 @@ export default function GaragePage() {
 
       const [{ data: profile }, { data: vehicleData }, { data: projects }] = await Promise.all([
         supabase.from('profiles').select('name').eq('id', user.id).single(),
-        supabase.from('vehicles').select('id, nickname, year, make, model, is_primary').eq('user_id', user.id).order('is_primary', { ascending: false }),
+        supabase.from('vehicles').select('id, nickname, year, make, model, is_primary, color, engine, transmission, drivetrain, fuel_type, mileage, condition').eq('user_id', user.id).order('is_primary', { ascending: false }),
         supabase.from('projects').select('id').eq('user_id', user.id).eq('status', 'active').limit(1),
       ])
 
@@ -136,6 +150,16 @@ export default function GaragePage() {
           ) : (
             // ── GARAGE WITH VEHICLES ──────────────────────────────────────────
             <>
+              {/* Walt nudge — incomplete profiles */}
+              {vehicles.some(v => getCompletion(v) < 100) && (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--orange)', flexShrink: 0 }}>
+                    <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div style={{ background: 'var(--dark-blue)', color: 'white', borderRadius: 14, padding: '10px 14px', fontSize: '0.9rem', lineHeight: 1.6, flex: 1 }}>Hey — some of your vehicles have incomplete profiles. Tap the bar on any card to finish them up.</div>
+                </div>
+              )}
+
               {/* 1. Hero Photo Card */}
               <div style={{ height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)', background: 'var(--border)' }}>
                 <img src={primaryVehicle ? getVehiclePhoto(primaryVehicle) : "/photos/f250-hiboy-68.jpg"} alt={primaryVehicle?.nickname || "My Vehicle"} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 35%" }} />
@@ -210,8 +234,9 @@ export default function GaragePage() {
                   <div
                     key={v.id}
                     onClick={() => console.log('vehicle tapped:', v.id)}
-                    style={{ background: 'white', borderRadius: 14, padding: '8px 8px 8px 8px', marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                    style={{ background: 'white', borderRadius: 14, marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer', overflow: 'hidden' }}
                   >
+                    <div style={{ padding: '8px 8px 8px 8px', display: 'flex', alignItems: 'center' }}>
                     <img src={getVehiclePhoto(v)} alt={v.nickname || v.make} style={{ width: 110, height: 70, objectFit: 'cover', objectPosition: 'center', borderRadius: '10px', flexShrink: 0 }} />
                     <div style={{ flex: 1, padding: '10px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                       <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -226,6 +251,15 @@ export default function GaragePage() {
                     >
                       <span style={{ color: v.is_primary ? "#e8750a" : "#d4e0eb", fontSize: "1.4rem", lineHeight: 1 }}>★</span>
                     </button>
+                    </div>
+                    {getCompletion(v) < 100 && (
+                      <>
+                        <div style={{ height: 4, borderRadius: '0 0 14px 14px', overflow: 'hidden', background: '#d4e0eb', marginTop: 8 }}>
+                          <div style={{ width: `${getCompletion(v)}%`, height: '100%', background: '#4da8da' }} />
+                        </div>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--secondary-text)', textAlign: 'center', paddingBottom: 6 }}>Tap to complete profile</p>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>

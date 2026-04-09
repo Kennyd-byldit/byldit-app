@@ -18,7 +18,7 @@ const WaltMsg = ({ text }: { text: React.ReactNode }) => (
 )
 
 const UserReply = ({ text }: { text: string }) => (
-  <div style={{ background: 'var(--bg)', borderRadius: 14, padding: '8px 14px', marginBottom: 12, marginLeft: 38, fontSize: '0.9rem', color: 'var(--dark-blue)', textAlign: 'right' }}>{text}</div>
+  <div style={{ background: '#4da8da', borderRadius: 14, padding: '8px 14px', marginBottom: 12, marginLeft: 38, fontSize: '0.9rem', color: 'white', textAlign: 'right' }}>{text}</div>
 )
 
 const expOptions = [
@@ -267,6 +267,7 @@ export default function BuildProfilePage() {
               {/* More Details toggle — only show when year/make/model filled */}
               {(newVehicle.year && newVehicle.make && newVehicle.model) && (
                 <>
+                  <WaltMsg text={<>The more you tell me about {newVehicle.make} {newVehicle.model}, the better I can help — got a minute to fill in the details?</>} />
                   <div onClick={() => setShowMoreDetails(p => !p)}
                     style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0', cursor: 'pointer', color: 'var(--light-blue)', fontSize: '0.85rem', fontWeight: 600, borderTop: '1px solid var(--border)', marginBottom: showMoreDetails ? 12 : 0 }}>
                     <span style={{ fontSize: '1rem' }}>{showMoreDetails ? '−' : '＋'}</span>
