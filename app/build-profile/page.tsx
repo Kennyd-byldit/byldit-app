@@ -248,7 +248,7 @@ export default function BuildProfilePage() {
                 style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 12, boxSizing: 'border-box' }} />
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setAddingVehicle(false)} style={{ flex: 1, padding: '10px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary-text)', cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>Cancel</button>
-                <button onClick={addVehicle} style={{ flex: 2, padding: '10px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 4px 14px rgba(232,117,10,0.25)', cursor: 'pointer' }}>Add vehicle &#x2192;</button>
+                <button onClick={addVehicle} style={{ flex: 2, padding: '10px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 4px 14px rgba(232,117,10,0.25)', cursor: 'pointer' }}>Add vehicle →</button>
               </div>
             </div>
           ) : (
@@ -265,7 +265,7 @@ export default function BuildProfilePage() {
 
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => setStep(6)} style={{ flex: 1, padding: '12px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>Skip</button>
-            <button onClick={() => setStep(6)} style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>Set up my workspace &#x2192;</button>
+            <button onClick={() => setStep(6)} style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>Set up my workspace →</button>
           </div>
         </div>
       </main>
@@ -299,7 +299,7 @@ export default function BuildProfilePage() {
           <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
             <button onClick={handleFinish} disabled={saving} style={{ flex: 1, padding: '12px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>Skip</button>
             <button onClick={handleFinish} disabled={saving} style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
-              {saving ? 'Setting up...' : 'Head to my garage &#x2192;'}
+              {saving ? 'Setting up...' : 'Head to my garage →'}
             </button>
           </div>
         </div>

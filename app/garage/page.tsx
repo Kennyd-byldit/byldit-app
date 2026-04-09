@@ -11,6 +11,7 @@ const supabase = createClient(
 )
 const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 
+// Mock vehicle data — replace with real Supabase query once projects are built
 const mockVehicle = {
   nickname: 'Betty Lou',
   year: 1968, make: 'Ford', model: 'F-250 Hi-Boy',
@@ -61,6 +62,7 @@ const AppHeader = () => (
 export default function GaragePage() {
   const [userName, setUserName] = useState('')
   const [hasVehicles, setHasVehicles] = useState(false)
+  const [firstVehicle, setFirstVehicle] = useState<{nickname: string, year: number, make: string, model: string} | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -68,9 +70,10 @@ export default function GaragePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login'; return }
       const { data: profile } = await supabase.from('profiles').select('name').eq('id', user.id).single()
-      const { data: vehicles } = await supabase.from('vehicles').select('id').eq('user_id', user.id).limit(1)
+      const { data: vehicles } = await supabase.from('vehicles').select('id, nickname, year, make, model').eq('user_id', user.id).limit(1)
       setUserName(profile?.name || user.email?.split('@')[0] || 'there')
       setHasVehicles((vehicles?.length ?? 0) > 0)
+      if (vehicles && vehicles.length > 0) setFirstVehicle(vehicles[0])
       setLoading(false)
     }
     loadUser()
@@ -108,9 +111,9 @@ export default function GaragePage() {
                 <Image src={mockVehicle.photo} alt={mockVehicle.nickname} fill style={{ objectFit: 'cover', objectPosition: 'center 35%' }} />
                 <div style={{ position: 'absolute', top: 8, right: 10, background: 'var(--orange)', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>ACTIVE BUILD</div>
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
-                  <p style={{ color: 'white', fontWeight: 800, fontSize: '1.2rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>{mockVehicle.nickname}</p>
+                  <p style={{ color: 'white', fontWeight: 800, fontSize: '1.2rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>{firstVehicle?.nickname || mockVehicle.nickname}</p>
                   <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.65rem', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
-                    {mockVehicle.year} {mockVehicle.make} {mockVehicle.model} · {mockVehicle.project.type}
+                    {firstVehicle ? firstVehicle.year + " " + firstVehicle.make + " " + firstVehicle.model : mockVehicle.year + " " + mockVehicle.make + " " + mockVehicle.model} · {mockVehicle.project.type}
                   </p>
                 </div>
               </div>
