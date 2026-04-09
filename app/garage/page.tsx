@@ -224,7 +224,7 @@ export default function GaragePage() {
                       style={{ alignSelf: 'center', marginRight: 12, fontSize: '1.3rem', background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}
                       aria-label={v.is_primary ? 'Featured vehicle' : 'Set as featured'}
                     >
-                      {v.is_primary ? '⭐' : '☆'}
+                      <span style={{ color: v.is_primary ? "#e8750a" : "#d4e0eb", fontSize: "1.4rem", lineHeight: 1 }}>★</span>
                     </button>
                   </div>
                 ))}

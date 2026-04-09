@@ -48,6 +48,7 @@ export default function BuildProfilePage() {
   const [addingVehicle, setAddingVehicle] = useState(false)
   const [showMoreDetails, setShowMoreDetails] = useState(false)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
+  const [toolsDone, setToolsDone] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const toggleTool = (tool: string) => {
@@ -369,7 +370,11 @@ export default function BuildProfilePage() {
             ))}
           </div>
 
-          {selectedTools.length > 0 && (
+          {!toolsDone && (
+            <button onClick={() => setToolsDone(true)} style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>Done →</button>
+          )}
+
+          {toolsDone && (
             <>
               <WaltMsg text={<>Perfect. I&apos;ve got everything I need, {name}. Let&apos;s build something great.</>} />
 
