@@ -39,6 +39,7 @@ type Vehicle = { id: string, nickname: string, year: number, make: string, model
 
 export default function GaragePage() {
   const [userName, setUserName] = useState('')
+  const [userId, setUserId] = useState('')
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [hasActiveProject, setHasActiveProject] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -48,20 +49,30 @@ export default function GaragePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login'; return }
 
+      setUserId(user.id)
+
       const [{ data: profile }, { data: vehicleData }, { data: projects }] = await Promise.all([
         supabase.from('profiles').select('name').eq('id', user.id).single(),
-        supabase.from('vehicles').select('id, nickname, year, make, model, is_primary').eq('user_id', user.id),
+        supabase.from('vehicles').select('id, nickname, year, make, model, is_primary').eq('user_id', user.id).order('is_primary', { ascending: false }),
         supabase.from('projects').select('id').eq('user_id', user.id).eq('status', 'active').limit(1),
       ])
 
       setUserName(profile?.name || user.email?.split('@')[0] || 'there')
-      const sorted = (vehicleData || []).sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
-      setVehicles(sorted)
+      setVehicles(vehicleData || [])
       setHasActiveProject((projects?.length ?? 0) > 0)
       setLoading(false)
     }
     loadUser()
   }, [])
+
+  async function setPrimary(vehicleId: string) {
+    // Optimistic update
+    setVehicles(prev => prev.map(v => ({ ...v, is_primary: v.id === vehicleId })))
+
+    // Update Supabase: set target true, all others false
+    await supabase.from('vehicles').update({ is_primary: false }).eq('user_id', userId).neq('id', vehicleId)
+    await supabase.from('vehicles').update({ is_primary: true }).eq('id', vehicleId)
+  }
 
   if (loading) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
@@ -72,8 +83,7 @@ export default function GaragePage() {
     </div>
   )
 
-  const featuredVehicle = vehicles[0]
-  const otherVehicles = vehicles.slice(1)
+  const primaryVehicle = vehicles.find(v => v.is_primary) || vehicles[0]
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
@@ -119,32 +129,19 @@ export default function GaragePage() {
           ) : (
             // ── GARAGE WITH VEHICLES ──────────────────────────────────────────
             <>
-              {/* ====================================================
-                  LOCKED LAYOUT ORDER (Apr 5, KD approved)
-                  1. Featured vehicle photo card
-                  2. Progress bar (active project only)
-                  3. Welcome / Welcome Back
-                  4. CTA button
-                  5. Stat cards (active project only)
-                  6. Additional vehicle cards (non-featured)
-                  7. + Add to My Garage
-                  ==================================================== */}
-
-              {/* 1. Vehicle Photo Card */}
+              {/* 1. Hero Photo Card */}
               <div style={{ height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)', background: 'var(--border)' }}>
-                {featuredVehicle && (
-                  <Image src="/photos/f250-hiboy-68.jpg" alt={featuredVehicle.nickname || featuredVehicle.make} fill style={{ objectFit: 'cover', objectPosition: 'center 35%' }} />
-                )}
+                <Image src="/photos/f250-hiboy-68.jpg" alt={primaryVehicle?.nickname || 'My Vehicle'} fill style={{ objectFit: 'cover', objectPosition: 'center 35%' }} />
                 {hasActiveProject && (
                   <div style={{ position: 'absolute', top: 8, right: 10, background: 'var(--orange)', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>ACTIVE BUILD</div>
                 )}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
                   <p style={{ color: 'white', fontWeight: 800, fontSize: '1.2rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
-                    {featuredVehicle?.nickname || (featuredVehicle ? featuredVehicle.year + ' ' + featuredVehicle.make + ' ' + featuredVehicle.model : 'My Vehicle')}
+                    {primaryVehicle?.nickname || (primaryVehicle ? `${primaryVehicle.year} ${primaryVehicle.make} ${primaryVehicle.model}` : 'My Vehicle')}
                   </p>
-                  {featuredVehicle && (
+                  {primaryVehicle && (
                     <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.65rem', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
-                      {featuredVehicle.year} {featuredVehicle.make} {featuredVehicle.model}
+                      {primaryVehicle.year} {primaryVehicle.make} {primaryVehicle.model}
                     </p>
                   )}
                 </div>
@@ -160,7 +157,7 @@ export default function GaragePage() {
                 </div>
               )}
 
-              {/* 3. Welcome Back / Welcome */}
+              {/* 3. Welcome / Welcome Back */}
               <div style={{ textAlign: 'center', marginBottom: 10 }}>
                 <p className={yellowtail.className} style={{ fontSize: '1.5rem', color: 'var(--light-blue)', lineHeight: 1 }}>
                   {hasActiveProject ? 'Welcome Back,' : 'Welcome,'}
@@ -200,20 +197,31 @@ export default function GaragePage() {
                 </div>
               )}
 
-              {/* 6. Additional vehicle cards */}
-              {otherVehicles.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
-                  {otherVehicles.map(v => (
-                    <div key={v.id} style={{ background: 'white', borderRadius: 14, padding: '10px 14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--bg)', border: '1px dashed var(--light-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>🚗</div>
-                      <div>
-                        <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--dark-blue)' }}>{v.nickname || v.year + ' ' + v.make + ' ' + v.model}</p>
-                        <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginTop: 1 }}>{v.year} {v.make} {v.model}</p>
-                      </div>
+              {/* 6. All vehicle cards */}
+              <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10 }}>
+                {vehicles.map(v => (
+                  <div
+                    key={v.id}
+                    onClick={() => console.log('vehicle tapped:', v.id)}
+                    style={{ background: 'white', borderRadius: 14, padding: '12px 14px', marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+                  >
+                    <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--bg)', border: '1px dashed var(--light-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>🚗</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--dark-blue)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {v.nickname || `${v.year} ${v.make} ${v.model}`}
+                      </p>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginTop: 1 }}>{v.year} {v.make} {v.model}</p>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <button
+                      onClick={e => { e.stopPropagation(); setPrimary(v.id) }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', padding: '4px', flexShrink: 0, lineHeight: 1 }}
+                      aria-label={v.is_primary ? 'Featured vehicle' : 'Set as featured'}
+                    >
+                      {v.is_primary ? '⭐' : '☆'}
+                    </button>
+                  </div>
+                ))}
+              </div>
 
               {/* 7. Add to My Garage */}
               <div style={{ border: '2px dashed var(--light-blue)', borderRadius: 25, padding: '11px', textAlign: 'center', cursor: 'pointer' }}>
