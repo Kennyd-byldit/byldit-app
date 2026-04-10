@@ -46,7 +46,7 @@ export default function BuildProfilePage() {
   const [vehicles, setVehicles] = useState<{year: string, make: string, model: string, nickname: string, color: string, trim: string, engine: string, transmission: string, drivetrain: string, fuel_type: string, mileage: string, condition: string, title_status: string, notes: string}[]>([])
   const [newVehicle, setNewVehicle] = useState({ year: '', make: '', model: '', nickname: '', color: '', trim: '', engine: '', transmission: '', drivetrain: '', fuel_type: '', mileage: '', condition: '', title_status: '', notes: '' })
   const [addingVehicle, setAddingVehicle] = useState(false)
-  const [showMoreDetails, setShowMoreDetails] = useState(false)
+  const [showMoreDetails, setShowMoreDetails] = useState(true)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [toolsDone, setToolsDone] = useState(false)
   const [saving, setSaving] = useState(false)

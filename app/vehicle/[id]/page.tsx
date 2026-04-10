@@ -25,14 +25,6 @@ type Vehicle = {
   title_status: string | null
   notes: string | null
   is_primary: boolean
-  cover_photo_url: string | null
-}
-
-const getVehiclePhoto = (vehicle: Vehicle): string => {
-  const model = vehicle.model?.toLowerCase() || ''
-  if (model.includes('ranger')) return '/photos/ranger-2025.jpg'
-  if (model.includes('f250') || model.includes('f-250')) return '/photos/f250-hiboy-68.jpg'
-  return '/photos/f250-hiboy-68.jpg'
 }
 
 const NavBar = () => (
@@ -61,83 +53,33 @@ const WaltBar = ({ nickname }: { nickname: string }) => (
   </div>
 )
 
-const FieldRow = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
-  <div style={{ marginBottom: 16 }}>
-    <div style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'var(--font-nunito)' }}>{label}</div>
-    <div style={{ fontSize: '0.95rem', color: value ? 'var(--dark-blue)' : 'var(--secondary-text)', fontWeight: value ? 600 : 400, fontStyle: value ? 'normal' : 'italic', marginTop: 2 }}>
-      {value ?? '—'}
-    </div>
-  </div>
-)
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  background: 'var(--bg)',
-  border: '1.5px solid var(--border)',
-  borderRadius: 10,
-  padding: '10px 14px',
-  fontSize: 16,
-  color: 'var(--dark-blue)',
-  fontFamily: 'var(--font-nunito)',
-  outline: 'none',
-}
-
-const selectStyle: React.CSSProperties = {
-  ...inputStyle,
-  appearance: 'none',
-  WebkitAppearance: 'none',
-}
-
 export default function VehicleDetailPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
 
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(true)
-  const [editing, setEditing] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-
-  // Edit form state
-  const [form, setForm] = useState({
-    nickname: '',
-    color: '',
-    engine: '',
-    transmission: '',
-    drivetrain: '',
-    fuel_type: '',
-    mileage: '',
-    condition: '',
-    title_status: '',
-    notes: '',
-  })
+  const [editingField, setEditingField] = useState<string | null>(null)
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
+  const [tempValue, setTempValue] = useState('')
 
   useEffect(() => {
     async function load() {
       if (!id) return
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { window.location.href = '/login'; return }
+      if (!user) { window.location.replace('/login'); return }
 
       const { data } = await supabase
         .from('vehicles')
-        .select('id, nickname, year, make, model, color, engine, fuel_type, transmission, drivetrain, mileage, condition, title_status, notes, is_primary, cover_photo_url')
-        .eq('id', id)
-        .single()
-
-      if (!data) { window.location.href = '/garage'; return }
-
-      // Verify ownership
-      const { data: owned } = await supabase
-        .from('vehicles')
-        .select('id')
+        .select('id, nickname, year, make, model, color, engine, fuel_type, transmission, drivetrain, mileage, condition, title_status, notes, is_primary')
         .eq('id', id)
         .eq('user_id', user.id)
         .single()
 
-      if (!owned) { window.location.href = '/garage'; return }
+      if (!data) { window.location.replace('/garage'); return }
 
       setVehicle(data)
-      setForm({
+      setFieldValues({
         nickname: data.nickname || '',
         color: data.color || '',
         engine: data.engine || '',
@@ -154,34 +96,16 @@ export default function VehicleDetailPage() {
     load()
   }, [id])
 
-  const handleSave = async () => {
-    if (!vehicle) return
-    setSaving(true)
-    await supabase.from('vehicles').update({
-      nickname: form.nickname || null,
-      color: form.color || null,
-      engine: form.engine || null,
-      transmission: form.transmission || null,
-      drivetrain: form.drivetrain || null,
-      fuel_type: form.fuel_type || null,
-      mileage: form.mileage ? parseInt(form.mileage) : null,
-      condition: form.condition || null,
-      title_status: form.title_status || null,
-      notes: form.notes || null,
-    }).eq('id', vehicle.id)
+  function startEdit(field: string) {
+    setTempValue(fieldValues[field] || '')
+    setEditingField(field)
+  }
 
-    // Refresh vehicle data
-    const { data } = await supabase
-      .from('vehicles')
-      .select('id, nickname, year, make, model, color, engine, fuel_type, transmission, drivetrain, mileage, condition, title_status, notes, is_primary, cover_photo_url')
-      .eq('id', vehicle.id)
-      .single()
-
-    if (data) setVehicle(data)
-    setSaving(false)
-    setEditing(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+  async function saveField(field: string) {
+    const value = tempValue
+    await supabase.from('vehicles').update({ [field]: value || null }).eq('id', vehicle!.id)
+    setFieldValues(prev => ({ ...prev, [field]: value }))
+    setEditingField(null)
   }
 
   if (loading) return (
@@ -195,7 +119,55 @@ export default function VehicleDetailPage() {
 
   if (!vehicle) return null
 
-  const displayName = vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+  const displayName = fieldValues.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+  const model = vehicle.model?.toLowerCase() || ''
+  const photoSrc = model.includes('ranger') ? '/photos/ranger-2025.jpg' : '/photos/f250-hiboy-68.jpg'
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    background: 'var(--bg)',
+    border: '1.5px solid var(--border)',
+    borderRadius: 10,
+    padding: '8px 12px',
+    fontSize: 16,
+    color: 'var(--dark-blue)',
+    fontFamily: 'var(--font-nunito)',
+    outline: 'none',
+    boxSizing: 'border-box',
+  }
+
+  const saveCancelButtons = (field: string) => (
+    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+      <button onClick={() => saveField(field)} style={{ background: '#e8750a', color: 'white', border: 'none', borderRadius: 20, padding: '4px 14px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>Save</button>
+      <button onClick={() => setEditingField(null)} style={{ background: '#d4e0eb', color: 'var(--dark-blue)', border: 'none', borderRadius: 20, padding: '4px 12px', fontSize: '0.8rem', cursor: 'pointer' }}>Cancel</button>
+    </div>
+  )
+
+  const editButton = (field: string) => (
+    <button onClick={() => startEdit(field)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 20, padding: '4px 12px', fontSize: '0.75rem', color: 'var(--secondary-text)', cursor: 'pointer', fontFamily: 'var(--font-nunito)', marginLeft: 12, flexShrink: 0 }}>Edit</button>
+  )
+
+  const fieldRow = (label: string, field: string, inputEl: React.ReactNode) => {
+    const val = fieldValues[field]
+    return (
+      <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</p>
+          {editingField === field ? (
+            <div>
+              {inputEl}
+              {saveCancelButtons(field)}
+            </div>
+          ) : (
+            <p style={{ fontSize: '0.95rem', color: val ? 'var(--dark-blue)' : 'var(--secondary-text)', fontWeight: val ? 600 : 400, fontStyle: val ? 'normal' : 'italic' }}>
+              {val || 'Tap Edit to add'}
+            </p>
+          )}
+        </div>
+        {editingField !== field && editButton(field)}
+      </div>
+    )
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
@@ -220,181 +192,94 @@ export default function VehicleDetailPage() {
             BYLD<span style={{ fontFamily: 'var(--font-nunito)', fontWeight: 300, fontStyle: 'normal', color: 'var(--light-blue)' }}>it</span>
           </span>
         </div>
-        {!editing && (
-          <button
-            onClick={() => setEditing(true)}
-            style={{ background: 'none', border: 'none', color: 'white', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', padding: '0 4px', position: 'absolute', right: 16 }}
-          >
-            Edit
-          </button>
-        )}
       </header>
-
-      {/* Saved toast */}
-      {saved && (
-        <div style={{ background: '#22c55e', color: 'white', textAlign: 'center', padding: '8px', fontSize: '0.85rem', fontWeight: 700, flexShrink: 0 }}>
-          Saved!
-        </div>
-      )}
 
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '12px 14px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
 
           {/* Hero photo */}
-          <div style={{ height: 180, borderRadius: 16, overflow: 'hidden', position: 'relative', marginBottom: 12, boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
+          <div style={{ position: 'relative', marginBottom: 12 }}>
             <img
-              src={getVehiclePhoto(vehicle)}
+              src={photoSrc}
               alt={displayName}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }}
+              style={{ height: 180, width: '100%', objectFit: 'cover', objectPosition: 'center 35%', borderRadius: 16, display: 'block' }}
             />
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 16px 12px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 16px 12px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))', borderRadius: '0 0 16px 16px' }}>
               <p style={{ color: 'white', fontWeight: 700, fontSize: '1.15rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{displayName}</p>
             </div>
           </div>
 
-          {/* Detail card */}
-          <div style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 2px 12px rgba(36,80,122,0.08)', marginBottom: 16 }}>
+          {/* Field card */}
+          <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', marginTop: 12 }}>
 
-            {editing ? (
-              // ── EDIT MODE ──────────────────────────────────────────────────
-              <>
-                <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Nickname</p>
-                <input
-                  style={{ ...inputStyle, marginBottom: 16 }}
-                  value={form.nickname}
-                  onChange={e => setForm(f => ({ ...f, nickname: e.target.value }))}
-                  placeholder="e.g. Big Blue"
-                />
+            {/* Read-only: Vehicle */}
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+              <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>VEHICLE</p>
+              <p style={{ fontSize: '0.95rem', color: 'var(--dark-blue)', fontWeight: 600 }}>{vehicle.year} {vehicle.make} {vehicle.model}</p>
+            </div>
 
-                {/* Year / Make / Model — read only */}
-                <div style={{ marginBottom: 16 }}>
-                  <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Year / Make / Model</p>
-                  <p style={{ fontSize: '0.95rem', color: 'var(--dark-blue)', fontWeight: 600 }}>{vehicle.year} {vehicle.make} {vehicle.model}</p>
-                </div>
-
-                <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Color</p>
-                <input
-                  style={{ ...inputStyle, marginBottom: 16 }}
-                  value={form.color}
-                  onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
-                  placeholder="e.g. Oxford White"
-                />
-
-                <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Engine</p>
-                <input
-                  style={{ ...inputStyle, marginBottom: 16 }}
-                  value={form.engine}
-                  onChange={e => setForm(f => ({ ...f, engine: e.target.value }))}
-                  placeholder="e.g. 6.7L Power Stroke"
-                />
-
-                <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Transmission</p>
-                <input
-                  style={{ ...inputStyle, marginBottom: 16 }}
-                  value={form.transmission}
-                  onChange={e => setForm(f => ({ ...f, transmission: e.target.value }))}
-                  placeholder="e.g. 6-speed auto"
-                />
-
-                <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Drivetrain</p>
-                <select
-                  style={{ ...selectStyle, marginBottom: 16 }}
-                  value={form.drivetrain}
-                  onChange={e => setForm(f => ({ ...f, drivetrain: e.target.value }))}
-                >
-                  <option value="">Select...</option>
-                  <option>2WD</option>
-                  <option>4WD</option>
-                  <option>AWD</option>
-                </select>
-
-                <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Fuel Type</p>
-                <select
-                  style={{ ...selectStyle, marginBottom: 16 }}
-                  value={form.fuel_type}
-                  onChange={e => setForm(f => ({ ...f, fuel_type: e.target.value }))}
-                >
-                  <option value="">Select...</option>
-                  <option>Gas</option>
-                  <option>Diesel</option>
-                  <option>Electric</option>
-                  <option>Hybrid</option>
-                </select>
-
-                <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Mileage</p>
-                <input
-                  style={{ ...inputStyle, marginBottom: 16 }}
-                  value={form.mileage}
-                  onChange={e => setForm(f => ({ ...f, mileage: e.target.value }))}
-                  placeholder="e.g. 85000"
-                  inputMode="numeric"
-                />
-
-                <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Condition</p>
-                <select
-                  style={{ ...selectStyle, marginBottom: 16 }}
-                  value={form.condition}
-                  onChange={e => setForm(f => ({ ...f, condition: e.target.value }))}
-                >
-                  <option value="">Select...</option>
-                  <option>Daily driver</option>
-                  <option>Weekend car</option>
-                  <option>Project non-running</option>
-                  <option>Stored</option>
-                </select>
-
-                <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Title Status</p>
-                <select
-                  style={{ ...selectStyle, marginBottom: 16 }}
-                  value={form.title_status}
-                  onChange={e => setForm(f => ({ ...f, title_status: e.target.value }))}
-                >
-                  <option value="">Select...</option>
-                  <option>Clean</option>
-                  <option>Salvage</option>
-                  <option>Rebuilt</option>
-                </select>
-
-                <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Notes</p>
-                <textarea
-                  style={{ ...inputStyle, marginBottom: 16, minHeight: 80, resize: 'vertical' }}
-                  value={form.notes}
-                  onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                  placeholder="Anything else worth knowing..."
-                />
-
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    onClick={() => setEditing(false)}
-                    style={{ flex: 1, background: 'white', border: '1.5px solid var(--border)', borderRadius: 50, padding: '12px 16px', fontSize: '0.9rem', fontWeight: 700, color: 'var(--dark-blue)', cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    style={{ flex: 2, background: 'linear-gradient(135deg, #e8750a, #f4a543)', border: 'none', borderRadius: 50, padding: '12px 16px', fontSize: '0.9rem', fontWeight: 700, color: 'white', cursor: saving ? 'default' : 'pointer', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', fontFamily: 'var(--font-nunito)', opacity: saving ? 0.7 : 1 }}
-                  >
-                    {saving ? 'Saving...' : 'Save Changes →'}
-                  </button>
-                </div>
-              </>
-            ) : (
-              // ── VIEW MODE ──────────────────────────────────────────────────
-              <>
-                <FieldRow label="Nickname" value={vehicle.nickname} />
-                <FieldRow label="Year / Make / Model" value={`${vehicle.year} ${vehicle.make} ${vehicle.model}`} />
-                <FieldRow label="Color" value={vehicle.color} />
-                <FieldRow label="Engine" value={vehicle.engine} />
-                <FieldRow label="Transmission" value={vehicle.transmission} />
-                <FieldRow label="Drivetrain" value={vehicle.drivetrain} />
-                <FieldRow label="Fuel Type" value={vehicle.fuel_type} />
-                <FieldRow label="Mileage" value={vehicle.mileage != null ? vehicle.mileage.toLocaleString() + ' mi' : null} />
-                <FieldRow label="Condition" value={vehicle.condition} />
-                <FieldRow label="Title Status" value={vehicle.title_status} />
-                <FieldRow label="Notes" value={vehicle.notes} />
-              </>
+            {fieldRow('Nickname', 'nickname',
+              <input style={inputStyle} value={tempValue} onChange={e => setTempValue(e.target.value)} autoFocus />
             )}
+
+            {fieldRow('Color', 'color',
+              <input style={inputStyle} value={tempValue} onChange={e => setTempValue(e.target.value)} autoFocus />
+            )}
+
+            {fieldRow('Engine', 'engine',
+              <input style={inputStyle} value={tempValue} onChange={e => setTempValue(e.target.value)} placeholder="e.g. 390 FE V8, 5.0 Coyote swap" autoFocus />
+            )}
+
+            {fieldRow('Transmission', 'transmission',
+              <input style={inputStyle} value={tempValue} onChange={e => setTempValue(e.target.value)} placeholder="e.g. 4-speed manual, 10-speed auto" autoFocus />
+            )}
+
+            {fieldRow('Drivetrain', 'drivetrain',
+              <select style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} value={tempValue} onChange={e => setTempValue(e.target.value)}>
+                <option value="">Select...</option>
+                <option>2WD</option>
+                <option>4WD</option>
+                <option>AWD</option>
+              </select>
+            )}
+
+            {fieldRow('Fuel Type', 'fuel_type',
+              <select style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} value={tempValue} onChange={e => setTempValue(e.target.value)}>
+                <option value="">Select...</option>
+                <option>Gas</option>
+                <option>Diesel</option>
+                <option>Electric</option>
+                <option>Hybrid</option>
+              </select>
+            )}
+
+            {fieldRow('Mileage', 'mileage',
+              <input style={inputStyle} type="number" value={tempValue} onChange={e => setTempValue(e.target.value)} inputMode="numeric" autoFocus />
+            )}
+
+            {fieldRow('Condition', 'condition',
+              <select style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} value={tempValue} onChange={e => setTempValue(e.target.value)}>
+                <option value="">Select...</option>
+                <option>Daily driver</option>
+                <option>Weekend car</option>
+                <option>Project (non-running)</option>
+                <option>Stored</option>
+              </select>
+            )}
+
+            {fieldRow('Title Status', 'title_status',
+              <select style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} value={tempValue} onChange={e => setTempValue(e.target.value)}>
+                <option value="">Select...</option>
+                <option>Clean</option>
+                <option>Salvage</option>
+                <option>Rebuilt</option>
+              </select>
+            )}
+
+            {fieldRow('Notes', 'notes',
+              <textarea style={{ ...inputStyle, minHeight: 72, resize: 'vertical' }} value={tempValue} onChange={e => setTempValue(e.target.value)} rows={3} autoFocus />
+            )}
+
           </div>
 
         </div>

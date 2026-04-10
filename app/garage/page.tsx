@@ -256,7 +256,10 @@ export default function GaragePage() {
                         <div style={{ height: 4, borderRadius: '0 0 14px 14px', overflow: 'hidden', background: '#d4e0eb', marginTop: 8 }}>
                           <div style={{ width: `${getCompletion(v)}%`, height: '100%', background: '#4da8da' }} />
                         </div>
-                        <p style={{ fontSize: '0.6rem', color: 'var(--secondary-text)', textAlign: 'center', paddingBottom: 6 }}>Tap to complete profile</p>
+                        <div onClick={(e) => { e.stopPropagation(); window.location.href = "/vehicle/" + v.id }}
+                          style={{ textAlign: "center", paddingBottom: 8, paddingTop: 4, cursor: "pointer" }}>
+                          <span style={{ fontSize: "0.7rem", color: "var(--light-blue)", fontWeight: 700 }}>Edit Profile →</span>
+                        </div>
                       </>
                     )}
                   </div>
