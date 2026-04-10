@@ -10,21 +10,17 @@ const supabase = createClient(
 const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 
 type Vehicle = {
-  id: string
-  nickname: string | null
-  year: number
-  make: string
-  model: string
-  color: string | null
-  engine: string | null
-  fuel_type: string | null
-  transmission: string | null
-  drivetrain: string | null
-  mileage: number | null
-  condition: string | null
-  title_status: string | null
-  notes: string | null
-  is_primary: boolean
+  id: string; nickname: string | null; year: number; make: string; model: string
+  color: string | null; engine: string | null; fuel_type: string | null
+  transmission: string | null; drivetrain: string | null; mileage: number | null
+  condition: string | null; title_status: string | null; notes: string | null; is_primary: boolean
+}
+
+const getVehiclePhoto = (v: Vehicle): string => {
+  const model = v.model?.toLowerCase() || ''
+  if (model.includes('ranger')) return '/photos/ranger-2025.jpg'
+  if (model.includes('f250') || model.includes('f-250')) return '/photos/f250-hiboy-68.jpg'
+  return '/photos/f250-hiboy-68.jpg'
 }
 
 const NavBar = () => (
@@ -40,259 +36,169 @@ const NavBar = () => (
   </nav>
 )
 
-const WaltBar = ({ nickname }: { nickname: string }) => (
-  <div style={{ background: 'white', padding: '8px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ flex: 1, background: 'var(--bg)', borderRadius: 25, padding: '10px 16px', fontSize: '0.85rem', color: '#aaa', fontFamily: 'var(--font-nunito)' }}>
-        Ask me about {nickname || 'this vehicle'}...
-      </div>
-      <div style={{ width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--orange)', flexShrink: 0, cursor: 'pointer' }}>
-        <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      </div>
-    </div>
-  </div>
-)
-
 export default function VehicleDetailPage() {
-  const params = useParams<{ id: string }>()
-  const id = params?.id
-
+  const params = useParams()
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(true)
   const [editingField, setEditingField] = useState<string | null>(null)
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
   const [tempValue, setTempValue] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [savedMsg, setSavedMsg] = useState(false)
 
   useEffect(() => {
     async function load() {
-      if (!id) return
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.replace('/login'); return }
-
-      const { data } = await supabase
-        .from('vehicles')
+      const { data } = await supabase.from('vehicles')
         .select('id, nickname, year, make, model, color, engine, fuel_type, transmission, drivetrain, mileage, condition, title_status, notes, is_primary')
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .single()
-
+        .eq('id', params.id as string).eq('user_id', user.id).single()
       if (!data) { window.location.replace('/garage'); return }
-
       setVehicle(data)
-      setFieldValues({
-        nickname: data.nickname || '',
-        color: data.color || '',
-        engine: data.engine || '',
-        transmission: data.transmission || '',
-        drivetrain: data.drivetrain || '',
-        fuel_type: data.fuel_type || '',
-        mileage: data.mileage != null ? String(data.mileage) : '',
-        condition: data.condition || '',
-        title_status: data.title_status || '',
-        notes: data.notes || '',
-      })
       setLoading(false)
     }
     load()
-  }, [id])
+  }, [params.id])
 
-  function startEdit(field: string) {
-    setTempValue(fieldValues[field] || '')
+  const startEdit = (field: string, current: string | number | null) => {
     setEditingField(field)
+    setTempValue(current != null ? String(current) : '')
   }
 
-  async function saveField(field: string) {
-    const value = tempValue
-    await supabase.from('vehicles').update({ [field]: value || null }).eq('id', vehicle!.id)
-    setFieldValues(prev => ({ ...prev, [field]: value }))
+  const saveField = async (field: string) => {
+    if (!vehicle) return
+    setSaving(true)
+    const value = tempValue.trim() || null
+    await supabase.from('vehicles').update({ [field]: value }).eq('id', vehicle.id)
+    setVehicle(prev => prev ? { ...prev, [field]: field === 'mileage' && value ? parseInt(value) : value } as Vehicle : prev)
     setEditingField(null)
+    setSaving(false)
+    setSavedMsg(true)
+    setTimeout(() => setSavedMsg(false), 2000)
   }
 
   if (loading) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-      <div style={{ textAlign: 'center' }}>
-        <img src={WALT} alt="Walt" style={{ width: 60, height: 60, borderRadius: '50%', border: '2px solid var(--orange)', marginBottom: 12 }} />
-        <p style={{ color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', fontSize: '0.9rem' }}>Loading vehicle...</p>
-      </div>
+      <p style={{ color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)' }}>Loading...</p>
     </div>
   )
 
   if (!vehicle) return null
 
-  const displayName = fieldValues.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`
-  const model = vehicle.model?.toLowerCase() || ''
-  const photoSrc = model.includes('ranger') ? '/photos/ranger-2025.jpg' : '/photos/f250-hiboy-68.jpg'
+  const fields: { label: string; field: string; type: 'text' | 'number' | 'select' | 'textarea'; placeholder?: string; opts?: string[] }[] = [
+    { label: 'Year *', field: 'year', type: 'text', placeholder: 'e.g. 1968' },
+    { label: 'Make *', field: 'make', type: 'text', placeholder: 'e.g. Ford' },
+    { label: 'Model *', field: 'model', type: 'text', placeholder: 'e.g. F-250' },
+    { label: 'Nickname', field: 'nickname', type: 'text', placeholder: 'e.g. "Betty Lou"' },
+    { label: 'Color', field: 'color', type: 'text', placeholder: 'e.g. Oxford White' },
+    { label: 'Engine', field: 'engine', type: 'text', placeholder: 'e.g. 390 FE V8, 5.0 Coyote swap' },
+    { label: 'Transmission', field: 'transmission', type: 'text', placeholder: 'e.g. 4-speed manual, 10-speed auto' },
+    { label: 'Mileage', field: 'mileage', type: 'number', placeholder: 'e.g. 87000' },
+    { label: 'Drivetrain', field: 'drivetrain', type: 'select', opts: ['2WD', '4WD', 'AWD'] },
+    { label: 'Fuel Type', field: 'fuel_type', type: 'select', opts: ['Gas', 'Diesel', 'Electric', 'Hybrid'] },
+    { label: 'Condition', field: 'condition', type: 'select', opts: ['Daily driver', 'Weekend car', 'Project (non-running)', 'Stored'] },
+    { label: 'Title Status', field: 'title_status', type: 'select', opts: ['Clean', 'Salvage', 'Rebuilt'] },
+    { label: 'Notes', field: 'notes', type: 'textarea', placeholder: 'Anything Walt should know — mods, issues, history...' },
+  ]
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    background: 'var(--bg)',
-    border: '1.5px solid var(--border)',
-    borderRadius: 10,
-    padding: '8px 12px',
-    fontSize: 16,
-    color: 'var(--dark-blue)',
-    fontFamily: 'var(--font-nunito)',
-    outline: 'none',
-    boxSizing: 'border-box',
-  }
-
-  const saveCancelButtons = (field: string) => (
-    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-      <button onClick={() => saveField(field)} style={{ background: '#e8750a', color: 'white', border: 'none', borderRadius: 20, padding: '4px 14px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>Save</button>
-      <button onClick={() => setEditingField(null)} style={{ background: '#d4e0eb', color: 'var(--dark-blue)', border: 'none', borderRadius: 20, padding: '4px 12px', fontSize: '0.8rem', cursor: 'pointer' }}>Cancel</button>
-    </div>
-  )
-
-  const editButton = (field: string) => (
-    <button onClick={() => startEdit(field)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 20, padding: '4px 12px', fontSize: '0.75rem', color: 'var(--secondary-text)', cursor: 'pointer', fontFamily: 'var(--font-nunito)', marginLeft: 12, flexShrink: 0 }}>Edit</button>
-  )
-
-  const fieldRow = (label: string, field: string, inputEl: React.ReactNode) => {
-    const val = fieldValues[field]
-    return (
-      <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</p>
-          {editingField === field ? (
-            <div>
-              {inputEl}
-              {saveCancelButtons(field)}
-            </div>
-          ) : (
-            <p style={{ fontSize: '0.95rem', color: val ? 'var(--dark-blue)' : 'var(--secondary-text)', fontWeight: val ? 600 : 400, fontStyle: val ? 'normal' : 'italic' }}>
-              {val || 'Tap Edit to add'}
-            </p>
-          )}
-        </div>
-        {editingField !== field && editButton(field)}
-      </div>
-    )
-  }
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', background: 'var(--bg)', border: '1.5px solid var(--light-blue)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' }
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
-
-      {/* Status bar */}
       <div style={{ background: 'var(--bg)', padding: '6px 16px 4px', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
         <span style={{ fontSize: '0.8rem', color: 'var(--dark-blue)', fontWeight: 600 }}>10:00 AM</span>
         <span style={{ fontSize: '0.8rem', color: 'var(--dark-blue)' }}>📶 🔋</span>
       </div>
-
-      {/* Header */}
-      <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', display: 'flex', alignItems: 'center', position: 'relative', flexShrink: 0 }}>
-        <button
-          onClick={() => window.location.href = '/garage'}
-          style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer', padding: '0 8px 0 0', lineHeight: 1, position: 'absolute', left: 16 }}
-          aria-label="Back to garage"
-        >
-          ←
-        </button>
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <span style={{ fontFamily: 'var(--font-barlow)', fontSize: '1.8rem', fontWeight: 800, fontStyle: 'italic', color: 'white' }}>
-            BYLD<span style={{ fontFamily: 'var(--font-nunito)', fontWeight: 300, fontStyle: 'normal', color: 'var(--light-blue)' }}>it</span>
-          </span>
-        </div>
+      <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <button onClick={() => window.location.href = '/garage'} style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer', padding: '0 4px' }}>←</button>
+        <span style={{ fontFamily: 'var(--font-barlow)', fontSize: '1.8rem', fontWeight: 800, fontStyle: 'italic', color: 'white' }}>
+          BYLD<span style={{ fontFamily: 'var(--font-nunito)', fontWeight: 300, fontStyle: 'normal', color: 'var(--light-blue)' }}>it</span>
+        </span>
+        <div style={{ width: 32 }} />
       </header>
 
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '12px 14px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
-
-          {/* Hero photo */}
-          <div style={{ position: 'relative', marginBottom: 12 }}>
-            <img
-              src={photoSrc}
-              alt={displayName}
-              style={{ height: 180, width: '100%', objectFit: 'cover', objectPosition: 'center 35%', borderRadius: 16, display: 'block' }}
-            />
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 16px 12px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))', borderRadius: '0 0 16px 16px' }}>
-              <p style={{ color: 'white', fontWeight: 700, fontSize: '1.15rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{displayName}</p>
+          <div style={{ height: 180, borderRadius: 16, overflow: 'hidden', position: 'relative', marginBottom: 16, boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
+            <img src={getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
+              <p style={{ color: 'white', fontWeight: 800, fontSize: '1.2rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+                {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+              </p>
             </div>
           </div>
 
-          {/* Field card */}
-          <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', marginTop: 12 }}>
+          {savedMsg && (
+            <div style={{ background: '#4da8da', color: 'white', borderRadius: 10, padding: '8px 16px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 700, marginBottom: 12 }}>Saved ✓</div>
+          )}
 
-            {/* Read-only: Vehicle */}
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
-              <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>VEHICLE</p>
-              <p style={{ fontSize: '0.95rem', color: 'var(--dark-blue)', fontWeight: 600 }}>{vehicle.year} {vehicle.make} {vehicle.model}</p>
-            </div>
-
-            {fieldRow('Nickname', 'nickname',
-              <input style={inputStyle} value={tempValue} onChange={e => setTempValue(e.target.value)} autoFocus />
-            )}
-
-            {fieldRow('Color', 'color',
-              <input style={inputStyle} value={tempValue} onChange={e => setTempValue(e.target.value)} autoFocus />
-            )}
-
-            {fieldRow('Engine', 'engine',
-              <input style={inputStyle} value={tempValue} onChange={e => setTempValue(e.target.value)} placeholder="e.g. 390 FE V8, 5.0 Coyote swap" autoFocus />
-            )}
-
-            {fieldRow('Transmission', 'transmission',
-              <input style={inputStyle} value={tempValue} onChange={e => setTempValue(e.target.value)} placeholder="e.g. 4-speed manual, 10-speed auto" autoFocus />
-            )}
-
-            {fieldRow('Drivetrain', 'drivetrain',
-              <select style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} value={tempValue} onChange={e => setTempValue(e.target.value)}>
-                <option value="">Select...</option>
-                <option>2WD</option>
-                <option>4WD</option>
-                <option>AWD</option>
-              </select>
-            )}
-
-            {fieldRow('Fuel Type', 'fuel_type',
-              <select style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} value={tempValue} onChange={e => setTempValue(e.target.value)}>
-                <option value="">Select...</option>
-                <option>Gas</option>
-                <option>Diesel</option>
-                <option>Electric</option>
-                <option>Hybrid</option>
-              </select>
-            )}
-
-            {fieldRow('Mileage', 'mileage',
-              <input style={inputStyle} type="number" value={tempValue} onChange={e => setTempValue(e.target.value)} inputMode="numeric" autoFocus />
-            )}
-
-            {fieldRow('Condition', 'condition',
-              <select style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} value={tempValue} onChange={e => setTempValue(e.target.value)}>
-                <option value="">Select...</option>
-                <option>Daily driver</option>
-                <option>Weekend car</option>
-                <option>Project (non-running)</option>
-                <option>Stored</option>
-              </select>
-            )}
-
-            {fieldRow('Title Status', 'title_status',
-              <select style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} value={tempValue} onChange={e => setTempValue(e.target.value)}>
-                <option value="">Select...</option>
-                <option>Clean</option>
-                <option>Salvage</option>
-                <option>Rebuilt</option>
-              </select>
-            )}
-
-            {fieldRow('Notes', 'notes',
-              <textarea style={{ ...inputStyle, minHeight: 72, resize: 'vertical' }} value={tempValue} onChange={e => setTempValue(e.target.value)} rows={3} autoFocus />
-            )}
-
+          <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', marginBottom: 16 }}>
+            {fields.map(({ label, field, type, placeholder, opts }) => {
+              const currentVal = (vehicle as Record<string, unknown>)[field]
+              const displayVal = currentVal != null && currentVal !== '' ? String(currentVal) : null
+              const isEditing = editingField === field
+              return (
+                <div key={field} style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 4 }}>{label}</label>
+                      {isEditing ? (
+                        <div>
+                          {type === 'select' && opts ? (
+                            <select value={tempValue} onChange={e => setTempValue(e.target.value)} style={inputStyle}>
+                              <option value="">Select...</option>
+                              {opts.map(o => <option key={o} value={o}>{o}</option>)}
+                            </select>
+                          ) : type === 'textarea' ? (
+                            <textarea value={tempValue} onChange={e => setTempValue(e.target.value)} rows={3} placeholder={placeholder} style={{ ...inputStyle, resize: 'vertical' as const }} />
+                          ) : (
+                            <input type={type} value={tempValue} onChange={e => setTempValue(e.target.value)} placeholder={placeholder} style={inputStyle} autoFocus />
+                          )}
+                          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                            <button onClick={() => saveField(field)} disabled={saving}
+                              style={{ background: '#e8750a', color: 'white', border: 'none', borderRadius: 20, padding: '5px 16px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>
+                              {saving ? '...' : 'Save'}
+                            </button>
+                            <button onClick={() => setEditingField(null)}
+                              style={{ background: '#d4e0eb', color: 'var(--dark-blue)', border: 'none', borderRadius: 20, padding: '5px 12px', fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p style={{ fontSize: '0.95rem', color: displayVal ? 'var(--dark-blue)' : 'var(--secondary-text)', fontWeight: displayVal ? 600 : 400, fontStyle: displayVal ? 'normal' : 'italic', margin: 0 }}>
+                          {displayVal || 'Tap Edit to add'}
+                        </p>
+                      )}
+                    </div>
+                    {!isEditing && (
+                      <button onClick={() => startEdit(field, currentVal as string | number | null)}
+                        style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 20, padding: '4px 12px', fontSize: '0.75rem', color: 'var(--secondary-text)', cursor: 'pointer', fontFamily: 'var(--font-nunito)', flexShrink: 0, marginTop: 18 }}>
+                        Edit
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
 
-          <div style={{ padding: "20px 0 8px" }}>
-            <button onClick={() => window.location.href = "/garage"}
-              style={{ width: "100%", padding: "14px", background: "white", border: "2px solid var(--dark-blue)", borderRadius: 25, color: "var(--dark-blue)", fontSize: "0.95rem", fontWeight: 700, fontFamily: "var(--font-nunito)", cursor: "pointer" }}>
-              ← Back to My Garage
-            </button>
-          </div>
-
+          <button onClick={() => window.location.href = '/garage'}
+            style={{ width: '100%', padding: '14px', background: 'white', border: '2px solid var(--dark-blue)', borderRadius: 25, color: 'var(--dark-blue)', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>
+            ← Back to My Garage
+          </button>
         </div>
       </main>
 
-      <WaltBar nickname={displayName} />
+      <div style={{ background: 'white', padding: '8px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 480, margin: '0 auto' }}>
+          <div style={{ flex: 1, background: 'var(--bg)', borderRadius: 25, padding: '10px 16px', fontSize: '0.85rem', color: '#aaa', fontFamily: 'var(--font-nunito)' }}>
+            Ask me about {vehicle.nickname || `${vehicle.year} ${vehicle.make}`}...
+          </div>
+          <div style={{ width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--orange)', flexShrink: 0, cursor: 'pointer' }}>
+            <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+        </div>
+      </div>
       <NavBar />
     </div>
   )
