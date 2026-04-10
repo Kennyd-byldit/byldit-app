@@ -19,7 +19,7 @@ const WaltMsg = ({ text }: { text: React.ReactNode }) => (
 
 const UserReply = ({ text }: { text: string }) => (
   <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12, marginLeft: 38 }}>
-    <div style={{ background: '#4da8da', color: 'white', borderRadius: 14, padding: '8px 14px', fontSize: '0.9rem', maxWidth: '75%', wordBreak: 'break-word' }}>
+    <div style={{ background: '#4da8da', color: 'white', borderRadius: 14, padding: '8px 14px', fontSize: '0.9rem', maxWidth: '60%', wordBreak: 'break-word' }}>
       {text}
     </div>
   </div>
@@ -336,80 +336,39 @@ export default function BuildProfilePage() {
               </button>
             </div>
           ) : addingVehicle ? (
-            <div style={{ background: 'white', borderRadius: 14, padding: '14px', marginBottom: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-              {/* Phase A — Core Identity */}
-              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                <input placeholder="Year" value={newVehicle.year} onChange={e => setNewVehicle(p => ({...p, year: e.target.value}))}
-                  style={{ flex: 1, minWidth: 0, padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' } as React.CSSProperties} />
-                <input placeholder="Make" value={newVehicle.make} onChange={e => setNewVehicle(p => ({...p, make: e.target.value}))}
-                  style={{ flex: 2, minWidth: 0, padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' } as React.CSSProperties} />
+            <div style={{ background: 'white', borderRadius: 14, padding: '16px', marginBottom: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              {/* Walt tip */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 16, background: 'var(--bg)', border: '2px solid #e8750a', borderRadius: 14, padding: '12px 14px' }}>
+                <img src={WALT} alt="Walt" style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #e8750a', flexShrink: 0 }} />
+                <p style={{ fontSize: '0.85rem', color: 'var(--dark-blue)', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>&ldquo;The more I know, the more I can help.&rdquo;</p>
               </div>
-              <input placeholder="Model" value={newVehicle.model} onChange={e => setNewVehicle(p => ({...p, model: e.target.value}))}
-                style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 8, boxSizing: 'border-box' }} />
-              <input placeholder='Nickname (e.g. "Betty Lou") — optional' value={newVehicle.nickname} onChange={e => setNewVehicle(p => ({...p, nickname: e.target.value}))}
-                style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 8, boxSizing: 'border-box' }} />
-              <input placeholder="Color (e.g. Red, Oxford White)" value={newVehicle.color} onChange={e => setNewVehicle(p => ({...p, color: e.target.value}))} onBlur={() => setColorBlurred(true)}
-                style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 10, boxSizing: 'border-box' }} />
-
-              {/* More Details toggle — only show when year/make/model/color filled and color blurred */}
-              {(newVehicle.year && newVehicle.make && newVehicle.model && newVehicle.color && colorBlurred) && (
-                <>
-                  <WaltMsg text="The more I know, the more I can help. Take a few seconds and fill in everything you know below." />
-                  <div onClick={() => setShowMoreDetails(p => !p)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0', cursor: 'pointer', color: 'var(--light-blue)', fontSize: '0.85rem', fontWeight: 600, borderTop: '1px solid var(--border)', marginBottom: showMoreDetails ? 12 : 0 }}>
-                    <span style={{ fontSize: '1rem' }}>{showMoreDetails ? '−' : '＋'}</span>
-                    <span>More Details (optional)</span>
-                  </div>
-
-                  {/* Phase B — More Details */}
-                  {showMoreDetails && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 4 }}>
-                      <input placeholder="Trim/Package (e.g. XLT, Sport, Base)" value={newVehicle.trim} onChange={e => setNewVehicle(p => ({...p, trim: e.target.value}))}
-                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' }} />
-                      <input placeholder="Engine (e.g. 390 FE V8, 5.0 Coyote swap)" value={newVehicle.engine} onChange={e => setNewVehicle(p => ({...p, engine: e.target.value}))}
-                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' }} />
-                      <input placeholder="Transmission (e.g. 4-speed manual, 10-speed auto)" value={newVehicle.transmission} onChange={e => setNewVehicle(p => ({...p, transmission: e.target.value}))}
-                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' }} />
-                      <select value={newVehicle.drivetrain} onChange={e => setNewVehicle(p => ({...p, drivetrain: e.target.value}))}
-                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', color: newVehicle.drivetrain ? 'var(--dark-blue)' : '#aaa' }}>
-                        <option value="">Drivetrain</option>
-                        <option value="2WD">2WD</option>
-                        <option value="4WD">4WD</option>
-                        <option value="AWD">AWD</option>
-                      </select>
-                      <select value={newVehicle.fuel_type} onChange={e => setNewVehicle(p => ({...p, fuel_type: e.target.value}))}
-                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', color: newVehicle.fuel_type ? 'var(--dark-blue)' : '#aaa' }}>
-                        <option value="">Fuel Type</option>
-                        <option value="Gas">Gas</option>
-                        <option value="Diesel">Diesel</option>
-                        <option value="Electric">Electric</option>
-                        <option value="Hybrid">Hybrid</option>
-                      </select>
-                      <input type="number" placeholder="Mileage (e.g. 87000)" value={newVehicle.mileage} onChange={e => setNewVehicle(p => ({...p, mileage: e.target.value}))}
-                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' }} />
-                      <select value={newVehicle.condition} onChange={e => setNewVehicle(p => ({...p, condition: e.target.value}))}
-                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', color: newVehicle.condition ? 'var(--dark-blue)' : '#aaa' }}>
-                        <option value="">Condition</option>
-                        <option value="Daily driver">Daily driver</option>
-                        <option value="Weekend car">Weekend car</option>
-                        <option value="Project (non-running)">Project (non-running)</option>
-                        <option value="Stored">Stored</option>
-                      </select>
-                      <select value={newVehicle.title_status} onChange={e => setNewVehicle(p => ({...p, title_status: e.target.value}))}
-                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', color: newVehicle.title_status ? 'var(--dark-blue)' : '#aaa' }}>
-                        <option value="">Title Status (optional)</option>
-                        <option value="Clean">Clean</option>
-                        <option value="Salvage">Salvage</option>
-                        <option value="Rebuilt">Rebuilt</option>
-                      </select>
-                      <textarea placeholder="Anything Walt should know — mods, issues, history..." value={newVehicle.notes} onChange={e => setNewVehicle(p => ({...p, notes: e.target.value}))}
-                        rows={3}
-                        style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box', resize: 'vertical' }} />
-                    </div>
-                  )}
-                </>
-              )}
-
+              {[['Year *','year','text','e.g. 1968'],['Make *','make','text','e.g. Ford'],['Model *','model','text','e.g. F-250'],['Nickname','nickname','text','e.g. Betty Lou'],['Color','color','text','e.g. Oxford White'],['Engine','engine','text','e.g. 390 FE V8'],['Transmission','transmission','text','e.g. 4-speed manual']].map(([label,field,type,ph]) => (
+                <div key={field} style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--secondary-text)', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 4 }}>{label}</label>
+                  <input type={type} placeholder={ph} value={(newVehicle as Record<string,string>)[field]} onChange={e => setNewVehicle(p => ({...p, [field]: e.target.value}))}
+                    style={{ width: '100%', padding: '10px 14px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const }} />
+                </div>
+              ))}
+              {[['Drivetrain','drivetrain',['2WD','4WD','AWD']],['Fuel Type','fuel_type',['Gas','Diesel','Electric','Hybrid']],['Condition','condition',['Daily driver','Weekend car','Project (non-running)','Stored']],['Title Status','title_status',['Clean','Salvage','Rebuilt']]].map(([label,field,opts]) => (
+                <div key={field as string} style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--secondary-text)', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 4 }}>{label}</label>
+                  <select value={(newVehicle as Record<string,string>)[field as string]} onChange={e => setNewVehicle(p => ({...p, [field as string]: e.target.value}))}
+                    style={{ width: '100%', padding: '10px 14px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const }}>
+                    <option value="">Select...</option>
+                    {(opts as string[]).map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+              ))}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--secondary-text)', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 4 }}>Mileage</label>
+                <input type="number" placeholder="e.g. 87000" value={newVehicle.mileage} onChange={e => setNewVehicle(p => ({...p, mileage: e.target.value}))}
+                  style={{ width: '100%', padding: '10px 14px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const }} />
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--secondary-text)', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 4 }}>Notes</label>
+                <textarea placeholder="Anything Walt should know — mods, issues, history..." value={newVehicle.notes} onChange={e => setNewVehicle(p => ({...p, notes: e.target.value}))} rows={3}
+                  style={{ width: '100%', padding: '10px 14px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const, resize: 'vertical' as const }} />
+              </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                 <button onClick={() => { setAddingVehicle(false); setShowMoreDetails(false); setColorBlurred(false) }} style={{ flex: 1, padding: '10px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary-text)', cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>Cancel</button>
                 {isAddingFromGarage ? (
