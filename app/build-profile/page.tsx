@@ -55,12 +55,14 @@ export default function BuildProfilePage() {
   const [toolsDone, setToolsDone] = useState(false)
   const [saving, setSaving] = useState(false)
   const [isAddingFromGarage, setIsAddingFromGarage] = useState(false)
+  const [colorBlurred, setColorBlurred] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get("step") === "vehicles") {
       setStep(5)
       setIsAddingFromGarage(true)
+      setAddingVehicle(true)
     }
   }, [])
 
@@ -74,6 +76,7 @@ export default function BuildProfilePage() {
     setNewVehicle({ year: '', make: '', model: '', nickname: '', color: '', trim: '', engine: '', transmission: '', drivetrain: '', fuel_type: '', mileage: '', condition: '', title_status: '', notes: '' })
     setAddingVehicle(false)
     setShowMoreDetails(false)
+    setColorBlurred(false)
   }
 
   const addAndFinish = async () => {
@@ -304,13 +307,13 @@ export default function BuildProfilePage() {
                 style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 8, boxSizing: 'border-box' }} />
               <input placeholder='Nickname (e.g. "Betty Lou") — optional' value={newVehicle.nickname} onChange={e => setNewVehicle(p => ({...p, nickname: e.target.value}))}
                 style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 8, boxSizing: 'border-box' }} />
-              <input placeholder="Color (e.g. Red, Oxford White)" value={newVehicle.color} onChange={e => setNewVehicle(p => ({...p, color: e.target.value}))}
+              <input placeholder="Color (e.g. Red, Oxford White)" value={newVehicle.color} onChange={e => setNewVehicle(p => ({...p, color: e.target.value}))} onBlur={() => setColorBlurred(true)}
                 style={{ width: '100%', padding: '10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 10, boxSizing: 'border-box' }} />
 
-              {/* More Details toggle — only show when year/make/model/color filled */}
-              {(newVehicle.year && newVehicle.make && newVehicle.model && newVehicle.color) && (
+              {/* More Details toggle — only show when year/make/model/color filled and color blurred */}
+              {(newVehicle.year && newVehicle.make && newVehicle.model && newVehicle.color && colorBlurred) && (
                 <>
-                  <WaltMsg text={<>Nice — I&apos;ve got {newVehicle.year} {newVehicle.make} {newVehicle.model} in the system. The more details you give me, the smarter I get about {newVehicle.nickname || 'this build'}. Worth 60 seconds?</>} />
+                  <WaltMsg text="The more I know, the more I can help. Take a few seconds and fill in everything you know below." />
                   <div onClick={() => setShowMoreDetails(p => !p)}
                     style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0', cursor: 'pointer', color: 'var(--light-blue)', fontSize: '0.85rem', fontWeight: 600, borderTop: '1px solid var(--border)', marginBottom: showMoreDetails ? 12 : 0 }}>
                     <span style={{ fontSize: '1rem' }}>{showMoreDetails ? '−' : '＋'}</span>
@@ -367,7 +370,7 @@ export default function BuildProfilePage() {
               )}
 
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <button onClick={() => { setAddingVehicle(false); setShowMoreDetails(false) }} style={{ flex: 1, padding: '10px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary-text)', cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>Cancel</button>
+                <button onClick={() => { setAddingVehicle(false); setShowMoreDetails(false); setColorBlurred(false) }} style={{ flex: 1, padding: '10px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary-text)', cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>Cancel</button>
                 {isAddingFromGarage ? (
                   <button onClick={addAndFinish} disabled={saving} style={{ flex: 2, padding: '10px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 4px 14px rgba(232,117,10,0.25)', cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save & Back to Garage \u2192'}</button>
                 ) : (
@@ -375,15 +378,15 @@ export default function BuildProfilePage() {
                 )}
               </div>
             </div>
-          ) : (
+          ) : !isAddingFromGarage ? (
             <div onClick={() => setAddingVehicle(true)} style={{ background: 'white', border: '2px dashed var(--light-blue)', borderRadius: 14, padding: '16px', marginBottom: 12, textAlign: 'center', cursor: 'pointer' }}>
               <div style={{ fontSize: '1.5rem', marginBottom: 6 }}>🚗</div>
               <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--light-blue)', marginBottom: 4 }}>
-                {vehicles.length === 0 ? (isAddingFromGarage ? '+ Add a vehicle' : '+ Add your first vehicle') : '+ Add another vehicle'}
+                {vehicles.length === 0 ? '+ Add your first vehicle' : '+ Add another vehicle'}
               </p>
               <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)' }}>Year &middot; Make &middot; Model &middot; Nickname</p>
             </div>
-          )}
+          ) : null}
 
           {!isAddingFromGarage && <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', textAlign: 'center', marginBottom: 16 }}>You can always add more vehicles later from My Garage.</p>}
 
