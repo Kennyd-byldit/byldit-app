@@ -294,7 +294,48 @@ export default function BuildProfilePage() {
           ))}
 
           {/* Add vehicle form */}
-          {addingVehicle ? (
+          {addingVehicle && isAddingFromGarage ? (
+            // Single clean form for adding from garage
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 16, background: 'white', border: '2px solid #e8750a', borderRadius: 14, padding: '12px 14px' }}>
+                <img src={WALT} alt="Walt" style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #e8750a', flexShrink: 0 }} />
+                <p style={{ fontSize: '0.85rem', color: 'var(--dark-blue)', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>&ldquo;The more I know, the more I can help.&rdquo;</p>
+              </div>
+              <div style={{ background: 'white', borderRadius: 14, padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+                {(['Year *|year|text|e.g. 1968','Make *|make|text|e.g. Ford','Model *|model|text|e.g. F-250','Nickname|nickname|text|e.g. Betty Lou','Color|color|text|e.g. Oxford White','Engine|engine|text|e.g. 390 FE V8','Transmission|transmission|text|e.g. 4-speed manual'] as const).map(f => { const [label,field,type,ph] = f.split('|'); return (
+                  <div key={field} style={{ marginBottom: 14 }}>
+                    <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</label>
+                    <input type={type} placeholder={ph} value={(newVehicle as Record<string,string>)[field]} onChange={e => setNewVehicle(p => ({...p, [field]: e.target.value}))}
+                      style={{ width: '100%', padding: '10px 14px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const }} />
+                  </div>
+                )})}
+                {[['Drivetrain','drivetrain',['2WD','4WD','AWD']],['Fuel Type','fuel_type',['Gas','Diesel','Electric','Hybrid']],['Condition','condition',['Daily driver','Weekend car','Project (non-running)','Stored']],['Title Status','title_status',['Clean','Salvage','Rebuilt']]].map(([label,field,opts]) => (
+                  <div key={field as string} style={{ marginBottom: 14 }}>
+                    <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</label>
+                    <select value={(newVehicle as Record<string,string>)[field as string]} onChange={e => setNewVehicle(p => ({...p, [field as string]: e.target.value}))}
+                      style={{ width: '100%', padding: '10px 14px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const }}>
+                      <option value="">Select...</option>
+                      {(opts as string[]).map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                ))}
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Mileage</label>
+                  <input type="number" placeholder="e.g. 87000" value={newVehicle.mileage} onChange={e => setNewVehicle(p => ({...p, mileage: e.target.value}))}
+                    style={{ width: '100%', padding: '10px 14px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Notes</label>
+                  <textarea placeholder="Anything Walt should know — mods, issues, history..." value={newVehicle.notes} onChange={e => setNewVehicle(p => ({...p, notes: e.target.value}))} rows={3}
+                    style={{ width: '100%', padding: '10px 14px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const, resize: 'vertical' as const }} />
+                </div>
+              </div>
+              <button onClick={addAndFinish} disabled={saving || !newVehicle.year || !newVehicle.make || !newVehicle.model}
+                style={{ width: '100%', padding: '14px', background: newVehicle.year && newVehicle.make && newVehicle.model ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', cursor: newVehicle.year && newVehicle.make && newVehicle.model ? 'pointer' : 'not-allowed', boxShadow: newVehicle.year && newVehicle.make && newVehicle.model ? '0 6px 20px rgba(232,117,10,0.3)' : 'none' }}>
+                {saving ? 'Saving...' : 'Save & Back to Garage →'}
+              </button>
+            </div>
+          ) : addingVehicle ? (
             <div style={{ background: 'white', borderRadius: 14, padding: '14px', marginBottom: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
               {/* Phase A — Core Identity */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
