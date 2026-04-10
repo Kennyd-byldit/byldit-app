@@ -282,6 +282,13 @@ export default function VehicleDetailPage() {
 
           </div>
 
+          <div style={{ padding: "20px 0 8px" }}>
+            <button onClick={() => window.location.href = "/garage"}
+              style={{ width: "100%", padding: "14px", background: "white", border: "2px solid var(--dark-blue)", borderRadius: 25, color: "var(--dark-blue)", fontSize: "0.95rem", fontWeight: 700, fontFamily: "var(--font-nunito)", cursor: "pointer" }}>
+              ← Back to My Garage
+            </button>
+          </div>
+
         </div>
       </main>
 

@@ -149,16 +149,6 @@ export default function GaragePage() {
           ) : (
             // ── GARAGE WITH VEHICLES ──────────────────────────────────────────
             <>
-              {/* Walt nudge — incomplete profiles */}
-              {vehicles.some(v => getCompletion(v) < 100) && (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--orange)', flexShrink: 0 }}>
-                    <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                  <div style={{ background: 'var(--dark-blue)', color: 'white', borderRadius: 14, padding: '10px 14px', fontSize: '0.9rem', lineHeight: 1.6, flex: 1 }}>Hey — some of your vehicles have incomplete profiles. Tap the bar on any card to finish them up.</div>
-                </div>
-              )}
-
               {/* 1. Hero Photo Card */}
               <div style={{ height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)', background: 'var(--border)' }}>
                 <img src={primaryVehicle ? getVehiclePhoto(primaryVehicle) : "/photos/f250-hiboy-68.jpg"} alt={primaryVehicle?.nickname || "My Vehicle"} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 35%" }} />
@@ -235,33 +225,47 @@ export default function GaragePage() {
                     onClick={() => window.location.href = '/vehicle/' + v.id}
                     style={{ background: 'white', borderRadius: 14, marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer', overflow: 'hidden' }}
                   >
-                    <div style={{ padding: '8px 8px 8px 8px', display: 'flex', alignItems: 'center' }}>
-                    <img src={getVehiclePhoto(v)} alt={v.nickname || v.make} style={{ width: 110, height: 70, objectFit: 'cover', objectPosition: 'center', borderRadius: '10px', flexShrink: 0 }} />
-                    <div style={{ flex: 1, padding: '10px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {v.nickname || `${v.year} ${v.make} ${v.model}`}
-                      </p>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)', marginTop: 3 }}>{v.year} {v.make} {v.model}</p>
+                    <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center' }}>
+                      <img src={getVehiclePhoto(v)} alt={v.nickname || v.make} style={{ width: 110, height: 70, objectFit: 'cover', objectPosition: 'center', borderRadius: '10px', flexShrink: 0 }} />
+                      <div style={{ flex: 1, padding: '10px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {v.nickname || `${v.year} ${v.make} ${v.model}`}
+                        </p>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)', marginTop: 3 }}>{v.year} {v.make} {v.model}</p>
+                      </div>
+                      <button
+                        onClick={e => { e.stopPropagation(); setPrimary(v.id) }}
+                        style={{ alignSelf: 'center', marginRight: 12, fontSize: '1.3rem', background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}
+                        aria-label={v.is_primary ? 'Featured vehicle' : 'Set as featured'}
+                      >
+                        <span style={{ color: v.is_primary ? "#e8750a" : "#d4e0eb", fontSize: "1.4rem", lineHeight: 1 }}>★</span>
+                      </button>
                     </div>
-                    <button
-                      onClick={e => { e.stopPropagation(); setPrimary(v.id) }}
-                      style={{ alignSelf: 'center', marginRight: 12, fontSize: '1.3rem', background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}
-                      aria-label={v.is_primary ? 'Featured vehicle' : 'Set as featured'}
-                    >
-                      <span style={{ color: v.is_primary ? "#e8750a" : "#d4e0eb", fontSize: "1.4rem", lineHeight: 1 }}>★</span>
-                    </button>
+                    {/* Completion section — always shown */}
+                    <div style={{ borderTop: "1px solid var(--border)", padding: "10px 14px" }}>
+                      {getCompletion(v) < 100 && (
+                        <>
+                          {/* Progress bar with percentage */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                            <div style={{ flex: 1, background: "#d4e0eb", borderRadius: 4, height: 5 }}>
+                              <div style={{ width: getCompletion(v) + "%", height: "100%", background: "#4da8da", borderRadius: 4 }} />
+                            </div>
+                            <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#4da8da", flexShrink: 0 }}>{getCompletion(v)}%</span>
+                          </div>
+                          {/* Walt nudge */}
+                          <div onClick={(e) => { e.stopPropagation(); window.location.href = "/vehicle/" + v.id }}
+                            style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, cursor: "pointer" }}>
+                            <img src="https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png" alt="Walt" style={{ width: 24, height: 24, borderRadius: "50%", border: "1.5px solid #e8750a", flexShrink: 0 }} />
+                            <span style={{ fontSize: "0.78rem", color: "var(--secondary-text)", fontStyle: "italic" }}>&quot;The more I know, the more I can help.&quot;</span>
+                          </div>
+                        </>
+                      )}
+                      {/* Edit Profile — always shown */}
+                      <div onClick={(e) => { e.stopPropagation(); window.location.href = "/vehicle/" + v.id }}
+                        style={{ textAlign: "center", cursor: "pointer" }}>
+                        <span style={{ fontSize: "0.78rem", color: "var(--light-blue)", fontWeight: 700 }}>Edit Profile →</span>
+                      </div>
                     </div>
-                    {getCompletion(v) < 100 && (
-                      <>
-                        <div style={{ height: 4, borderRadius: '0 0 14px 14px', overflow: 'hidden', background: '#d4e0eb', marginTop: 8 }}>
-                          <div style={{ width: `${getCompletion(v)}%`, height: '100%', background: '#4da8da' }} />
-                        </div>
-                        <div onClick={(e) => { e.stopPropagation(); window.location.href = "/vehicle/" + v.id }}
-                          style={{ textAlign: "center", paddingBottom: 8, paddingTop: 4, cursor: "pointer" }}>
-                          <span style={{ fontSize: "0.7rem", color: "var(--light-blue)", fontWeight: 700 }}>Edit Profile →</span>
-                        </div>
-                      </>
-                    )}
                   </div>
                 ))}
               </div>
