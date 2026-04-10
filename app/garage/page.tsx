@@ -241,30 +241,30 @@ export default function GaragePage() {
                         <span style={{ color: v.is_primary ? "#e8750a" : "#d4e0eb", fontSize: "1.4rem", lineHeight: 1 }}>★</span>
                       </button>
                     </div>
-                    {/* Completion section — always shown */}
-                    <div style={{ borderTop: "1px solid var(--border)", padding: "10px 14px" }}>
-                      {getCompletion(v) < 100 && (
-                        <>
-                          {/* Progress bar with percentage */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                            <div style={{ flex: 1, background: "#d4e0eb", borderRadius: 4, height: 5 }}>
+                    <div style={{ borderTop: "1px solid var(--border)", padding: "8px 14px" }}>
+                      {/* Row 1: progress bar + Edit Profile pill on same line */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {getCompletion(v) < 100 && (
+                          <>
+                            <div style={{ flex: 1, background: "#d4e0eb", borderRadius: 4, height: 4 }}>
                               <div style={{ width: getCompletion(v) + "%", height: "100%", background: "#4da8da", borderRadius: 4 }} />
                             </div>
-                            <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#4da8da", flexShrink: 0 }}>{getCompletion(v)}%</span>
-                          </div>
-                          {/* Walt nudge */}
-                          <div onClick={(e) => { e.stopPropagation(); window.location.href = "/vehicle/" + v.id }}
-                            style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, cursor: "pointer" }}>
-                            <img src="https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png" alt="Walt" style={{ width: 24, height: 24, borderRadius: "50%", border: "1.5px solid #e8750a", flexShrink: 0 }} />
-                            <span style={{ fontSize: "0.78rem", color: "var(--secondary-text)", fontStyle: "italic" }}>&quot;The more I know, the more I can help.&quot;</span>
-                          </div>
-                        </>
-                      )}
-                      {/* Edit Profile — always shown */}
-                      <div onClick={(e) => { e.stopPropagation(); window.location.href = "/vehicle/" + v.id }}
-                        style={{ textAlign: "center", cursor: "pointer" }}>
-                        <span style={{ fontSize: "0.78rem", color: "var(--light-blue)", fontWeight: 700 }}>Edit Profile →</span>
+                            <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#4da8da", flexShrink: 0 }}>{getCompletion(v)}%</span>
+                          </>
+                        )}
+                        <div onClick={(e) => { e.stopPropagation(); window.location.href = "/vehicle/" + v.id }}
+                          style={{ marginLeft: "auto", background: "white", border: "1.5px solid var(--light-blue)", borderRadius: 20, padding: "3px 10px", cursor: "pointer", flexShrink: 0 }}>
+                          <span style={{ fontSize: "0.7rem", color: "var(--light-blue)", fontWeight: 700 }}>Edit Profile</span>
+                        </div>
                       </div>
+                      {/* Row 2: Walt nudge — only if incomplete */}
+                      {getCompletion(v) < 100 && (
+                        <div onClick={(e) => { e.stopPropagation(); window.location.href = "/vehicle/" + v.id }}
+                          style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, cursor: "pointer" }}>
+                          <img src="https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png" alt="Walt" style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid #e8750a", flexShrink: 0 }} />
+                          <span style={{ fontSize: "0.72rem", color: "var(--secondary-text)", fontStyle: "italic" }}>&quot;The more I know, the more I can help.&quot;</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

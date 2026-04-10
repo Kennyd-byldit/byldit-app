@@ -1,0 +1,10 @@
+alter table vehicles add column if not exists color text;
+alter table vehicles add column if not exists engine text;
+alter table vehicles add column if not exists fuel_type text;
+alter table vehicles add column if not exists transmission text;
+alter table vehicles add column if not exists drivetrain text;
+alter table vehicles add column if not exists mileage integer;
+alter table vehicles add column if not exists condition text;
+alter table vehicles add column if not exists title_status text;
+alter table vehicles add column if not exists notes text;
+alter table vehicles add column if not exists is_primary boolean default false;
