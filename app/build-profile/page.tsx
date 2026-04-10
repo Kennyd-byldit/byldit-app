@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
 const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
@@ -50,6 +50,11 @@ export default function BuildProfilePage() {
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [toolsDone, setToolsDone] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("step") === "vehicles") setStep(5)
+  }, [])
 
   const toggleTool = (tool: string) => {
     setSelectedTools(prev => prev.includes(tool) ? prev.filter(t => t !== tool) : [...prev, tool])

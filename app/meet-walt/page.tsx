@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 const WALT_AVATAR = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 
 const capabilities = [
@@ -11,6 +12,10 @@ const capabilities = [
 ]
 
 export default function MeetWaltPage() {
+  useEffect(() => {
+    window.history.replaceState(null, "", window.location.href)
+  }, [])
+
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
 
@@ -69,7 +74,7 @@ export default function MeetWaltPage() {
           </div>
 
           {/* CTA */}
-          <button style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }} onClick={() => window.location.replace('/build-profile')}>
+          <button style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }} onClick={() => { window.location.href = '/build-profile' }}>
             Let&apos;s go →
           </button>
 

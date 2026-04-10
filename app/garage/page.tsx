@@ -58,9 +58,8 @@ export default function GaragePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Push a state so back button stays on garage
-    window.history.pushState(null, "", window.location.href)
-    const handlePop = () => { window.history.pushState(null, "", window.location.href) }
+    window.history.replaceState(null, "", window.location.href)
+    const handlePop = () => { window.history.replaceState(null, "", window.location.href) }
     window.addEventListener("popstate", handlePop)
     return () => window.removeEventListener("popstate", handlePop)
   }, [])
@@ -265,7 +264,7 @@ export default function GaragePage() {
               </div>
 
               {/* 7. Add to My Garage */}
-              <div style={{ border: '2px dashed var(--light-blue)', borderRadius: 25, padding: '11px', textAlign: 'center', cursor: 'pointer' }}>
+              <div onClick={() => window.location.href = "/build-profile?step=vehicles"} style={{ border: '2px dashed var(--light-blue)', borderRadius: 25, padding: '11px', textAlign: 'center', cursor: 'pointer' }}>
                 <span style={{ color: 'var(--light-blue)', fontWeight: 700, fontSize: '0.9rem' }}>+ Add to My Garage</span>
               </div>
             </>
