@@ -220,6 +220,14 @@ export default function VehicleDetailPage() {
             BYLD<span style={{ fontFamily: 'var(--font-nunito)', fontWeight: 300, fontStyle: 'normal', color: 'var(--light-blue)' }}>it</span>
           </span>
         </div>
+        {!editing && (
+          <button
+            onClick={() => setEditing(true)}
+            style={{ background: 'none', border: 'none', color: 'white', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', padding: '0 4px', position: 'absolute', right: 16 }}
+          >
+            Edit
+          </button>
+        )}
       </header>
 
       {/* Saved toast */}
@@ -385,13 +393,6 @@ export default function VehicleDetailPage() {
                 <FieldRow label="Condition" value={vehicle.condition} />
                 <FieldRow label="Title Status" value={vehicle.title_status} />
                 <FieldRow label="Notes" value={vehicle.notes} />
-
-                <button
-                  onClick={() => setEditing(true)}
-                  style={{ width: '100%', background: 'linear-gradient(135deg, #e8750a, #f4a543)', border: 'none', borderRadius: 50, padding: '14px 16px', fontSize: '0.95rem', fontWeight: 700, color: 'white', cursor: 'pointer', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', fontFamily: 'var(--font-nunito)', marginTop: 4 }}
-                >
-                  Edit Vehicle →
-                </button>
               </>
             )}
           </div>
