@@ -280,7 +280,7 @@ export default function BuildProfilePage() {
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>{isAddingFromGarage ? 'Add a Vehicle' : 'What\u2019s in your garage?'}</p>
           {!isAddingFromGarage && <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 14 }}>Step 2 of 3</p>}
 
-          <WaltMsg text={isAddingFromGarage ? <>Adding another vehicle? <strong>Let&apos;s get it set up.</strong></> : <>What are you working on? <strong>Let&apos;s add your first vehicle.</strong></>} />
+          {!isAddingFromGarage && <WaltMsg text={<>What are you working on? <strong>Let&apos;s add your first vehicle.</strong></>} />}
 
           {/* Vehicle list */}
           {vehicles.map((v, i) => (
