@@ -18,7 +18,11 @@ const WaltMsg = ({ text }: { text: React.ReactNode }) => (
 )
 
 const UserReply = ({ text }: { text: string }) => (
-  <div style={{ background: '#4da8da', borderRadius: 14, padding: '8px 14px', marginBottom: 12, marginLeft: 38, fontSize: '0.9rem', color: 'white', textAlign: 'right' }}>{text}</div>
+  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12, marginLeft: 38 }}>
+    <div style={{ background: '#4da8da', color: 'white', borderRadius: 14, padding: '8px 14px', fontSize: '0.9rem', maxWidth: '75%', wordBreak: 'break-word' }}>
+      {text}
+    </div>
+  </div>
 )
 
 const expOptions = [
@@ -50,10 +54,14 @@ export default function BuildProfilePage() {
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [toolsDone, setToolsDone] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [isAddingFromGarage, setIsAddingFromGarage] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    if (params.get("step") === "vehicles") setStep(5)
+    if (params.get("step") === "vehicles") {
+      setStep(5)
+      setIsAddingFromGarage(true)
+    }
   }, [])
 
   const toggleTool = (tool: string) => {
@@ -72,11 +80,13 @@ export default function BuildProfilePage() {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      // Save profile
-      await supabase.from('profiles').upsert({
-        id: user.id, name, experience: exp, reason,
-        onboarded: true, updated_at: new Date().toISOString(),
-      })
+      // Save profile (skip when adding from garage to avoid overwriting existing data)
+      if (!isAddingFromGarage) {
+        await supabase.from('profiles').upsert({
+          id: user.id, name, experience: exp, reason,
+          onboarded: true, updated_at: new Date().toISOString(),
+        })
+      }
       // Save vehicles
       for (let i = 0; i < vehicles.length; i++) {
         const v = vehicles[i]
@@ -236,10 +246,10 @@ export default function BuildProfilePage() {
       <AppHeader />
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto', overflowX: 'hidden', width: '100%' }}>
-          <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>What&apos;s in your garage?</p>
-          <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 14 }}>Step 2 of 3</p>
+          <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>{isAddingFromGarage ? 'Add a Vehicle' : 'What\u2019s in your garage?'}</p>
+          {!isAddingFromGarage && <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 14 }}>Step 2 of 3</p>}
 
-          <WaltMsg text={<>What are you working on? <strong>Let&apos;s add your first vehicle.</strong></>} />
+          <WaltMsg text={isAddingFromGarage ? <>Adding another vehicle? <strong>Let&apos;s get it set up.</strong></> : <>What are you working on? <strong>Let&apos;s add your first vehicle.</strong></>} />
 
           {/* Vehicle list */}
           {vehicles.map((v, i) => (
@@ -272,7 +282,7 @@ export default function BuildProfilePage() {
               {/* More Details toggle — only show when year/make/model filled */}
               {(newVehicle.year && newVehicle.make && newVehicle.model) && (
                 <>
-                  <WaltMsg text={<>The more you tell me about {newVehicle.make} {newVehicle.model}, the better I can help — got a minute to fill in the details?</>} />
+                  <WaltMsg text={<>Nice — I&apos;ve got {newVehicle.year} {newVehicle.make} {newVehicle.model} in the system. The more details you give me, the smarter I get about {newVehicle.nickname || 'this build'}. Worth 60 seconds?</>} />
                   <div onClick={() => setShowMoreDetails(p => !p)}
                     style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0', cursor: 'pointer', color: 'var(--light-blue)', fontSize: '0.85rem', fontWeight: 600, borderTop: '1px solid var(--border)', marginBottom: showMoreDetails ? 12 : 0 }}>
                     <span style={{ fontSize: '1rem' }}>{showMoreDetails ? '−' : '＋'}</span>
@@ -337,18 +347,24 @@ export default function BuildProfilePage() {
             <div onClick={() => setAddingVehicle(true)} style={{ background: 'white', border: '2px dashed var(--light-blue)', borderRadius: 14, padding: '16px', marginBottom: 12, textAlign: 'center', cursor: 'pointer' }}>
               <div style={{ fontSize: '1.5rem', marginBottom: 6 }}>🚗</div>
               <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--light-blue)', marginBottom: 4 }}>
-                {vehicles.length === 0 ? '+ Add your first vehicle' : '+ Add another vehicle'}
+                {vehicles.length === 0 ? (isAddingFromGarage ? '+ Add a vehicle' : '+ Add your first vehicle') : '+ Add another vehicle'}
               </p>
               <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)' }}>Year &middot; Make &middot; Model &middot; Nickname</p>
             </div>
           )}
 
-          <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', textAlign: 'center', marginBottom: 16 }}>You can always add more vehicles later from My Garage.</p>
+          {!isAddingFromGarage && <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', textAlign: 'center', marginBottom: 16 }}>You can always add more vehicles later from My Garage.</p>}
 
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={() => setStep(6)} style={{ flex: 1, padding: '12px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>Skip</button>
-            <button onClick={() => setStep(6)} style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>Set up my workspace →</button>
-          </div>
+          {isAddingFromGarage ? (
+            <button onClick={handleFinish} disabled={saving} style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
+              {saving ? 'Saving...' : 'Save & Back to Garage \u2192'}
+            </button>
+          ) : (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setStep(6)} style={{ flex: 1, padding: '12px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>Skip</button>
+              <button onClick={() => setStep(6)} style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>Set up my workspace →</button>
+            </div>
+          )}
         </div>
       </main>
       <WaltBar placeholder="Tell me about your vehicles..." />
