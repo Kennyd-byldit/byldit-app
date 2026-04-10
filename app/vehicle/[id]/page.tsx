@@ -118,6 +118,7 @@ export default function VehicleDetailPage() {
 
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '12px 14px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
+
           <div style={{ height: 180, borderRadius: 16, overflow: 'hidden', position: 'relative', marginBottom: 16, boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
             <img src={getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
@@ -131,52 +132,49 @@ export default function VehicleDetailPage() {
             <div style={{ background: '#4da8da', color: 'white', borderRadius: 10, padding: '8px 16px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 700, marginBottom: 12 }}>Saved ✓</div>
           )}
 
-          <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', marginBottom: 16 }}>
+          <div style={{ background: 'white', borderRadius: 14, padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 16 }}>
             {fields.map(({ label, field, type, placeholder, opts }) => {
               const currentVal = (vehicle as Record<string, unknown>)[field]
               const displayVal = currentVal != null && currentVal !== '' ? String(currentVal) : null
               const isEditing = editingField === field
+
               return (
-                <div key={field} style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <label style={{ display: 'block', fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 4 }}>{label}</label>
-                      {isEditing ? (
-                        <div>
-                          {type === 'select' && opts ? (
-                            <select value={tempValue} onChange={e => setTempValue(e.target.value)} style={inputStyle}>
-                              <option value="">Select...</option>
-                              {opts.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                          ) : type === 'textarea' ? (
-                            <textarea value={tempValue} onChange={e => setTempValue(e.target.value)} rows={3} placeholder={placeholder} style={{ ...inputStyle, resize: 'vertical' as const }} />
-                          ) : (
-                            <input type={type} value={tempValue} onChange={e => setTempValue(e.target.value)} placeholder={placeholder} style={inputStyle} autoFocus />
-                          )}
-                          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                            <button onClick={() => saveField(field)} disabled={saving}
-                              style={{ background: '#e8750a', color: 'white', border: 'none', borderRadius: 20, padding: '5px 16px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>
-                              {saving ? '...' : 'Save'}
-                            </button>
-                            <button onClick={() => setEditingField(null)}
-                              style={{ background: '#d4e0eb', color: 'var(--dark-blue)', border: 'none', borderRadius: 20, padding: '5px 12px', fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
+                <div key={field} style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--secondary-text)', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 4 }}>{label}</label>
+                  {isEditing ? (
+                    <div>
+                      {type === 'select' && opts ? (
+                        <select value={tempValue} onChange={e => setTempValue(e.target.value)} style={inputStyle}>
+                          <option value="">Select...</option>
+                          {opts.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      ) : type === 'textarea' ? (
+                        <textarea value={tempValue} onChange={e => setTempValue(e.target.value)} rows={3} placeholder={placeholder} style={{ ...inputStyle, resize: 'vertical' as const }} />
                       ) : (
-                        <p style={{ fontSize: '0.95rem', color: displayVal ? 'var(--dark-blue)' : 'var(--secondary-text)', fontWeight: displayVal ? 600 : 400, fontStyle: displayVal ? 'normal' : 'italic', margin: 0 }}>
-                          {displayVal || 'Tap Edit to add'}
-                        </p>
+                        <input type={type} value={tempValue} onChange={e => setTempValue(e.target.value)} placeholder={placeholder} style={inputStyle} autoFocus />
                       )}
+                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                        <button onClick={() => saveField(field)} disabled={saving}
+                          style={{ background: '#e8750a', color: 'white', border: 'none', borderRadius: 20, padding: '5px 16px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>
+                          {saving ? '...' : 'Save'}
+                        </button>
+                        <button onClick={() => setEditingField(null)}
+                          style={{ background: '#d4e0eb', color: 'var(--dark-blue)', border: 'none', borderRadius: 20, padding: '5px 12px', fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                    {!isEditing && (
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: 1, padding: '10px 14px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: '0.95rem', color: displayVal ? 'var(--dark-blue)' : '#aaa', fontStyle: displayVal ? 'normal' : 'italic', fontFamily: 'var(--font-nunito)', minHeight: 42, display: 'flex', alignItems: 'center' }}>
+                        {displayVal || 'Tap Edit to add'}
+                      </div>
                       <button onClick={() => startEdit(field, currentVal as string | number | null)}
-                        style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 20, padding: '4px 12px', fontSize: '0.75rem', color: 'var(--secondary-text)', cursor: 'pointer', fontFamily: 'var(--font-nunito)', flexShrink: 0, marginTop: 18 }}>
+                        style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 20, padding: '4px 12px', fontSize: '0.75rem', color: 'var(--secondary-text)', cursor: 'pointer', fontFamily: 'var(--font-nunito)', flexShrink: 0, whiteSpace: 'nowrap' as const }}>
                         Edit
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )
             })}
