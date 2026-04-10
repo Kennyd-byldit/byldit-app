@@ -233,7 +233,7 @@ export default function GaragePage() {
                 {vehicles.map(v => (
                   <div
                     key={v.id}
-                    onClick={() => console.log('vehicle tapped:', v.id)}
+                    onClick={() => window.location.href = '/vehicle/' + v.id}
                     style={{ background: 'white', borderRadius: 14, marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer', overflow: 'hidden' }}
                   >
                     <div style={{ padding: '8px 8px 8px 8px', display: 'flex', alignItems: 'center' }}>
