@@ -110,7 +110,7 @@ export default function BuildProfilePage() {
           condition: v.condition || null,
           title_status: v.title_status || null,
           notes: v.notes || null,
-          is_primary: i === 0,
+          is_primary: false,
           type: "build",
         })
       }
@@ -300,11 +300,14 @@ export default function BuildProfilePage() {
 
           {/* Vehicle list */}
           {vehicles.map((v, i) => (
-            <div key={i} style={{ background: 'white', borderRadius: 14, padding: '10px 14px', marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--bg)', border: '1px dashed var(--light-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>🚗</div>
-              <div>
-                <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--dark-blue)' }}>{v.year} {v.make} {v.model}</p>
-                {v.nickname && <p style={{ fontSize: '0.7rem', color: 'var(--light-blue)' }}>&ldquo;{v.nickname}&rdquo;</p>}
+            <div key={i} style={{ background: 'white', borderRadius: 14, marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden', display: 'flex', alignItems: 'stretch' }}>
+              <div style={{ width: 80, flexShrink: 0, overflow: 'hidden' }}>
+                <img src={v.model?.toLowerCase().includes('ranger') ? '/photos/ranger-2025.jpg' : '/photos/f250-hiboy-68.jpg'} alt={v.nickname || v.make}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
+              </div>
+              <div style={{ flex: 1, padding: '10px 14px' }}>
+                <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)', marginBottom: 2 }}>{v.nickname || v.make}</p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)' }}>{v.year} {v.make} {v.model}</p>
               </div>
             </div>
           ))}

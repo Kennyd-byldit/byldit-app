@@ -44,6 +44,7 @@ export default function VehicleDetailPage() {
   const [tempValue, setTempValue] = useState('')
   const [saving, setSaving] = useState(false)
   const [savedMsg, setSavedMsg] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -74,6 +75,12 @@ export default function VehicleDetailPage() {
     setSaving(false)
     setSavedMsg(true)
     setTimeout(() => setSavedMsg(false), 2000)
+  }
+
+  const deleteVehicle = async () => {
+    if (!vehicle) return
+    await supabase.from('vehicles').delete().eq('id', vehicle.id)
+    window.location.replace('/garage')
   }
 
   if (loading) return (
@@ -184,6 +191,31 @@ export default function VehicleDetailPage() {
             style={{ width: '100%', padding: '14px', background: 'white', border: '2px solid var(--dark-blue)', borderRadius: 25, color: 'var(--dark-blue)', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>
             ← Back to My Garage
           </button>
+
+          {/* Delete vehicle */}
+          {!confirmDelete ? (
+            <div style={{ textAlign: 'center', marginTop: 20 }}>
+              <button onClick={() => setConfirmDelete(true)}
+                style={{ background: 'none', border: 'none', color: '#e74c3c', fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'var(--font-nunito)', textDecoration: 'underline' }}>
+                Remove from Garage
+              </button>
+            </div>
+          ) : (
+            <div style={{ background: 'white', borderRadius: 14, padding: '16px', marginTop: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.9rem', color: 'var(--dark-blue)', fontWeight: 700, marginBottom: 6 }}>Remove this vehicle?</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)', marginBottom: 16 }}>This can&apos;t be undone.</p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setConfirmDelete(false)}
+                  style={{ flex: 1, padding: '12px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button onClick={deleteVehicle}
+                  style={{ flex: 1, padding: '12px', background: '#e74c3c', border: 'none', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'white', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>
+                  Yes, Remove
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 

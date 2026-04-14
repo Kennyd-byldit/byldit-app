@@ -244,21 +244,22 @@ export default function GaragePage() {
                     <div style={{ borderTop: "1px solid var(--border)", padding: "8px 14px" }}>
                       {/* Row 1: progress bar + Edit Profile pill on same line */}
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {getCompletion(v) < 100 && (
-                          <>
-                            <div style={{ flex: 1, background: "#d4e0eb", borderRadius: 4, height: 4 }}>
-                              <div style={{ width: getCompletion(v) + "%", height: "100%", background: "#4da8da", borderRadius: 4 }} />
-                            </div>
-                            <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#4da8da", flexShrink: 0 }}>{getCompletion(v)}%</span>
-                          </>
-                        )}
+                        <div style={{ flex: 1, background: "#d4e0eb", borderRadius: 4, height: 4 }}>
+                          <div style={{ width: getCompletion(v) + "%", height: "100%", background: getCompletion(v) === 100 ? "#e8750a" : "#4da8da", borderRadius: 4 }} />
+                        </div>
+                        <span style={{ fontSize: "0.65rem", fontWeight: 700, color: getCompletion(v) === 100 ? "#e8750a" : "#4da8da", flexShrink: 0 }}>{getCompletion(v)}%</span>
                         <div onClick={(e) => { e.stopPropagation(); window.location.href = "/vehicle/" + v.id }}
-                          style={{ marginLeft: "auto", background: "white", border: "1.5px solid var(--light-blue)", borderRadius: 20, padding: "3px 10px", cursor: "pointer", flexShrink: 0 }}>
+                          style={{ marginLeft: 4, background: "white", border: "1.5px solid var(--light-blue)", borderRadius: 20, padding: "3px 10px", cursor: "pointer", flexShrink: 0 }}>
                           <span style={{ fontSize: "0.7rem", color: "var(--light-blue)", fontWeight: 700 }}>Edit Profile</span>
                         </div>
                       </div>
-                      {/* Row 2: Walt nudge — only if incomplete */}
-                      {getCompletion(v) < 100 && (
+                      {/* Row 2: Walt message */}
+                      {getCompletion(v) === 100 ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                          <img src="https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png" alt="Walt" style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid #e8750a", flexShrink: 0 }} />
+                          <span style={{ fontSize: "0.72rem", color: "#e8750a", fontWeight: 700 }}>Great job! Profile complete.</span>
+                        </div>
+                      ) : (
                         <div onClick={(e) => { e.stopPropagation(); window.location.href = "/vehicle/" + v.id }}
                           style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, cursor: "pointer" }}>
                           <img src="https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png" alt="Walt" style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid #e8750a", flexShrink: 0 }} />
