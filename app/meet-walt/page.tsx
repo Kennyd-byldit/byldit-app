@@ -1,6 +1,9 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 const WALT_AVATAR = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
+const WALT_VOICE_ID = 'Zz0vK5YhSHXzKc3Oy7KJ'
+
+const WALT_INTRO = "Hey, I'm Walt — your build partner. I know vehicles inside and out, and I'm here to help you plan, prioritize, and execute your project. Whether you're doing a full restoration, tracking mods, or just trying to figure out what to tackle next — I've got you. Tap Let's go and let's get your garage set up."
 
 const capabilities = [
   'Plan your build',
@@ -12,9 +15,40 @@ const capabilities = [
 ]
 
 export default function MeetWaltPage() {
+  const [playing, setPlaying] = useState(false)
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
+
   useEffect(() => {
     window.history.replaceState(null, "", window.location.href)
   }, [])
+
+  const playWalt = async () => {
+    if (playing && audio) {
+      audio.pause()
+      audio.currentTime = 0
+      setPlaying(false)
+      return
+    }
+
+    setPlaying(true)
+    try {
+      const res = await fetch('/api/walt-speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: WALT_INTRO }),
+      })
+      if (!res.ok) throw new Error('TTS failed')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = new Audio(url)
+      setAudio(a)
+      a.play()
+      a.onended = () => { setPlaying(false); URL.revokeObjectURL(url) }
+    } catch (e) {
+      console.error(e)
+      setPlaying(false)
+    }
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
@@ -42,13 +76,17 @@ export default function MeetWaltPage() {
             <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--orange)', marginTop: 2 }}>Your Crew Chief</p>
           </div>
 
-          {/* Walt avatar card */}
-          <div style={{ background: 'var(--dark-blue)', borderRadius: 16, padding: '18px 16px', textAlign: 'center', marginBottom: 14, boxShadow: '0 4px 16px rgba(36,80,122,0.2)' }}>
-            <div style={{ width: 88, height: 88, borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--orange)', margin: '0 auto 12px', boxShadow: '0 4px 15px rgba(232,117,10,0.3)' }}>
+          {/* Walt avatar card — tap to hear */}
+          <div onClick={playWalt} style={{ background: 'var(--dark-blue)', borderRadius: 16, padding: '18px 16px', textAlign: 'center', marginBottom: 14, boxShadow: '0 4px 16px rgba(36,80,122,0.2)', cursor: 'pointer' }}>
+            <div style={{ width: 88, height: 88, borderRadius: '50%', overflow: 'hidden', border: `3px solid ${playing ? '#4da8da' : 'var(--orange)'}`, margin: '0 auto 12px', boxShadow: playing ? '0 4px 15px rgba(77,168,218,0.5)' : '0 4px 15px rgba(232,117,10,0.3)', transition: 'all 0.3s' }}>
               <img src={WALT_AVATAR} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             </div>
-            <p style={{ fontSize: '0.85rem', color: 'white', fontWeight: 700, marginBottom: 3 }}>Tap to hear from Walt</p>
-            <p style={{ fontSize: '0.7rem', color: 'var(--light-blue)', fontWeight: 300 }}>30 seconds — he&apos;ll tell you who he is</p>
+            <p style={{ fontSize: '0.85rem', color: 'white', fontWeight: 700, marginBottom: 3 }}>
+              {playing ? '▐▐  Tap to stop' : '▶  Tap to hear from Walt'}
+            </p>
+            <p style={{ fontSize: '0.7rem', color: 'var(--light-blue)', fontWeight: 300 }}>
+              {playing ? 'Walt is speaking...' : '30 seconds — he\'ll tell you who he is'}
+            </p>
           </div>
 
           {/* What I do */}
