@@ -13,7 +13,7 @@ const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/
 const NavBar = () => (
   <nav style={{ background: 'white', borderTop: '1px solid var(--border)', padding: '6px 0 4px', flexShrink: 0 }}>
     <div style={{ display: 'flex', maxWidth: 480, margin: '0 auto' }}>
-      {[{ icon: '🏠', label: 'Garage', active: true }, { icon: '🔧', label: 'Projects', active: false }, { icon: '🔩', label: 'Parts', active: false }, { icon: '📋', label: "Walt's Notes", active: false }, { icon: '⋯', label: 'More', active: false }].map(item => (
+      {[{ icon: '🏠', label: 'Garage', active: true }, { icon: '🔧', label: 'Projects', active: false }, { icon: '🔩', label: 'Parts', active: false }, { icon: '📋', label: "Walt's Notes", active: false }].map(item => (
         <div key={item.label} style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}>
           <div style={{ fontSize: '1.1rem' }}>{item.icon}</div>
           <div style={{ fontSize: '0.55rem', fontWeight: item.active ? 700 : 400, color: item.active ? 'var(--orange)' : 'var(--secondary-text)', fontFamily: 'var(--font-nunito)' }}>{item.label}</div>
@@ -56,6 +56,7 @@ export default function GaragePage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [hasActiveProject, setHasActiveProject] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
     window.history.pushState(null, "", window.location.href)
@@ -115,10 +116,17 @@ export default function GaragePage() {
       </div>
 
       {/* Header */}
-      <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', textAlign: 'center', flexShrink: 0 }}>
+      <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div style={{ width: 36 }} />
         <span style={{ fontFamily: 'var(--font-barlow)', fontSize: '1.8rem', fontWeight: 800, fontStyle: 'italic', color: 'white' }}>
           BYLD<span style={{ fontFamily: 'var(--font-nunito)', fontWeight: 300, fontStyle: 'normal', color: 'var(--light-blue)' }}>it</span>
         </span>
+        <button onClick={() => setDrawerOpen(true)}
+          style={{ width: 36, height: 36, borderRadius: '50%', background: 'white', border: '2px solid var(--light-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--dark-blue)', fontFamily: 'var(--font-nunito)', lineHeight: 1 }}>
+            {userName ? userName[0].toUpperCase() : '?'}
+          </span>
+        </button>
       </header>
 
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '12px 14px 20px' }}>
@@ -283,6 +291,77 @@ export default function GaragePage() {
 
       <WaltBar />
       <NavBar />
+
+      {/* Overlay */}
+      {drawerOpen && (
+        <div onClick={() => setDrawerOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 40 }} />
+      )}
+
+      {/* Slide-up drawer */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+        background: 'white', borderRadius: '20px 20px 0 0',
+        padding: '0 0 32px',
+        transform: drawerOpen ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.3s ease',
+        boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
+        fontFamily: 'var(--font-nunito)',
+        maxHeight: '80vh',
+        overflowY: 'auto',
+      }}>
+        {/* Handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px' }}>
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: '#d4e0eb' }} />
+        </div>
+
+        {/* User info */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 24px 16px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--bg)', border: '2px solid var(--light-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--dark-blue)' }}>{userName ? userName[0].toUpperCase() : '?'}</span>
+          </div>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)' }}>{userName}</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)' }}>BYLDit.ai member</p>
+          </div>
+        </div>
+
+        {/* Menu items */}
+        {[
+          { label: 'My Profile', icon: '👤', section: 'Account' },
+          { label: 'Billing & Subscription', icon: '💳', section: null },
+          { label: 'Notifications', icon: '🔔', section: 'Settings' },
+          { label: 'Units', icon: '📏', section: null },
+          { label: 'FAQ / Help', icon: '❓', section: 'Help' },
+          { label: 'About BYLDit.ai', icon: 'ℹ️', section: null },
+          { label: 'Send Feedback', icon: '💬', section: null },
+        ].map((item, i, arr) => (
+          <div key={item.label}>
+            {item.section && (
+              <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, padding: '16px 24px 6px', fontWeight: 700 }}>{item.section}</p>
+            )}
+            <div onClick={() => setDrawerOpen(false)}
+              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 24px', cursor: 'pointer', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
+              <span style={{ fontSize: '1.1rem', width: 24, textAlign: 'center' }}>{item.icon}</span>
+              <span style={{ fontSize: '0.95rem', color: 'var(--dark-blue)', fontWeight: 500 }}>{item.label}</span>
+              <span style={{ marginLeft: 'auto', color: 'var(--secondary-text)', fontSize: '0.9rem' }}>›</span>
+            </div>
+          </div>
+        ))}
+
+        {/* Divider */}
+        <div style={{ height: 8, background: 'var(--bg)', margin: '8px 0' }} />
+
+        {/* Log Out */}
+        <div onClick={async () => {
+          await supabase.auth.signOut()
+          window.location.replace('/login')
+        }}
+          style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 24px', cursor: 'pointer' }}>
+          <span style={{ fontSize: '1.1rem', width: 24, textAlign: 'center' }}>🚪</span>
+          <span style={{ fontSize: '0.95rem', color: '#e74c3c', fontWeight: 700 }}>Log Out</span>
+        </div>
+      </div>
     </div>
   )
 }
