@@ -67,6 +67,29 @@ export default function BuildProfilePage() {
     }
   }, [])
 
+  // Handle browser back button — step backwards through onboarding
+  useEffect(() => {
+    const handlePop = () => {
+      setStep(prev => {
+        if (prev <= 1) {
+          window.location.replace('/meet-walt')
+          return prev
+        }
+        // Step back: if on step 5 (vehicles), go to step 4; step 6 → step 5; etc.
+        if (prev === 5 && addingVehicle) {
+          setAddingVehicle(false)
+          return prev
+        }
+        return prev - 1
+      })
+      // Push state again to keep catching future back presses
+      window.history.pushState(null, '', window.location.href)
+    }
+    window.history.pushState(null, '', window.location.href)
+    window.addEventListener('popstate', handlePop)
+    return () => window.removeEventListener('popstate', handlePop)
+  }, [addingVehicle])
+
   const toggleTool = (tool: string) => {
     setSelectedTools(prev => prev.includes(tool) ? prev.filter(t => t !== tool) : [...prev, tool])
   }
@@ -132,28 +155,6 @@ export default function BuildProfilePage() {
         await supabase.from('profiles').upsert({
           id: user.id, name, experience: exp, reason,
           onboarded: true, updated_at: new Date().toISOString(),
-        })
-      }
-      // Save vehicles
-      for (let i = 0; i < vehicles.length; i++) {
-        const v = vehicles[i]
-        await supabase.from('vehicles').insert({
-          user_id: user.id,
-          year: parseInt(v.year),
-          make: v.make,
-          model: v.model,
-          nickname: v.nickname || `${v.year} ${v.make} ${v.model}`,
-          type: 'build',
-          color: v.color || null,
-          engine: v.engine || null,
-          transmission: v.transmission || null,
-          drivetrain: v.drivetrain || null,
-          fuel_type: v.fuel_type || null,
-          mileage: v.mileage ? parseInt(v.mileage) : null,
-          condition: v.condition || null,
-          title_status: v.title_status || null,
-          notes: v.notes || null,
-          is_primary: i === 0,
         })
       }
     }
@@ -299,18 +300,45 @@ export default function BuildProfilePage() {
           {!isAddingFromGarage && <WaltMsg text={<>What are you working on? <strong>Let&apos;s add your first vehicle.</strong></>} />}
 
           {/* Vehicle list */}
-          {vehicles.map((v, i) => (
-            <div key={i} style={{ background: 'white', borderRadius: 14, marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden', display: 'flex', alignItems: 'stretch' }}>
-              <div style={{ width: 80, flexShrink: 0, overflow: 'hidden' }}>
-                <img src={v.model?.toLowerCase().includes('ranger') ? '/photos/ranger-2025.jpg' : '/photos/f250-hiboy-68.jpg'} alt={v.nickname || v.make}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
+          {vehicles.map((v, i) => {
+            const photo = v.model?.toLowerCase().includes('ranger') ? '/photos/ranger-2025.jpg' : '/photos/f250-hiboy-68.jpg'
+            const fields = [v.color, v.engine, v.transmission, v.drivetrain, v.fuel_type, v.mileage, v.condition]
+            const filled = fields.filter(Boolean).length
+            const pct = Math.round((filled / fields.length) * 100)
+            return (
+              <div key={i} style={{ background: 'white', borderRadius: 14, marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                  <div style={{ width: 110, flexShrink: 0, overflow: 'hidden' }}>
+                    <img src={photo} alt={v.nickname || v.make}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
+                  </div>
+                  <div style={{ flex: 1, padding: '12px 14px' }}>
+                    <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)', marginBottom: 2 }}>{v.nickname || v.make}</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)' }}>{v.year} {v.make} {v.model}</p>
+                  </div>
+                </div>
+                <div style={{ borderTop: '1px solid var(--border)', padding: '8px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ flex: 1, background: '#d4e0eb', borderRadius: 4, height: 4 }}>
+                      <div style={{ width: pct + '%', height: '100%', background: pct === 100 ? '#4da8da' : '#e8750a', borderRadius: 4 }} />
+                    </div>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: pct === 100 ? '#4da8da' : '#e8750a', flexShrink: 0 }}>{pct}%</span>
+                  </div>
+                  {pct === 100 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                      <img src={WALT} alt="Walt" style={{ width: 18, height: 18, borderRadius: '50%', border: '1px solid #e8750a', flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.72rem', color: '#4da8da', fontWeight: 700 }}>Great job! Profile complete.</span>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                      <img src={WALT} alt="Walt" style={{ width: 18, height: 18, borderRadius: '50%', border: '1px solid #e8750a', flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.72rem', color: 'var(--secondary-text)', fontStyle: 'italic' }}>&ldquo;The more I know, the more I can help.&rdquo;</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div style={{ flex: 1, padding: '10px 14px' }}>
-                <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)', marginBottom: 2 }}>{v.nickname || v.make}</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)' }}>{v.year} {v.make} {v.model}</p>
-              </div>
-            </div>
-          ))}
+            )
+          })}
 
           {/* Add vehicle form */}
           {addingVehicle && isAddingFromGarage ? (
