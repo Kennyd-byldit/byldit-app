@@ -67,28 +67,7 @@ export default function BuildProfilePage() {
     }
   }, [])
 
-  // Handle browser back button — step backwards through onboarding
-  useEffect(() => {
-    const handlePop = () => {
-      setStep(prev => {
-        if (prev <= 1) {
-          window.location.replace('/meet-walt')
-          return prev
-        }
-        // Step back: if on step 5 (vehicles), go to step 4; step 6 → step 5; etc.
-        if (prev === 5 && addingVehicle) {
-          setAddingVehicle(false)
-          return prev
-        }
-        return prev - 1
-      })
-      // Push state again to keep catching future back presses
-      window.history.pushState(null, '', window.location.href)
-    }
-    window.history.pushState(null, '', window.location.href)
-    window.addEventListener('popstate', handlePop)
-    return () => window.removeEventListener('popstate', handlePop)
-  }, [addingVehicle])
+  // Back navigation handled via in-app back arrow in AppHeader
 
   const toggleTool = (tool: string) => {
     setSelectedTools(prev => prev.includes(tool) ? prev.filter(t => t !== tool) : [...prev, tool])
@@ -161,16 +140,22 @@ export default function BuildProfilePage() {
     window.location.replace('/garage')
   }
 
-  const AppHeader = () => (
+  const AppHeader = ({ onBack }: { onBack?: () => void }) => (
     <>
       <div style={{ background: 'var(--bg)', padding: '6px 16px 4px', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
         <span style={{ fontSize: '0.8rem', color: 'var(--dark-blue)', fontWeight: 600 }}>10:12 AM</span>
         <span style={{ fontSize: '0.8rem', color: 'var(--dark-blue)' }}>📶 🔋</span>
       </div>
-      <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', textAlign: 'center', flexShrink: 0 }}>
+      <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        {onBack ? (
+          <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.4rem', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>←</button>
+        ) : (
+          <div style={{ width: 32 }} />
+        )}
         <span style={{ fontFamily: 'var(--font-barlow)', fontSize: '1.8rem', fontWeight: 800, fontStyle: 'italic', color: 'white' }}>
           BYLD<span style={{ fontFamily: 'var(--font-nunito)', fontWeight: 300, fontStyle: 'normal', color: 'var(--light-blue)' }}>it</span>
         </span>
+        <div style={{ width: 32 }} />
       </header>
     </>
   )
@@ -200,18 +185,26 @@ export default function BuildProfilePage() {
   )
 
   // ── STEP 1 & OPTIONAL DETAILS ──────────────────────────────────────────────
+  const handleStepBack = () => {
+    if (step <= 1) {
+      window.location.replace('/meet-walt')
+    } else {
+      setStep(prev => prev - 1)
+    }
+  }
+
   if (step <= 4) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
-      <AppHeader />
+      <AppHeader onBack={handleStepBack} />
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto', overflowX: 'hidden', width: '100%' }}>
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>Build Your Profile</p>
           <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 14 }}>Step 1 of 3</p>
           {(name || exp || reason) && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-              {[name, exp, reason].filter(Boolean).map(t => (
-                <div key={t} style={{ background: 'var(--dark-blue)', color: 'white', borderRadius: 20, padding: '4px 12px', fontSize: '0.75rem' }}>{t}</div>
-              ))}
+              {name && <div onClick={() => setStep(1)} style={{ background: 'var(--dark-blue)', color: 'white', borderRadius: 20, padding: '4px 12px', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>{name} <span style={{ opacity: 0.7, fontSize: '0.65rem' }}>✏️</span></div>}
+              {exp && <div onClick={() => setStep(2)} style={{ background: 'var(--dark-blue)', color: 'white', borderRadius: 20, padding: '4px 12px', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>{exp} <span style={{ opacity: 0.7, fontSize: '0.65rem' }}>✏️</span></div>}
+              {reason && <div onClick={() => setStep(3)} style={{ background: 'var(--dark-blue)', color: 'white', borderRadius: 20, padding: '4px 12px', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>{reason} <span style={{ opacity: 0.7, fontSize: '0.65rem' }}>✏️</span></div>}
             </div>
           )}
 
@@ -291,7 +284,7 @@ export default function BuildProfilePage() {
   // ── STEP 2: WHAT'S IN YOUR GARAGE? ────────────────────────────────────────
   if (step === 5) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
-      <AppHeader />
+      <AppHeader onBack={() => isAddingFromGarage ? window.location.replace('/garage') : setStep(4)} />
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto', overflowX: 'hidden', width: '100%' }}>
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>{isAddingFromGarage ? 'Add a Vehicle' : 'What\u2019s in your garage?'}</p>
@@ -477,7 +470,7 @@ export default function BuildProfilePage() {
   // ── STEP 3: YOUR SETUP ────────────────────────────────────────────────────
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
-      <AppHeader />
+      <AppHeader onBack={() => setStep(5)} />
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto', overflowX: 'hidden', width: '100%' }}>
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>Your Setup</p>
