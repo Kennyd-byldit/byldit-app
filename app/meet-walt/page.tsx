@@ -92,11 +92,11 @@ export default function MeetWaltPage() {
             }
           `}</style>
           <div onClick={playWalt} style={{ background: 'var(--dark-blue)', borderRadius: 16, padding: '18px 16px', textAlign: 'center', marginBottom: 14, boxShadow: '0 4px 16px rgba(36,80,122,0.2)', cursor: 'pointer' }}>
-            <div style={{ position: 'relative', width: 88, height: 88, margin: '0 auto 12px' }}>
+            <div style={{ position: 'relative', width: 88, height: 88, margin: '0 auto 12px', overflow: 'visible' }}>
               {loading && <>
-                <div style={{ position: 'absolute', inset: -8, borderRadius: '50%', border: '2px solid #f4a543', animation: 'pulse-ring 1.2s ease-out infinite' }} />
-                <div style={{ position: 'absolute', inset: -8, borderRadius: '50%', border: '2px solid #f4a543', animation: 'pulse-ring 1.2s ease-out 0.4s infinite' }} />
-                <div style={{ position: 'absolute', inset: -8, borderRadius: '50%', border: '2px solid #f4a543', animation: 'pulse-ring 1.2s ease-out 0.8s infinite' }} />
+                <div style={{ position: 'absolute', top: '50%', left: '50%', width: 88, height: 88, marginTop: -44, marginLeft: -44, borderRadius: '50%', border: '2px solid #f4a543', animation: 'pulse-ring 1.4s ease-out infinite', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: '50%', left: '50%', width: 88, height: 88, marginTop: -44, marginLeft: -44, borderRadius: '50%', border: '2px solid #f4a543', animation: 'pulse-ring 1.4s ease-out 0.45s infinite', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: '50%', left: '50%', width: 88, height: 88, marginTop: -44, marginLeft: -44, borderRadius: '50%', border: '2px solid #f4a543', animation: 'pulse-ring 1.4s ease-out 0.9s infinite', pointerEvents: 'none' }} />
               </>}
               <div style={{ width: 88, height: 88, borderRadius: '50%', overflow: 'hidden', border: `3px solid ${loading ? '#f4a543' : playing ? '#4da8da' : 'var(--orange)'}`, boxShadow: loading ? '0 4px 15px rgba(244,165,67,0.5)' : playing ? '0 4px 15px rgba(77,168,218,0.5)' : '0 4px 15px rgba(232,117,10,0.3)', transition: 'all 0.3s' }}>
                 <img src={WALT_AVATAR} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />

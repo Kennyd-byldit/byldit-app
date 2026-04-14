@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify({
       text,
       model_id: 'eleven_monolingual_v1',
-      voice_settings: { stability: 0.75, similarity_boost: 0.75, speed: 0.85 },
+      voice_settings: { stability: 0.5, similarity_boost: 0.75 },
     }),
   })
 
