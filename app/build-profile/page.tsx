@@ -193,8 +193,13 @@ export default function BuildProfilePage() {
     }
   }
 
-  const toggleExp = (val: string) => setExpList(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val])
-  const toggleReason = (val: string) => setReasonList(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val])
+  const toggleExp = (val: string) => {
+    setExpList(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val])
+  }
+  const toggleReason = (val: string) => {
+    setReasonList(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val])
+  }
+  const [nameCommitted, setNameCommitted] = useState(false)
 
   if (step <= 4) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
@@ -207,50 +212,66 @@ export default function BuildProfilePage() {
           {/* Name */}
           <WaltMsg text={<>Alright, let&apos;s get to know each other. <strong>What&apos;s your first name?</strong></>} />
           <div style={{ marginBottom: 20 }}>
-            <input type="text" placeholder="Your first name" value={name} onChange={e => setName(e.target.value)}
-              style={{ width: '100%', padding: '12px 16px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const }}
-              onKeyDown={e => { if (e.key === 'Enter' && name) { const el = document.querySelector('[data-next-focus]') as HTMLElement; el?.focus() } }} />
+            <input type="text" placeholder="Your first name" value={name} onChange={e => { setName(e.target.value); if (nameCommitted) setNameCommitted(false) }}
+              onBlur={() => { if (name) setNameCommitted(true) }}
+              onKeyDown={e => { if (e.key === 'Enter' && name) setNameCommitted(true) }}
+              style={{ width: '100%', padding: '12px 16px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const }} />
+            {name && !nameCommitted && (
+              <button onClick={() => setNameCommitted(true)} style={{ marginTop: 10, width: '100%', padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
+                That&apos;s me &#x2192;
+              </button>
+            )}
           </div>
 
-          {/* Experience */}
-          <WaltMsg text={<>{name ? <>Good to meet you, {name}. </> : ''}<strong>How much experience do you have wrenching?</strong></>} />
-          <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 8, marginLeft: 2 }}>Select all that apply</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
-            {expOptions.map(o => {
-              const val = o.emoji + ' ' + o.label
-              const selected = expList.includes(val)
-              return (
-                <div key={o.label} onClick={() => toggleExp(val)}
-                  style={{ background: selected ? 'var(--dark-blue)' : 'white', border: selected ? '1.5px solid var(--dark-blue)' : '1.5px solid var(--border)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', fontSize: '0.85rem', color: selected ? 'white' : 'var(--dark-blue)' }}>
-                  <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{o.emoji}</div>
-                  <strong>{o.label}</strong>
-                </div>
-              )
-            })}
-          </div>
+          {/* Experience — shows after name committed */}
+          {nameCommitted && (
+            <>
+              <WaltMsg text={<>Good to meet you, {name}. <strong>How much experience do you have wrenching?</strong></>} />
+              <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 8, marginLeft: 2 }}>Select all that apply</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
+                {expOptions.map(o => {
+                  const val = o.emoji + ' ' + o.label
+                  const selected = expList.includes(val)
+                  return (
+                    <div key={o.label} onClick={() => toggleExp(val)}
+                      style={{ background: selected ? '#4da8da' : 'white', border: selected ? '1.5px solid #4da8da' : '1.5px solid var(--border)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', fontSize: '0.85rem', color: selected ? 'white' : 'var(--dark-blue)' }}>
+                      <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{o.emoji}</div>
+                      <strong>{o.label}</strong>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
 
-          {/* Reason */}
-          <WaltMsg text={<><strong>What brings you to BYLDit.ai?</strong></>} />
-          <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 8, marginLeft: 2 }}>Select all that apply</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
-            {reasonOptions.map(o => {
-              const val = o.emoji + ' ' + o.label
-              const selected = reasonList.includes(val)
-              return (
-                <div key={o.label} onClick={() => toggleReason(val)}
-                  style={{ background: selected ? 'var(--dark-blue)' : 'white', border: selected ? '1.5px solid var(--dark-blue)' : '1.5px solid var(--border)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', fontSize: '0.85rem', color: selected ? 'white' : 'var(--dark-blue)' }}>
-                  <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{o.emoji}</div>
-                  <strong>{o.label}</strong>
-                </div>
-              )
-            })}
-          </div>
+          {/* Reason — shows after at least one exp selected */}
+          {nameCommitted && expList.length > 0 && (
+            <>
+              <WaltMsg text={<>Nice &#x2014; solid starting point. <strong>What brings you to BYLDit.ai?</strong></>} />
+              <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 8, marginLeft: 2 }}>Select all that apply</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
+                {reasonOptions.map(o => {
+                  const val = o.emoji + ' ' + o.label
+                  const selected = reasonList.includes(val)
+                  return (
+                    <div key={o.label} onClick={() => toggleReason(val)}
+                      style={{ background: selected ? '#4da8da' : 'white', border: selected ? '1.5px solid #4da8da' : '1.5px solid var(--border)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', fontSize: '0.85rem', color: selected ? 'white' : 'var(--dark-blue)' }}>
+                      <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{o.emoji}</div>
+                      <strong>{o.label}</strong>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
 
-          {/* Next button */}
-          <button onClick={() => setStep(5)} disabled={!name}
-            style={{ width: '100%', padding: '14px', background: name ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: name ? '0 6px 20px rgba(232,117,10,0.3)' : 'none', cursor: name ? 'pointer' : 'not-allowed' }}>
-            What&apos;s in my garage &#x2192;
-          </button>
+          {/* Next button — shows after at least one reason selected */}
+          {nameCommitted && expList.length > 0 && reasonList.length > 0 && (
+            <button onClick={() => setStep(5)}
+              style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
+              What&apos;s in my garage &#x2192;
+            </button>
+          )}
         </div>
       </main>
       <WaltBar placeholder="Tell me about yourself..." />
