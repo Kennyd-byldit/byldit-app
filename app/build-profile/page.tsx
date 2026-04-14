@@ -45,8 +45,8 @@ const toolOptions = [
 export default function BuildProfilePage() {
   const [step, setStep] = useState(1)
   const [name, setName] = useState('')
-  const [exp, setExp] = useState('')
-  const [reason, setReason] = useState('')
+  const [expList, setExpList] = useState<string[]>([])
+  const [reasonList, setReasonList] = useState<string[]>([])
   const [vehicles, setVehicles] = useState<{year: string, make: string, model: string, nickname: string, color: string, trim: string, engine: string, transmission: string, drivetrain: string, fuel_type: string, mileage: string, condition: string, title_status: string, notes: string}[]>([])
   const [newVehicle, setNewVehicle] = useState({ year: '', make: '', model: '', nickname: '', color: '', trim: '', engine: '', transmission: '', drivetrain: '', fuel_type: '', mileage: '', condition: '', title_status: '', notes: '' })
   const [addingVehicle, setAddingVehicle] = useState(false)
@@ -132,7 +132,7 @@ export default function BuildProfilePage() {
       // Save profile (skip when adding from garage to avoid overwriting existing data)
       if (!isAddingFromGarage) {
         await supabase.from('profiles').upsert({
-          id: user.id, name, experience: exp, reason,
+          id: user.id, name, experience: expList.join(', '), reason: reasonList.join(', '),
           onboarded: true, updated_at: new Date().toISOString(),
         })
       }
@@ -193,87 +193,64 @@ export default function BuildProfilePage() {
     }
   }
 
+  const toggleExp = (val: string) => setExpList(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val])
+  const toggleReason = (val: string) => setReasonList(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val])
+
   if (step <= 4) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
       <AppHeader onBack={handleStepBack} />
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto', overflowX: 'hidden', width: '100%' }}>
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>Build Your Profile</p>
-          <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 14 }}>Step 1 of 3</p>
-          {(name || exp || reason) && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-              {name && <div onClick={() => setStep(1)} style={{ background: 'var(--dark-blue)', color: 'white', borderRadius: 20, padding: '4px 12px', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>{name} <span style={{ opacity: 0.7, fontSize: '0.65rem' }}>✏️</span></div>}
-              {exp && <div onClick={() => setStep(2)} style={{ background: 'var(--dark-blue)', color: 'white', borderRadius: 20, padding: '4px 12px', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>{exp} <span style={{ opacity: 0.7, fontSize: '0.65rem' }}>✏️</span></div>}
-              {reason && <div onClick={() => setStep(3)} style={{ background: 'var(--dark-blue)', color: 'white', borderRadius: 20, padding: '4px 12px', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>{reason} <span style={{ opacity: 0.7, fontSize: '0.65rem' }}>✏️</span></div>}
-            </div>
-          )}
+          <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 16 }}>Step 1 of 3</p>
 
+          {/* Name */}
           <WaltMsg text={<>Alright, let&apos;s get to know each other. <strong>What&apos;s your first name?</strong></>} />
-          {step === 1 && (
-            <div style={{ marginLeft: 38, marginBottom: 16 }}>
-              <input type="text" placeholder="Your first name" value={name} onChange={e => setName(e.target.value)}
-                style={{ width: '100%', padding: '12px 16px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }}
-                onKeyDown={e => { if (e.key === 'Enter' && name) setStep(2) }} />
-              {name && <button onClick={() => setStep(2)} style={{ marginTop: 10, width: '100%', padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>That&apos;s me &#x2192;</button>}
-            </div>
-          )}
+          <div style={{ marginBottom: 20 }}>
+            <input type="text" placeholder="Your first name" value={name} onChange={e => setName(e.target.value)}
+              style={{ width: '100%', padding: '12px 16px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const }}
+              onKeyDown={e => { if (e.key === 'Enter' && name) { const el = document.querySelector('[data-next-focus]') as HTMLElement; el?.focus() } }} />
+          </div>
 
-          {step >= 2 && (
-            <>
-              <UserReply text={name} />
-              <WaltMsg text={<>Good to meet you, {name}. <strong>How much experience do you have wrenching?</strong></>} />
-              {step === 2 && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
-                  {expOptions.map(o => (
-                    <div key={o.label} onClick={() => { setExp(o.emoji + ' ' + o.label); setStep(3) }}
-                      style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--dark-blue)' }}>
-                      <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{o.emoji}</div>
-                      <strong>{o.label}</strong>
-                    </div>
-                  ))}
+          {/* Experience */}
+          <WaltMsg text={<>{name ? <>Good to meet you, {name}. </> : ''}<strong>How much experience do you have wrenching?</strong></>} />
+          <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 8, marginLeft: 2 }}>Select all that apply</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
+            {expOptions.map(o => {
+              const val = o.emoji + ' ' + o.label
+              const selected = expList.includes(val)
+              return (
+                <div key={o.label} onClick={() => toggleExp(val)}
+                  style={{ background: selected ? 'var(--dark-blue)' : 'white', border: selected ? '1.5px solid var(--dark-blue)' : '1.5px solid var(--border)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', fontSize: '0.85rem', color: selected ? 'white' : 'var(--dark-blue)' }}>
+                  <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{o.emoji}</div>
+                  <strong>{o.label}</strong>
                 </div>
-              )}
-            </>
-          )}
+              )
+            })}
+          </div>
 
-          {step >= 3 && (
-            <>
-              <UserReply text={exp} />
-              <WaltMsg text={<>Nice &#x2014; solid starting point. <strong>What brings you to BYLDit.ai?</strong></>} />
-              {step === 3 && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
-                  {reasonOptions.map(o => (
-                    <div key={o.label} onClick={() => { setReason(o.emoji + ' ' + o.label); setStep(4) }}
-                      style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--dark-blue)' }}>
-                      <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{o.emoji}</div>
-                      <strong>{o.label}</strong>
-                    </div>
-                  ))}
+          {/* Reason */}
+          <WaltMsg text={<><strong>What brings you to BYLDit.ai?</strong></>} />
+          <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 8, marginLeft: 2 }}>Select all that apply</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
+            {reasonOptions.map(o => {
+              const val = o.emoji + ' ' + o.label
+              const selected = reasonList.includes(val)
+              return (
+                <div key={o.label} onClick={() => toggleReason(val)}
+                  style={{ background: selected ? 'var(--dark-blue)' : 'white', border: selected ? '1.5px solid var(--dark-blue)' : '1.5px solid var(--border)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', fontSize: '0.85rem', color: selected ? 'white' : 'var(--dark-blue)' }}>
+                  <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{o.emoji}</div>
+                  <strong>{o.label}</strong>
                 </div>
-              )}
-            </>
-          )}
+              )
+            })}
+          </div>
 
-          {step >= 4 && (
-            <>
-              <UserReply text={reason} />
-              <WaltMsg text="Great &#x2014; I've got what I need. Want to round out your profile? Totally optional." />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--bg)', border: '2px dashed var(--light-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>📷</div>
-                <div><p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--dark-blue)' }}>{name}</p><p style={{ fontSize: '0.75rem', color: 'var(--light-blue)' }}>Add photo</p></div>
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'hidden' }}>
-                <input placeholder="Age" style={{ flex: 1, minWidth: 0, boxSizing: 'border-box', padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }} />
-                <input placeholder="City, State" style={{ flex: 2, minWidth: 0, boxSizing: 'border-box', padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none' }} />
-              </div>
-              <input placeholder="Bio &#x2014; Tell us about yourself..." style={{ width: '100%', padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 10 }} />
-              <input placeholder="Dream build &#x2014; What's your dream vehicle?" style={{ width: '100%', padding: '10px 14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', display: 'block', marginBottom: 18 }} />
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setStep(5)} style={{ flex: 1, padding: '12px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>Skip</button>
-                <button onClick={() => setStep(5)} style={{ flex: 1, padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>What&apos;s in my garage &#x2192;</button>
-              </div>
-            </>
-          )}
+          {/* Next button */}
+          <button onClick={() => setStep(5)} disabled={!name}
+            style={{ width: '100%', padding: '14px', background: name ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: name ? '0 6px 20px rgba(232,117,10,0.3)' : 'none', cursor: name ? 'pointer' : 'not-allowed' }}>
+            What&apos;s in my garage &#x2192;
+          </button>
         </div>
       </main>
       <WaltBar placeholder="Tell me about yourself..." />
