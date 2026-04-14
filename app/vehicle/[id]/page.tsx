@@ -203,7 +203,7 @@ export default function VehicleDetailPage() {
           ) : (
             <div style={{ background: 'white', borderRadius: 14, padding: '16px', marginTop: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', textAlign: 'center' }}>
               <p style={{ fontSize: '0.9rem', color: 'var(--dark-blue)', fontWeight: 700, marginBottom: 6 }}>Remove this vehicle?</p>
-              <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)', marginBottom: 16 }}>This can&apos;t be undone.</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)', marginBottom: 16 }}>Removing this vehicle will permanently delete all associated projects, build plans, parts, expenses, and notes. This cannot be undone.</p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => setConfirmDelete(false)}
                   style={{ flex: 1, padding: '12px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>
