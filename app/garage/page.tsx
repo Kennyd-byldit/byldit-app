@@ -250,7 +250,7 @@ export default function GaragePage() {
                         <span style={{ fontSize: "0.65rem", fontWeight: 700, color: getCompletion(v) === 100 ? "#4da8da" : "#e8750a", flexShrink: 0 }}>{getCompletion(v)}%</span>
                         <div onClick={(e) => { e.stopPropagation(); window.location.href = "/vehicle/" + v.id }}
                           style={{ marginLeft: 4, background: "white", border: "1.5px solid var(--light-blue)", borderRadius: 20, padding: "3px 10px", cursor: "pointer", flexShrink: 0 }}>
-                          <span style={{ fontSize: "0.7rem", color: "var(--light-blue)", fontWeight: 700 }}>Edit Car</span>
+                          <span style={{ fontSize: "0.7rem", color: "var(--light-blue)", fontWeight: 700 }}>Edit {v.nickname || v.make}</span>
                         </div>
                       </div>
                       {/* Row 2: Walt message */}
