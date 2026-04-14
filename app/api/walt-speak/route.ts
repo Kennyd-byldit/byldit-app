@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const VOICE_ID = 'Zz0vK5YhSHXzKc3Oy7KJ'
+const VOICE_ID = '2ID9HDeYYED4esAo37T7'
 
 export async function POST(req: NextRequest) {
   const { text } = await req.json()
