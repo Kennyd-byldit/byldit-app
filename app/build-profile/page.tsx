@@ -200,6 +200,8 @@ export default function BuildProfilePage() {
     setReasonList(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val])
   }
   const [nameCommitted, setNameCommitted] = useState(false)
+  const [expCommitted, setExpCommitted] = useState(false)
+  const [reasonCommitted, setReasonCommitted] = useState(false)
 
   if (step <= 4) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
@@ -241,11 +243,17 @@ export default function BuildProfilePage() {
                   )
                 })}
               </div>
+              {expList.length > 0 && !expCommitted && (
+                <button onClick={() => setExpCommitted(true)}
+                  style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer', marginBottom: 8 }}>
+                  Next &#x2192;
+                </button>
+              )}
             </>
           )}
 
-          {/* Reason — shows after at least one exp selected */}
-          {nameCommitted && expList.length > 0 && (
+          {/* Reason — shows after exp committed */}
+          {nameCommitted && expCommitted && (
             <>
               <WaltMsg text={<>Nice &#x2014; solid starting point. <strong>What brings you to BYLDit.ai?</strong></>} />
               <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 8, marginLeft: 2 }}>Select all that apply</p>
@@ -262,11 +270,17 @@ export default function BuildProfilePage() {
                   )
                 })}
               </div>
+              {reasonList.length > 0 && !reasonCommitted && (
+                <button onClick={() => setReasonCommitted(true)}
+                  style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer', marginBottom: 8 }}>
+                  Next &#x2192;
+                </button>
+              )}
             </>
           )}
 
-          {/* Next button — shows after at least one reason selected */}
-          {nameCommitted && expList.length > 0 && reasonList.length > 0 && (
+          {/* Final button — shows after reason committed */}
+          {nameCommitted && expCommitted && reasonCommitted && (
             <button onClick={() => setStep(5)}
               style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
               What&apos;s in my garage &#x2192;
