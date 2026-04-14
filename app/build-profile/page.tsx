@@ -270,17 +270,11 @@ export default function BuildProfilePage() {
                   )
                 })}
               </div>
-              {!reasonCommitted && (
-                <button onClick={() => setReasonCommitted(true)}
-                  style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer', marginBottom: 8 }}>
-                  Next &#x2192;
-                </button>
-              )}
             </>
           )}
 
-          {/* Final button — shows after reason committed */}
-          {nameCommitted && expCommitted && reasonCommitted && (
+          {/* Final button — shows after reason section appears */}
+          {nameCommitted && expCommitted && (
             <button onClick={() => setStep(5)}
               style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
               What&apos;s in my garage &#x2192;
