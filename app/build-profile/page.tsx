@@ -148,7 +148,7 @@ export default function BuildProfilePage() {
       </div>
       <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         {onBack ? (
-          <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.4rem', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>←</button>
+          <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', padding: '0 4px', fontFamily: 'var(--font-nunito)', display: 'flex', alignItems: 'center', gap: 4 }}>← Back</button>
         ) : (
           <div style={{ width: 32 }} />
         )}
@@ -493,7 +493,7 @@ export default function BuildProfilePage() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
             {toolOptions.map(tool => (
               <div key={tool} onClick={() => toggleTool(tool)}
-                style={{ padding: '8px 14px', borderRadius: 20, border: `1.5px solid ${selectedTools.includes(tool) ? 'var(--dark-blue)' : 'var(--border)'}`, background: selectedTools.includes(tool) ? 'var(--dark-blue)' : 'white', color: selectedTools.includes(tool) ? 'white' : 'var(--dark-blue)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
+                style={{ padding: '8px 14px', borderRadius: 20, border: `1.5px solid ${selectedTools.includes(tool) ? '#4da8da' : 'var(--border)'}`, background: selectedTools.includes(tool) ? '#4da8da' : 'white', color: selectedTools.includes(tool) ? 'white' : 'var(--dark-blue)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
                 {tool}
               </div>
             ))}
