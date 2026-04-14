@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 const WALT_AVATAR = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 const WALT_VOICE_ID = 'Zz0vK5YhSHXzKc3Oy7KJ'
 
-const WALT_INTRO = "Hey, I'm Walt — your build partner. I know vehicles inside and out, and I'm here to help you plan, prioritize, and execute your project. Whether you're doing a full restoration, tracking mods, or just trying to figure out what to tackle next — I've got you. Tap Let's go and let's get your garage set up."
+const WALT_INTRO = "Hey. Name's Walt. I'm your build partner — think of me as the crew chief who actually answers the phone. Full restorations, quick mods, or just trying to figure out what broke... I'm your guy. Here's the deal — I'm always at the bottom of every screen. That little face down there? That's me. Tap it anytime — day or night. I don't sleep. Now let's get your garage set up. I've got questions."
 
 const capabilities = [
   'Plan your build',
