@@ -16,6 +16,7 @@ const capabilities = [
 
 export default function MeetWaltPage() {
   const [playing, setPlaying] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
 
   useEffect(() => {
@@ -23,6 +24,10 @@ export default function MeetWaltPage() {
   }, [])
 
   const playWalt = async () => {
+    // If loading, ignore tap
+    if (loading) return
+
+    // If playing, stop
     if (playing && audio) {
       audio.pause()
       audio.currentTime = 0
@@ -30,7 +35,7 @@ export default function MeetWaltPage() {
       return
     }
 
-    setPlaying(true)
+    setLoading(true)
     try {
       const res = await fetch('/api/walt-speak', {
         method: 'POST',
@@ -42,10 +47,13 @@ export default function MeetWaltPage() {
       const url = URL.createObjectURL(blob)
       const a = new Audio(url)
       setAudio(a)
+      setLoading(false)
+      setPlaying(true)
       a.play()
       a.onended = () => { setPlaying(false); URL.revokeObjectURL(url) }
     } catch (e) {
       console.error(e)
+      setLoading(false)
       setPlaying(false)
     }
   }
@@ -78,14 +86,14 @@ export default function MeetWaltPage() {
 
           {/* Walt avatar card — tap to hear */}
           <div onClick={playWalt} style={{ background: 'var(--dark-blue)', borderRadius: 16, padding: '18px 16px', textAlign: 'center', marginBottom: 14, boxShadow: '0 4px 16px rgba(36,80,122,0.2)', cursor: 'pointer' }}>
-            <div style={{ width: 88, height: 88, borderRadius: '50%', overflow: 'hidden', border: `3px solid ${playing ? '#4da8da' : 'var(--orange)'}`, margin: '0 auto 12px', boxShadow: playing ? '0 4px 15px rgba(77,168,218,0.5)' : '0 4px 15px rgba(232,117,10,0.3)', transition: 'all 0.3s' }}>
+            <div style={{ width: 88, height: 88, borderRadius: '50%', overflow: 'hidden', border: `3px solid ${loading ? '#f4a543' : playing ? '#4da8da' : 'var(--orange)'}`, margin: '0 auto 12px', boxShadow: loading ? '0 4px 15px rgba(244,165,67,0.5)' : playing ? '0 4px 15px rgba(77,168,218,0.5)' : '0 4px 15px rgba(232,117,10,0.3)', transition: 'all 0.3s' }}>
               <img src={WALT_AVATAR} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             </div>
             <p style={{ fontSize: '0.85rem', color: 'white', fontWeight: 700, marginBottom: 3 }}>
-              {playing ? '▐▐  Tap to stop' : '▶  Tap to hear from Walt'}
+              {loading ? '⏳ Loading...' : playing ? '▐▐  Tap to stop' : '▶  Tap to hear from Walt'}
             </p>
             <p style={{ fontSize: '0.7rem', color: 'var(--light-blue)', fontWeight: 300 }}>
-              {playing ? 'Walt is speaking...' : '30 seconds — he\'ll tell you who he is'}
+              {loading ? 'Give him a second...' : playing ? 'Walt is speaking...' : '30 seconds — he\'ll tell you who he is'}
             </p>
           </div>
 
