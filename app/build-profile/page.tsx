@@ -243,7 +243,7 @@ export default function BuildProfilePage() {
                   )
                 })}
               </div>
-              {expList.length > 0 && !expCommitted && (
+              {!expCommitted && (
                 <button onClick={() => setExpCommitted(true)}
                   style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer', marginBottom: 8 }}>
                   Next &#x2192;
@@ -270,7 +270,7 @@ export default function BuildProfilePage() {
                   )
                 })}
               </div>
-              {reasonList.length > 0 && !reasonCommitted && (
+              {!reasonCommitted && (
                 <button onClick={() => setReasonCommitted(true)}
                   style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer', marginBottom: 8 }}>
                   Next &#x2192;
