@@ -53,6 +53,7 @@ export default function BuildProfilePage() {
   const [showMoreDetails, setShowMoreDetails] = useState(true)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [toolsDone, setToolsDone] = useState(false)
+  const [vehicleSaved, setVehicleSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [isAddingFromGarage, setIsAddingFromGarage] = useState(false)
   const [colorBlurred, setColorBlurred] = useState(false)
@@ -77,34 +78,49 @@ export default function BuildProfilePage() {
     setAddingVehicle(false)
     setShowMoreDetails(false)
     setColorBlurred(false)
+    setVehicleSaved(true)
   }
 
-  const addAndFinish = async () => {
+  const addAndFinish = () => {
     if (!newVehicle.year || !newVehicle.make || !newVehicle.model) return
-    const vehicleToAdd = { ...newVehicle }
+    setVehicles(prev => [...prev, newVehicle])
+    setNewVehicle({ year: '', make: '', model: '', nickname: '', color: '', trim: '', engine: '', transmission: '', drivetrain: '', fuel_type: '', mileage: '', condition: '', title_status: '', notes: '' })
+    setAddingVehicle(false)
+    setVehicleSaved(true)
+  }
+
+  const saveToSupabaseAndRedirect = async (destination: 'garage' | 'workspace') => {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      await supabase.from("vehicles").insert({
-        user_id: user.id,
-        year: parseInt(vehicleToAdd.year),
-        make: vehicleToAdd.make,
-        model: vehicleToAdd.model,
-        nickname: vehicleToAdd.nickname || `${vehicleToAdd.year} ${vehicleToAdd.make} ${vehicleToAdd.model}`,
-        color: vehicleToAdd.color || null,
-        engine: vehicleToAdd.engine || null,
-        transmission: vehicleToAdd.transmission || null,
-        drivetrain: vehicleToAdd.drivetrain || null,
-        fuel_type: vehicleToAdd.fuel_type || null,
-        mileage: vehicleToAdd.mileage ? parseInt(vehicleToAdd.mileage) : null,
-        condition: vehicleToAdd.condition || null,
-        title_status: vehicleToAdd.title_status || null,
-        notes: vehicleToAdd.notes || null,
-        is_primary: false,
-        type: "build",
-      })
+      for (let i = 0; i < vehicles.length; i++) {
+        const v = vehicles[i]
+        await supabase.from("vehicles").insert({
+          user_id: user.id,
+          year: parseInt(v.year),
+          make: v.make,
+          model: v.model,
+          nickname: v.nickname || `${v.year} ${v.make} ${v.model}`,
+          color: v.color || null,
+          engine: v.engine || null,
+          transmission: v.transmission || null,
+          drivetrain: v.drivetrain || null,
+          fuel_type: v.fuel_type || null,
+          mileage: v.mileage ? parseInt(v.mileage) : null,
+          condition: v.condition || null,
+          title_status: v.title_status || null,
+          notes: v.notes || null,
+          is_primary: i === 0,
+          type: "build",
+        })
+      }
     }
-    window.location.replace("/garage")
+    if (destination === 'garage') {
+      window.location.replace("/garage")
+    } else {
+      setStep(6)
+      setSaving(false)
+    }
   }
 
   const handleFinish = async () => {
@@ -332,7 +348,7 @@ export default function BuildProfilePage() {
               </div>
               <button onClick={addAndFinish} disabled={saving || !newVehicle.year || !newVehicle.make || !newVehicle.model}
                 style={{ width: '100%', padding: '14px', background: newVehicle.year && newVehicle.make && newVehicle.model ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', cursor: newVehicle.year && newVehicle.make && newVehicle.model ? 'pointer' : 'not-allowed', boxShadow: newVehicle.year && newVehicle.make && newVehicle.model ? '0 6px 20px rgba(232,117,10,0.3)' : 'none' }}>
-                {saving ? 'Saving...' : 'Save & Back to Garage →'}
+                {saving ? 'Adding...' : 'Add Vehicle →'}
               </button>
             </div>
           ) : addingVehicle ? (
@@ -372,7 +388,7 @@ export default function BuildProfilePage() {
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                 <button onClick={() => { setAddingVehicle(false); setShowMoreDetails(false); setColorBlurred(false) }} style={{ flex: 1, padding: '10px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary-text)', cursor: 'pointer', fontFamily: 'var(--font-nunito)' }}>Cancel</button>
                 {isAddingFromGarage ? (
-                  <button onClick={addAndFinish} disabled={saving} style={{ flex: 2, padding: '10px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 4px 14px rgba(232,117,10,0.25)', cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save & Back to Garage \u2192'}</button>
+                  <button onClick={addAndFinish} disabled={saving} style={{ flex: 2, padding: '10px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 4px 14px rgba(232,117,10,0.25)', cursor: 'pointer' }}>{saving ? 'Saving...' : 'Add Vehicle \u2192'}</button>
                 ) : (
                   <button onClick={addVehicle} style={{ flex: 2, padding: '10px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 4px 14px rgba(232,117,10,0.25)', cursor: 'pointer' }}>Add vehicle &#x2192;</button>
                 )}
@@ -390,12 +406,31 @@ export default function BuildProfilePage() {
 
           {!isAddingFromGarage && <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', textAlign: 'center', marginBottom: 16 }}>You can always add more vehicles later from My Garage.</p>}
 
-          {isAddingFromGarage && vehicles.length > 0 && !addingVehicle && (
-            <button onClick={handleFinish} disabled={saving} style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
-              {saving ? 'Saving...' : 'Save & Back to Garage \u2192'}
-            </button>
+          {isAddingFromGarage && vehicleSaved && !addingVehicle && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button onClick={() => saveToSupabaseAndRedirect('garage')} disabled={saving}
+                style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
+                {saving ? 'Saving...' : 'Back to My Garage →'}
+              </button>
+              <button onClick={() => { setVehicleSaved(false); setAddingVehicle(true) }}
+                style={{ width: '100%', padding: '14px', background: 'white', border: '2px solid var(--dark-blue)', borderRadius: 25, color: 'var(--dark-blue)', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>
+                + Add Another Vehicle
+              </button>
+            </div>
           )}
-          {!isAddingFromGarage && (
+          {!isAddingFromGarage && vehicleSaved && !addingVehicle && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button onClick={() => saveToSupabaseAndRedirect('workspace')} disabled={saving}
+                style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
+                {saving ? 'Saving...' : 'Set Up My Workspace →'}
+              </button>
+              <button onClick={() => { setVehicleSaved(false); setAddingVehicle(true) }}
+                style={{ width: '100%', padding: '14px', background: 'white', border: '2px solid var(--dark-blue)', borderRadius: 25, color: 'var(--dark-blue)', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>
+                + Add Another Vehicle
+              </button>
+            </div>
+          )}
+          {!isAddingFromGarage && !vehicleSaved && !addingVehicle && (
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setStep(6)} style={{ flex: 1, padding: '12px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>Skip</button>
               <button onClick={() => setStep(6)} style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>Set up my workspace →</button>
