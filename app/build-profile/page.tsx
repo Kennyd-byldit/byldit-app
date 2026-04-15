@@ -214,6 +214,8 @@ export default function BuildProfilePage() {
             onboarded: true,
             updated_at: new Date().toISOString(),
           })
+          // Explicit update to ensure onboarded is set
+          await supabase.from('profiles').update({ onboarded: true }).eq('id', user.id)
           // Save any vehicles that haven't been saved yet
           for (let i = 0; i < vehicles.length; i++) {
             const v = vehicles[i]
