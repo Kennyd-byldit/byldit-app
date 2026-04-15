@@ -277,6 +277,7 @@ export default function BuildProfilePage() {
   const [q1Visible, setQ1Visible] = useState(false)
   const [q2Visible, setQ2Visible] = useState(false)
   const [q3Visible, setQ3Visible] = useState(false)
+  const [step2Spoken, setStep2Spoken] = useState(false)
   const handleStart = () => {
     if (started) return
     setStarted(true)
@@ -437,6 +438,22 @@ export default function BuildProfilePage() {
     </div>
   )
 
+  // Walt speaks Step 2 intro when they arrive
+  useEffect(() => {
+    if (step === 5 && !step2Spoken && !isAddingFromGarage) {
+      setStep2Spoken(true)
+      setTimeout(() => {
+        speakWalt(
+          `Alright ${name}, let's build out your garage. Add everything you've got — project cars, daily drivers, dream builds. The more I know about your vehicles, the better I can help. We can always add more later.`,
+          muted,
+          undefined,
+          undefined,
+          setWaltLoading
+        )
+      }, 600)
+    }
+  }, [step])
+
   // ── STEP 2: WHAT'S IN YOUR GARAGE? ────────────────────────────────────────
   if (step === 5) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
@@ -446,7 +463,7 @@ export default function BuildProfilePage() {
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>{isAddingFromGarage ? 'Add a Vehicle' : 'What\u2019s in your garage?'}</p>
           {!isAddingFromGarage && <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 14 }}>Step 2 of 3</p>}
 
-          {!isAddingFromGarage && <WaltMsg text={<>What are you working on? <strong>Let&apos;s add your first vehicle.</strong></>} />}
+          {!isAddingFromGarage && <WaltMsg text={<>Alright {name}, let&apos;s build out your garage. Add everything you&apos;ve got — project cars, daily drivers, dream builds. <strong>The more I know about your vehicles, the better I can help.</strong></>} />}
 
           {/* Vehicle list */}
           {vehicles.map((v, i) => {
