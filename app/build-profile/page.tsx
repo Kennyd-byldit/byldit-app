@@ -9,6 +9,31 @@ const supabase = createClient(
 )
 
 // Walt TTS utility
+function getExpResponse(name: string, expList: string[]): string {
+  const hasBlindfolded = expList.some(e => e.includes('Blindfolded'))
+  const hasDoneBefore = expList.some(e => e.includes('Done this before'))
+  const hasBasics = expList.some(e => e.includes('Handle the basics'))
+  const hasJustStarting = expList.some(e => e.includes('Just getting started'))
+
+  let response = ''
+  if (hasBlindfolded) {
+    response = `Ha — a seasoned wrench, ${name}. I like it.`
+  } else if (hasDoneBefore && hasBasics) {
+    response = `Nice, ${name} — you've been around the block a few times. We'll keep moving at a good pace.`
+  } else if (hasDoneBefore) {
+    response = `Nice, ${name} — you've been around the block. I'll keep up with you.`
+  } else if (hasBasics && hasJustStarting) {
+    response = `Got it, ${name} — you know your way around a little, still learning. That's the sweet spot honestly.`
+  } else if (hasBasics) {
+    response = `Good, ${name} — sounds like you've got a foundation to work with. We'll build on that.`
+  } else if (hasJustStarting) {
+    response = `No worries, ${name} — everyone starts somewhere. I'll walk you through everything step by step.`
+  } else {
+    response = `Fair enough, ${name} — we'll figure it out as we go.`
+  }
+  return response + ` Now... got any specific projects in mind? Pick everything that applies — you can choose more than one.`
+}
+
 async function speakWalt(
   text: string,
   muted: boolean,
@@ -282,11 +307,12 @@ export default function BuildProfilePage() {
     }
   }, [nameCommitted])
 
-  // Walt speaks question 3 after exp committed
+  // Walt speaks question 3 after exp committed — smart response based on selections
   useEffect(() => {
     if (expCommitted) {
+      const response = getExpResponse(name, expList)
       speakWalt(
-        "Got it. So... what brings you to Build It? What are you working on?",
+        response,
         muted,
         () => setQ3Visible(true),
         undefined,
@@ -380,8 +406,7 @@ export default function BuildProfilePage() {
           {/* Reason — shows after exp committed */}
           {nameCommitted && expCommitted && (
             <>
-              {q3Visible && <WaltMsg text={<>Got it. So <strong>what brings you to Build It?</strong> What are you working on?</>} />}
-              <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 8, marginLeft: 2 }}>Select all that apply</p>
+              {q3Visible && <WaltMsg text={<>{getExpResponse(name, expList).split('Now...')[0].trim()} <strong>Got any specific projects in mind?</strong> Pick everything that applies — you can choose more than one.</>} />}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
                 {reasonOptions.map(o => {
                   const val = o.emoji + ' ' + o.label
