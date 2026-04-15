@@ -425,7 +425,6 @@ export default function BuildProfilePage() {
           {q1Visible && <div style={{ marginBottom: 20 }}>
             <input type="text" placeholder="Your first name" value={name} onChange={e => { setName(e.target.value); if (nameCommitted) setNameCommitted(false) }}
               onFocus={handleNameFocus}
-              onBlur={() => { if (name) setNameCommitted(true) }}
               onKeyDown={e => { if (e.key === 'Enter' && name) setNameCommitted(true) }}
               style={{ width: '100%', padding: '12px 16px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const }} />
             {name && !nameCommitted && (
