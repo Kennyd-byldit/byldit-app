@@ -9,22 +9,39 @@ const supabase = createClient(
 )
 
 // Walt TTS utility
-async function speakWalt(text: string, muted: boolean) {
-  if (muted || typeof window === 'undefined') return
+async function speakWalt(
+  text: string,
+  muted: boolean,
+  onStart?: () => void,
+  onEnd?: () => void,
+  setLoading?: (v: boolean) => void
+) {
+  if (typeof window === 'undefined') return
+  if (setLoading) setLoading(true)
+  if (muted) {
+    if (setLoading) setLoading(false)
+    if (onStart) onStart()
+    if (onEnd) onEnd()
+    return
+  }
   try {
     const res = await fetch('/api/walt-speak', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
     })
-    if (!res.ok) return
+    if (!res.ok) { if (setLoading) setLoading(false); return }
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
     const audio = new Audio(url)
+    if (setLoading) setLoading(false)
+    if (onStart) onStart()
     audio.play()
-    audio.onended = () => URL.revokeObjectURL(url)
+    audio.onended = () => { URL.revokeObjectURL(url); if (onEnd) onEnd() }
   } catch (e) {
     console.error('Walt TTS error:', e)
+    if (setLoading) setLoading(false)
+    if (onStart) onStart()
   }
 }
 
@@ -229,25 +246,51 @@ export default function BuildProfilePage() {
 
   // Walt speaks question 1 when user taps the name field (onFocus)
   const [q1Spoken, setQ1Spoken] = useState(false)
-  const handleNameFocus = () => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get("step") === "vehicles") return
-    if (q1Spoken) return
+  const [started, setStarted] = useState(false)
+  const [waltLoading, setWaltLoading] = useState(false)
+  const [q1Visible, setQ1Visible] = useState(false)
+  const [q2Visible, setQ2Visible] = useState(false)
+  const [q3Visible, setQ3Visible] = useState(false)
+  const handleStart = () => {
+    if (started) return
+    setStarted(true)
     setQ1Spoken(true)
-    speakWalt("Hey... welcome to Build It. I'm Walt. What's your name — or what would you like me to call you?", muted)
+    speakWalt(
+      "Hey... welcome to Build It. I'm Walt. What's your name — or what would you like me to call you?",
+      muted,
+      () => setQ1Visible(true),
+      undefined,
+      setWaltLoading
+    )
+  }
+
+  const handleNameFocus = () => {
+    // kept for compatibility but Start button now handles Q1
   }
 
   // Walt speaks question 2 after name committed
   useEffect(() => {
     if (nameCommitted && name) {
-      speakWalt(`Good to meet you, ${name}. Real quick... how much wrenching experience do you have? Pick everything that applies — you can choose more than one.`, muted)
+      speakWalt(
+        `Good to meet you, ${name}. Real quick... how much wrenching experience do you have? Pick everything that applies — you can choose more than one.`,
+        muted,
+        () => setQ2Visible(true),
+        undefined,
+        setWaltLoading
+      )
     }
   }, [nameCommitted])
 
   // Walt speaks question 3 after exp committed
   useEffect(() => {
     if (expCommitted) {
-      speakWalt("Got it. So... what brings you to Build It? What are you working on?", muted)
+      speakWalt(
+        "Got it. So... what brings you to Build It? What are you working on?",
+        muted,
+        () => setQ3Visible(true),
+        undefined,
+        setWaltLoading
+      )
     }
   }, [expCommitted])
 
@@ -259,9 +302,42 @@ export default function BuildProfilePage() {
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>Build Your Profile</p>
           <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 16 }}>Step 1 of 3</p>
 
+          {/* Start button — shown before user starts */}
+          {!started && (
+            <div style={{ textAlign: 'center', paddingTop: 20 }}>
+              <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 20px' }}>
+                <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--orange)' }}>
+                  <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+              </div>
+              <p style={{ fontSize: '0.9rem', color: 'var(--secondary-text)', marginBottom: 20 }}>Walt will walk you through setup.</p>
+              <button onClick={handleStart}
+                style={{ padding: '14px 32px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
+                Start Building My Profile →
+              </button>
+            </div>
+          )}
+
+          {/* Walt loading pulse */}
+          {waltLoading && (
+            <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{ position: 'relative', width: 28, height: 28, flexShrink: 0 }}>
+                <style>{`@keyframes wp{0%{transform:scale(1);opacity:.6}100%{transform:scale(2);opacity:0}}`}</style>
+                <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', border: '1.5px solid #e8750a', animation: 'wp 1.2s ease-out infinite' }} />
+                <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', border: '1.5px solid #e8750a', animation: 'wp 1.2s ease-out 0.4s infinite' }} />
+                <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--orange)' }}>
+                  <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+              </div>
+              <div style={{ background: 'var(--dark-blue)', borderRadius: 14, padding: '10px 14px' }}>
+                <span style={{ color: 'white', fontSize: '0.9rem' }}>...</span>
+              </div>
+            </div>
+          )}
+
           {/* Name */}
-          <WaltMsg text={<>Hey, welcome to BYLDit. I&apos;m Walt. <strong>What&apos;s your name</strong> — or what do you want me to call you?</>} />
-          <div style={{ marginBottom: 20 }}>
+          {q1Visible && <WaltMsg text={<>Hey, welcome to Build It. I&apos;m Walt. <strong>What&apos;s your name</strong> — or what do you want me to call you?</>} />}
+          {q1Visible && <div style={{ marginBottom: 20 }}>
             <input type="text" placeholder="Your first name" value={name} onChange={e => { setName(e.target.value); if (nameCommitted) setNameCommitted(false) }}
               onFocus={handleNameFocus}
               onBlur={() => { if (name) setNameCommitted(true) }}
@@ -272,12 +348,12 @@ export default function BuildProfilePage() {
                 That&apos;s me &#x2192;
               </button>
             )}
-          </div>
+          </div>}
 
           {/* Experience — shows after name committed */}
           {nameCommitted && (
             <>
-              <WaltMsg text={<>Good to meet you, {name}. Real quick — <strong>how much wrenching experience do you have?</strong> Pick everything that applies.</>} />
+              {q2Visible && <WaltMsg text={<>Good to meet you, {name}. Real quick — <strong>how much wrenching experience do you have?</strong> Pick everything that applies.</>} />}
               <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 8, marginLeft: 2 }}>Select all that apply</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
                 {expOptions.map(o => {
@@ -304,7 +380,7 @@ export default function BuildProfilePage() {
           {/* Reason — shows after exp committed */}
           {nameCommitted && expCommitted && (
             <>
-              <WaltMsg text={<>Got it. So <strong>what brings you to BYLDit?</strong> What are you working on?</>} />
+              {q3Visible && <WaltMsg text={<>Got it. So <strong>what brings you to Build It?</strong> What are you working on?</>} />}
               <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 8, marginLeft: 2 }}>Select all that apply</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
                 {reasonOptions.map(o => {
