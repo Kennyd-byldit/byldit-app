@@ -227,27 +227,27 @@ export default function BuildProfilePage() {
   const [expCommitted, setExpCommitted] = useState(false)
   const [reasonCommitted, setReasonCommitted] = useState(false)
 
-  // Walt speaks question 1 on page load (name)
-  useEffect(() => {
+  // Walt speaks question 1 when user taps the name field (onFocus)
+  const [q1Spoken, setQ1Spoken] = useState(false)
+  const handleNameFocus = () => {
     const params = new URLSearchParams(window.location.search)
     if (params.get("step") === "vehicles") return
-    const timer = setTimeout(() => {
-      speakWalt("Hey, welcome to Build It. I'm Walt. What's your name — or what do you want me to call you?", false)
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [])
+    if (q1Spoken) return
+    setQ1Spoken(true)
+    speakWalt("Hey... welcome to Build It. I'm Walt. What's your name — or what would you like me to call you?", muted)
+  }
 
   // Walt speaks question 2 after name committed
   useEffect(() => {
     if (nameCommitted && name) {
-      speakWalt(`Good to meet you, ${name}. Real quick — how much wrenching experience do you have? Pick everything that applies.`, muted)
+      speakWalt(`Good to meet you, ${name}. Real quick... how much wrenching experience do you have? Pick everything that applies — you can choose more than one.`, muted)
     }
   }, [nameCommitted])
 
   // Walt speaks question 3 after exp committed
   useEffect(() => {
     if (expCommitted) {
-      speakWalt("Got it. So what brings you to Build It? What are you working on?", muted)
+      speakWalt("Got it. So... what brings you to Build It? What are you working on?", muted)
     }
   }, [expCommitted])
 
@@ -263,6 +263,7 @@ export default function BuildProfilePage() {
           <WaltMsg text={<>Hey, welcome to BYLDit. I&apos;m Walt. <strong>What&apos;s your name</strong> — or what do you want me to call you?</>} />
           <div style={{ marginBottom: 20 }}>
             <input type="text" placeholder="Your first name" value={name} onChange={e => { setName(e.target.value); if (nameCommitted) setNameCommitted(false) }}
+              onFocus={handleNameFocus}
               onBlur={() => { if (name) setNameCommitted(true) }}
               onKeyDown={e => { if (e.key === 'Enter' && name) setNameCommitted(true) }}
               style={{ width: '100%', padding: '12px 16px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16, fontFamily: 'var(--font-nunito)', outline: 'none', boxSizing: 'border-box' as const }} />
