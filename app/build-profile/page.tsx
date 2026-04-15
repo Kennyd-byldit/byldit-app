@@ -8,6 +8,26 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+// Walt TTS utility
+async function speakWalt(text: string, muted: boolean) {
+  if (muted || typeof window === 'undefined') return
+  try {
+    const res = await fetch('/api/walt-speak', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    })
+    if (!res.ok) return
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const audio = new Audio(url)
+    audio.play()
+    audio.onended = () => URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('Walt TTS error:', e)
+  }
+}
+
 const WaltMsg = ({ text }: { text: React.ReactNode }) => (
   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
     <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--orange)', flexShrink: 0 }}>
@@ -57,6 +77,7 @@ export default function BuildProfilePage() {
   const [saving, setSaving] = useState(false)
   const [isAddingFromGarage, setIsAddingFromGarage] = useState(false)
   const [colorBlurred, setColorBlurred] = useState(false)
+  const [muted, setMuted] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -155,7 +176,10 @@ export default function BuildProfilePage() {
         <span style={{ fontFamily: 'var(--font-barlow)', fontSize: '1.8rem', fontWeight: 800, fontStyle: 'italic', color: 'white' }}>
           BYLD<span style={{ fontFamily: 'var(--font-nunito)', fontWeight: 300, fontStyle: 'normal', color: 'var(--light-blue)' }}>it</span>
         </span>
-        <div style={{ width: 32 }} />
+        <button onClick={() => setMuted(m => !m)}
+          style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.1rem', cursor: 'pointer', padding: '0 4px', width: 32 }}>
+          {muted ? '🔇' : '🔊'}
+        </button>
       </header>
     </>
   )
@@ -203,6 +227,30 @@ export default function BuildProfilePage() {
   const [expCommitted, setExpCommitted] = useState(false)
   const [reasonCommitted, setReasonCommitted] = useState(false)
 
+  // Walt speaks question 1 on page load (name)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("step") === "vehicles") return
+    const timer = setTimeout(() => {
+      speakWalt("Hey, welcome to BYLDit. I'm Walt. What's your name — or what do you want me to call you?", false)
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Walt speaks question 2 after name committed
+  useEffect(() => {
+    if (nameCommitted && name) {
+      speakWalt(`Good to meet you, ${name}. Real quick — how much wrenching experience do you have? Pick everything that applies.`, muted)
+    }
+  }, [nameCommitted])
+
+  // Walt speaks question 3 after exp committed
+  useEffect(() => {
+    if (expCommitted) {
+      speakWalt("Got it. So what brings you to BYLDit? What are you working on?", muted)
+    }
+  }, [expCommitted])
+
   if (step <= 4) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
       <AppHeader onBack={handleStepBack} />
@@ -212,7 +260,7 @@ export default function BuildProfilePage() {
           <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 16 }}>Step 1 of 3</p>
 
           {/* Name */}
-          <WaltMsg text={<>Alright, let&apos;s get to know each other. <strong>What&apos;s your first name?</strong></>} />
+          <WaltMsg text={<>Hey, welcome to BYLDit. I&apos;m Walt. <strong>What&apos;s your name</strong> — or what do you want me to call you?</>} />
           <div style={{ marginBottom: 20 }}>
             <input type="text" placeholder="Your first name" value={name} onChange={e => { setName(e.target.value); if (nameCommitted) setNameCommitted(false) }}
               onBlur={() => { if (name) setNameCommitted(true) }}
@@ -228,7 +276,7 @@ export default function BuildProfilePage() {
           {/* Experience — shows after name committed */}
           {nameCommitted && (
             <>
-              <WaltMsg text={<>Good to meet you, {name}. <strong>How much experience do you have wrenching?</strong></>} />
+              <WaltMsg text={<>Good to meet you, {name}. Real quick — <strong>how much wrenching experience do you have?</strong> Pick everything that applies.</>} />
               <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 8, marginLeft: 2 }}>Select all that apply</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
                 {expOptions.map(o => {
@@ -255,7 +303,7 @@ export default function BuildProfilePage() {
           {/* Reason — shows after exp committed */}
           {nameCommitted && expCommitted && (
             <>
-              <WaltMsg text={<>Nice &#x2014; solid starting point. <strong>What brings you to BYLDit.ai?</strong></>} />
+              <WaltMsg text={<>Got it. So <strong>what brings you to BYLDit?</strong> What are you working on?</>} />
               <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginBottom: 8, marginLeft: 2 }}>Select all that apply</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
                 {reasonOptions.map(o => {
