@@ -293,10 +293,26 @@ export default function BuildProfilePage() {
 
   // ── STEP 1 & OPTIONAL DETAILS ──────────────────────────────────────────────
   const handleStepBack = () => {
-    if (step <= 1) {
+    if (step === 5) {
+      // Back from Step 2 (vehicles) → go back to Step 1
+      setStep(4) // step 4 shows step 1 content
+    } else if (step <= 4 && nameCommitted) {
+      // Back within Step 1 conversation — undo last committed answer
+      if (expCommitted) {
+        setExpCommitted(false)
+        setQ3Visible(false)
+      } else if (nameCommitted) {
+        setNameCommitted(false)
+        setQ2Visible(false)
+        setQ1Spoken(false)
+      }
+    } else if (step <= 4 && started && !nameCommitted) {
+      // Back to the Start button
+      setStarted(false)
+      setQ1Visible(false)
+    } else if (!started) {
+      // Haven't started yet — go to Meet Walt
       window.location.replace('/meet-walt')
-    } else {
-      setStep(prev => prev - 1)
     }
   }
 
