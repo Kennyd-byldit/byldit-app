@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 const WALT_AVATAR = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
-const WALT_VOICE_ID = '2ID9HDeYYED4esAo37T7'
+const WALT_VOICE_ID = 'g3Z5pIW1TcQjt5JV10L3'
 
 const WALT_INTRO = "Hey. Name's Walt. I'm your build partner — think of me as the crew chief who actually answers the phone. Full restorations, quick mods, or just trying to figure out what broke... I'm your guy. Here's the deal — I'm always at the bottom of every screen. That little face down there? That's me. Tap it anytime — day or night. I don't sleep. Now let's get your garage set up. I've got questions."
 
