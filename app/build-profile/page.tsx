@@ -232,8 +232,8 @@ export default function BuildProfilePage() {
     const params = new URLSearchParams(window.location.search)
     if (params.get("step") === "vehicles") return
     const timer = setTimeout(() => {
-      speakWalt("Hey, welcome to BYLDit. I'm Walt. What's your name — or what do you want me to call you?", false)
-    }, 800)
+      speakWalt("Hey, welcome to Build It. I'm Walt. What's your name — or what do you want me to call you?", false)
+    }, 1500)
     return () => clearTimeout(timer)
   }, [])
 
@@ -247,7 +247,7 @@ export default function BuildProfilePage() {
   // Walt speaks question 3 after exp committed
   useEffect(() => {
     if (expCommitted) {
-      speakWalt("Got it. So what brings you to BYLDit? What are you working on?", muted)
+      speakWalt("Got it. So what brings you to Build It? What are you working on?", muted)
     }
   }, [expCommitted])
 
