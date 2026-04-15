@@ -465,7 +465,7 @@ export default function BuildProfilePage() {
           {/* Reason — shows after exp committed */}
           {nameCommitted && expCommitted && (
             <>
-              {q3Visible && <WaltMsg text={<>{getExpResponse(name, expList).split('Now...')[0].trim()} <strong>Got any specific projects in mind?</strong> Pick everything that applies — you can choose more than one.</>} />}
+              {q3Visible && <WaltMsg text={<>Got it, {name}. <strong>Got any specific projects in mind?</strong> Pick everything that applies — you can choose more than one.</>} />}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
                 {reasonOptions.map(o => {
                   const val = o.emoji + ' ' + o.label
