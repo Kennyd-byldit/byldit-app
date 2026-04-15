@@ -157,11 +157,21 @@ export default function BuildProfilePage() {
 
   const saveToSupabaseAndRedirect = async (destination: 'garage' | 'workspace') => {
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) { console.error('Auth error:', authError); setSaving(false); return }
+      if (!user) { console.error('No user'); setSaving(false); return }
+      
+      // Save profile first
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: user.id, name, experience: expList.join(', '), reason: reasonList.join(', '),
+        onboarded: true, updated_at: new Date().toISOString(),
+      })
+      if (profileError) console.error('Profile save error:', profileError)
+
       for (let i = 0; i < vehicles.length; i++) {
         const v = vehicles[i]
-        await supabase.from("vehicles").insert({
+        const { error: vError } = await supabase.from("vehicles").insert({
           user_id: user.id,
           year: parseInt(v.year),
           make: v.make,
@@ -180,7 +190,7 @@ export default function BuildProfilePage() {
           type: "build",
         })
       }
-    }
+    } catch(e) { console.error('Save error:', e) }
     if (destination === 'garage') {
       window.location.replace("/garage")
     } else {
