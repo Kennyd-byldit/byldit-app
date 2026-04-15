@@ -191,15 +191,45 @@ export default function BuildProfilePage() {
 
   const handleFinish = async () => {
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      // Save profile (skip when adding from garage to avoid overwriting existing data)
-      if (!isAddingFromGarage) {
-        await supabase.from('profiles').upsert({
-          id: user.id, name, experience: expList.join(', '), reason: reasonList.join(', '),
-          onboarded: true, updated_at: new Date().toISOString(),
-        })
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        if (!isAddingFromGarage) {
+          // Save profile with onboarded = true
+          await supabase.from('profiles').upsert({
+            id: user.id,
+            name,
+            experience: expList.join(', '),
+            reason: reasonList.join(', '),
+            onboarded: true,
+            updated_at: new Date().toISOString(),
+          })
+          // Save any vehicles that haven't been saved yet
+          for (let i = 0; i < vehicles.length; i++) {
+            const v = vehicles[i]
+            await supabase.from('vehicles').insert({
+              user_id: user.id,
+              year: parseInt(v.year),
+              make: v.make,
+              model: v.model,
+              nickname: v.nickname || `${v.year} ${v.make} ${v.model}`,
+              color: v.color || null,
+              engine: v.engine || null,
+              transmission: v.transmission || null,
+              drivetrain: v.drivetrain || null,
+              fuel_type: v.fuel_type || null,
+              mileage: v.mileage ? parseInt(v.mileage) : null,
+              condition: v.condition || null,
+              title_status: v.title_status || null,
+              notes: v.notes || null,
+              is_primary: i === 0,
+              type: 'build',
+            })
+          }
+        }
       }
+    } catch (e) {
+      console.error('handleFinish error:', e)
     }
     window.location.replace('/garage')
   }
