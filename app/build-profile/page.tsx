@@ -46,7 +46,8 @@ async function speakWalt(
 }
 
 const WaltMsg = ({ text }: { text: React.ReactNode }) => (
-  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12, animation: 'fadeInUp 0.4s ease-out', opacity: 1 }}>
+    <style>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
     <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--orange)', flexShrink: 0 }}>
       <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
     </div>
@@ -304,15 +305,14 @@ export default function BuildProfilePage() {
 
           {/* Start button — shown before user starts */}
           {!started && (
-            <div style={{ textAlign: 'center', paddingTop: 20 }}>
-              <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 20px' }}>
-                <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--orange)' }}>
-                  <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
+            <div style={{ background: 'var(--dark-blue)', borderRadius: 16, padding: '24px 20px', textAlign: 'center', marginBottom: 16, boxShadow: '0 4px 16px rgba(36,80,122,0.2)' }}>
+              <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--orange)', margin: '0 auto 14px', boxShadow: '0 4px 15px rgba(232,117,10,0.3)' }}>
+                <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-              <p style={{ fontSize: '0.9rem', color: 'var(--secondary-text)', marginBottom: 20 }}>Walt will walk you through setup.</p>
+              <p style={{ fontSize: '0.85rem', color: 'white', fontWeight: 700, marginBottom: 4 }}>Walt will walk you through setup.</p>
+              <p style={{ fontSize: '0.7rem', color: 'var(--light-blue)', marginBottom: 20 }}>Just answer a few quick questions.</p>
               <button onClick={handleStart}
-                style={{ padding: '14px 32px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
+                style={{ padding: '13px 28px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
                 Start Building My Profile →
               </button>
             </div>
