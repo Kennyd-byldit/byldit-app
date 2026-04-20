@@ -280,7 +280,7 @@ export default function GaragePage() {
               </div>
 
               {/* 7. Add to My Garage */}
-              <div onClick={() => window.location.href = "/build-profile?step=vehicles"} style={{ border: '2px dashed var(--light-blue)', borderRadius: 25, padding: '11px', textAlign: 'center', cursor: 'pointer' }}>
+              <div onClick={() => window.location.href = "/add-vehicle"} style={{ border: '2px dashed var(--light-blue)', borderRadius: 25, padding: '11px', textAlign: 'center', cursor: 'pointer' }}>
                 <span style={{ color: 'var(--light-blue)', fontWeight: 700, fontSize: '0.9rem' }}>+ Add to My Garage</span>
               </div>
             </>
