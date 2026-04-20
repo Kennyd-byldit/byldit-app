@@ -121,6 +121,16 @@ export default function BuildProfilePage() {
   const [isAddingFromGarage, setIsAddingFromGarage] = useState(false)
   const [colorBlurred, setColorBlurred] = useState(false)
   const [muted, setMuted] = useState(false)
+  const [nameCommitted, setNameCommitted] = useState(false)
+  const [expCommitted, setExpCommitted] = useState(false)
+  const [reasonCommitted, setReasonCommitted] = useState(false)
+  const [q1Spoken, setQ1Spoken] = useState(false)
+  const [started, setStarted] = useState(false)
+  const [waltLoading, setWaltLoading] = useState(false)
+  const [q1Visible, setQ1Visible] = useState(false)
+  const [q2Visible, setQ2Visible] = useState(false)
+  const [q3Visible, setQ3Visible] = useState(false)
+  const [step2Spoken, setStep2Spoken] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -324,18 +334,6 @@ export default function BuildProfilePage() {
   const toggleReason = (val: string) => {
     setReasonList(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val])
   }
-  const [nameCommitted, setNameCommitted] = useState(false)
-  const [expCommitted, setExpCommitted] = useState(false)
-  const [reasonCommitted, setReasonCommitted] = useState(false)
-
-  // Walt speaks question 1 when user taps the name field (onFocus)
-  const [q1Spoken, setQ1Spoken] = useState(false)
-  const [started, setStarted] = useState(false)
-  const [waltLoading, setWaltLoading] = useState(false)
-  const [q1Visible, setQ1Visible] = useState(false)
-  const [q2Visible, setQ2Visible] = useState(false)
-  const [q3Visible, setQ3Visible] = useState(false)
-  const [step2Spoken, setStep2Spoken] = useState(false)
   const handleStart = () => {
     if (started) return
     setStarted(true)
