@@ -34,7 +34,7 @@ const WaltBar = () => (
   </div>
 )
 
-type Vehicle = { id: string, nickname: string, year: number, make: string, model: string, is_primary: boolean, color: string|null, engine: string|null, transmission: string|null, drivetrain: string|null, fuel_type: string|null, mileage: number|null, condition: string|null }
+type Vehicle = { id: string, nickname: string, year: number, make: string, model: string, is_primary: boolean, color: string|null, engine: string|null, transmission: string|null, drivetrain: string|null, fuel_type: string|null, mileage: number|null, condition: string|null, cover_photo_url: string|null }
 
 const getCompletion = (v: Vehicle) => {
   const fields = [v.color, v.engine, v.transmission, v.drivetrain, v.fuel_type, v.mileage, v.condition]
@@ -43,7 +43,7 @@ const getCompletion = (v: Vehicle) => {
 }
 
 const getVehiclePhoto = (vehicle: Vehicle): string => {
-  const make = vehicle.make?.toLowerCase() || ""
+  if (vehicle.cover_photo_url) return vehicle.cover_photo_url
   const model = vehicle.model?.toLowerCase() || ""
   if (model.includes("ranger")) return "/photos/ranger-2025.jpg"
   if (model.includes("f250") || model.includes("f-250")) return "/photos/f250-hiboy-68.jpg"
@@ -74,7 +74,7 @@ export default function GaragePage() {
 
       const [{ data: profile }, { data: vehicleData }, { data: projects }] = await Promise.all([
         supabase.from('profiles').select('name').eq('id', user.id).single(),
-        supabase.from('vehicles').select('id, nickname, year, make, model, is_primary, color, engine, transmission, drivetrain, fuel_type, mileage, condition').eq('user_id', user.id).order('is_primary', { ascending: false }),
+        supabase.from('vehicles').select('id, nickname, year, make, model, is_primary, color, engine, transmission, drivetrain, fuel_type, mileage, condition, cover_photo_url').eq('user_id', user.id).order('is_primary', { ascending: false }),
         supabase.from('projects').select('id').eq('user_id', user.id).eq('status', 'active').limit(1),
       ])
 
@@ -234,7 +234,14 @@ export default function GaragePage() {
                     style={{ background: 'white', borderRadius: 14, marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer', overflow: 'hidden' }}
                   >
                     <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center' }}>
-                      <img src={getVehiclePhoto(v)} alt={v.nickname || v.make} style={{ width: 110, height: 70, objectFit: 'cover', objectPosition: 'center', borderRadius: '10px', flexShrink: 0 }} />
+                      <div style={{ width: 110, height: 70, borderRadius: '10px', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+                        <img src={getVehiclePhoto(v)} alt={v.nickname || v.make} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
+                        {!v.cover_photo_url && (
+                          <div style={{ position: 'absolute', bottom: 3, left: 0, right: 0, textAlign: 'center' }}>
+                            <span style={{ fontSize: '0.55rem', color: 'white', background: 'rgba(0,0,0,0.5)', borderRadius: 8, padding: '1px 5px' }}>📷 Add photo</span>
+                          </div>
+                        )}
+                      </div>
                       <div style={{ flex: 1, padding: '10px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                         <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {v.nickname || `${v.year} ${v.make} ${v.model}`}

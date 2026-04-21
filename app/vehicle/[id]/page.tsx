@@ -51,7 +51,7 @@ export default function VehicleDetailPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.replace('/login'); return }
       const { data } = await supabase.from('vehicles')
-        .select('id, nickname, year, make, model, color, engine, fuel_type, transmission, drivetrain, mileage, condition, title_status, notes, is_primary')
+        .select('id, nickname, year, make, model, color, engine, fuel_type, transmission, drivetrain, mileage, condition, title_status, notes, is_primary, cover_photo_url')
         .eq('id', params.id as string).eq('user_id', user.id).single()
       if (!data) { window.location.replace('/garage'); return }
       setVehicle(data)
@@ -73,6 +73,20 @@ export default function VehicleDetailPage() {
     setVehicle(prev => prev ? { ...prev, [field]: field === 'mileage' && value ? parseInt(value) : value } as Vehicle : prev)
     setEditingField(null)
     setSaving(false)
+    setSavedMsg(true)
+    setTimeout(() => setSavedMsg(false), 2000)
+  }
+
+  const uploadPhoto = async (file: File) => {
+    if (!vehicle) return
+    const ext = file.name.split('.').pop()
+    const path = `vehicles/${vehicle.id}.${ext}`
+    const { error: uploadError } = await supabase.storage.from('photos').upload(path, file, { upsert: true })
+    if (uploadError) { console.error('Upload error:', uploadError); return }
+    const { data } = supabase.storage.from('photos').getPublicUrl(path)
+    const publicUrl = data.publicUrl
+    await supabase.from('vehicles').update({ cover_photo_url: publicUrl }).eq('id', vehicle.id)
+    setVehicle(prev => prev ? { ...prev, cover_photo_url: publicUrl } as any : prev)
     setSavedMsg(true)
     setTimeout(() => setSavedMsg(false), 2000)
   }
@@ -126,14 +140,23 @@ export default function VehicleDetailPage() {
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '12px 14px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
 
-          <div style={{ height: 180, borderRadius: 16, overflow: 'hidden', position: 'relative', marginBottom: 16, boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
-            <img src={getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
-              <p style={{ color: 'white', fontWeight: 800, fontSize: '1.2rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-              </p>
+          <label style={{ display: 'block', cursor: 'pointer', marginBottom: 16 }}>
+            <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+              onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f) }} />
+            <div style={{ height: 180, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
+              <img src={(vehicle as any).cover_photo_url || getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
+                <p style={{ color: 'white', fontWeight: 800, fontSize: '1.2rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+                  {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                </p>
+              </div>
+              <div style={{ position: 'absolute', top: 10, right: 12, background: 'rgba(0,0,0,0.5)', borderRadius: 20, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: '0.8rem' }}>📷</span>
+                <span style={{ fontSize: '0.75rem', color: 'white', fontWeight: 700 }}>{(vehicle as any).cover_photo_url ? 'Change photo' : 'Add a photo'}</span>
+              </div>
             </div>
-          </div>
+          </label>
 
           {savedMsg && (
             <div style={{ background: '#4da8da', color: 'white', borderRadius: 10, padding: '8px 16px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 700, marginBottom: 12 }}>Saved ✓</div>
