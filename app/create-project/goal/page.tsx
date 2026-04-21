@@ -113,7 +113,7 @@ function CreateProjectGoalContent() {
   const handleContinue = () => {
     if (selected.length === 0) return
     const goals = encodeURIComponent(selected.join(','))
-    window.location.href = `/create-project/condition?vehicle=${vehicleId}&goals=${goals}`
+    window.location.href = `/create-project/work?vehicle=${vehicleId}&goals=${goals}&condition=`
   }
 
   if (loading) return (
