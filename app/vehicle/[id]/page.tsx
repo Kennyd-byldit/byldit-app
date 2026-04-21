@@ -79,11 +79,13 @@ export default function VehicleDetailPage() {
 
   const uploadPhoto = async (file: File) => {
     if (!vehicle) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
     const ext = file.name.split('.').pop()
-    const path = `vehicles/${vehicle.id}.${ext}`
-    const { error: uploadError } = await supabase.storage.from('photos').upload(path, file, { upsert: true })
+    const filePath = `${user.id}/${vehicle.id}.${ext}`
+    const { error: uploadError } = await supabase.storage.from('photos').upload(filePath, file, { upsert: true })
     if (uploadError) { console.error('Upload error:', uploadError); return }
-    const { data } = supabase.storage.from('photos').getPublicUrl(path)
+    const { data } = supabase.storage.from('photos').getPublicUrl(filePath)
     const publicUrl = data.publicUrl
     await supabase.from('vehicles').update({ cover_photo_url: publicUrl }).eq('id', vehicle.id)
     setVehicle(prev => prev ? { ...prev, cover_photo_url: publicUrl } as any : prev)
