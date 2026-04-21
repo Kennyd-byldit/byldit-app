@@ -137,19 +137,17 @@ function CreateProjectGoalContent() {
         <div style={{ width: 48 }} />
       </header>
 
-      {/* Pinned vehicle card — outside scroll area */}
-      <div style={{ background: 'white', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-        <div style={{ maxWidth: 480, margin: '0 auto', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}>
-            <img src={getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
-          </div>
-          <div>
-            <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--dark-blue)', marginBottom: 1 }}>
-              {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-            </p>
-            <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)' }}>{vehicle.year} {vehicle.make} {vehicle.model}</p>
-          </div>
+      {/* Pinned hero photo — outside scroll area */}
+      <div style={{ height: 160, position: 'relative', flexShrink: 0, overflow: 'hidden' }}>
+        <img src={getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 16px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
+          <p style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
+            {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+          </p>
+          <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.65rem', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2 }}>
+            {vehicle.year} {vehicle.make} {vehicle.model}
+          </p>
         </div>
       </div>
 
