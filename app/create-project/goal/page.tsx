@@ -9,21 +9,27 @@ const supabase = createClient(
 )
 const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 
-const PROJECT_TYPES = [
-  'Full Restoration',
-  'Partial Restoration',
-  'Restomod',
-  'Engine Swap',
-  'Suspension & Lift',
-  'Body & Paint',
-  'Interior',
-  'Electrical',
-  'Wheels & Tires',
-  'Audio & Stereo',
-  'Performance & Tuning',
-  'Diagnostics',
-  'Maintenance',
-  'Custom / Other',
+const PROJECT_GROUPS = [
+  {
+    label: 'Restoration',
+    types: ['Full Restoration', 'Partial Restoration', 'Restomod'],
+  },
+  {
+    label: 'Performance & Mods',
+    types: ['Engine Swap', 'Suspension & Lift', 'Performance & Tuning', 'Wheels & Tires'],
+  },
+  {
+    label: 'Appearance',
+    types: ['Body & Paint', 'Interior', 'Audio & Stereo'],
+  },
+  {
+    label: 'Maintenance & Service',
+    types: ['Maintenance', 'Diagnostics', 'Electrical'],
+  },
+  {
+    label: 'Other',
+    types: ['Custom / Other'],
+  },
 ]
 
 type Vehicle = {
@@ -102,6 +108,8 @@ function CreateProjectGoalContent() {
   const toggle = (type: string) =>
     setSelected(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])
 
+  const allTypes = PROJECT_GROUPS.flatMap(g => g.types)
+
   const handleContinue = () => {
     if (selected.length === 0) return
     const goals = encodeURIComponent(selected.join(','))
@@ -160,30 +168,35 @@ function CreateProjectGoalContent() {
           <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>What&apos;s the goal?</p>
           <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', marginBottom: 16 }}>Select all that apply</p>
 
-          {/* 14 project type tiles */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
-            {PROJECT_TYPES.map(type => {
-              const isSelected = selected.includes(type)
-              return (
-                <div key={type} onClick={() => toggle(type)}
-                  style={{
-                    background: isSelected ? '#4da8da' : 'white',
-                    border: `1.5px solid ${isSelected ? '#4da8da' : 'var(--border)'}`,
-                    borderRadius: 12,
-                    padding: '14px 12px',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    color: isSelected ? 'white' : 'var(--dark-blue)',
-                    transition: 'all 0.15s',
-                    lineHeight: 1.3,
-                  }}>
-                  {type}
-                </div>
-              )
-            })}
-          </div>
+          {/* Grouped project type tiles */}
+          {PROJECT_GROUPS.map(group => (
+            <div key={group.label} style={{ marginBottom: 20 }}>
+              <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 8 }}>{group.label}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {group.types.map(type => {
+                  const isSelected = selected.includes(type)
+                  return (
+                    <div key={type} onClick={() => toggle(type)}
+                      style={{
+                        background: isSelected ? '#4da8da' : 'white',
+                        border: `1.5px solid ${isSelected ? '#4da8da' : 'var(--border)'}`,
+                        borderRadius: 12,
+                        padding: '14px 12px',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        color: isSelected ? 'white' : 'var(--dark-blue)',
+                        lineHeight: 1.3,
+                      }}>
+                      {type}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+          <div style={{ marginBottom: 8 }} />
 
           {/* Continue button */}
           <button onClick={handleContinue} disabled={selected.length === 0}
