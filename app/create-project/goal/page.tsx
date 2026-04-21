@@ -138,9 +138,10 @@ function CreateProjectGoalContent() {
       </header>
 
       {/* Pinned hero photo — outside scroll area */}
-      <div style={{ height: 160, position: 'relative', flexShrink: 0, overflow: 'hidden' }}>
-        <img src={getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
+      <div style={{ padding: '12px 14px 0', flexShrink: 0 }}>
+        <div style={{ height: 160, position: 'relative', overflow: 'hidden', borderRadius: 16, boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
+          <img src={getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 16px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
           <p style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
             {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
@@ -148,6 +149,7 @@ function CreateProjectGoalContent() {
           <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.65rem', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2 }}>
             {vehicle.year} {vehicle.make} {vehicle.model}
           </p>
+        </div>
         </div>
       </div>
 
