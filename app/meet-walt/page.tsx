@@ -46,11 +46,14 @@ export default function MeetWaltPage() {
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = new Audio(url)
+      a.onended = () => { setPlaying(false); URL.revokeObjectURL(url) }
       setAudio(a)
       setLoading(false)
       setPlaying(true)
-      a.play()
-      a.onended = () => { setPlaying(false); URL.revokeObjectURL(url) }
+      a.play().catch(e => {
+        console.error('Playback failed:', e)
+        setPlaying(false)
+      })
     } catch (e) {
       console.error(e)
       setLoading(false)
