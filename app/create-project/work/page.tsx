@@ -9,14 +9,11 @@ const supabase = createClient(
 )
 const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 
-const CONDITIONS = [
-  'Running & driving',
-  'Runs but needs love',
-  'Not running',
-  'Mid-build',
-  'Stored',
-  'Maintenance / service',
-]
+const GOAL_SUB_OPTIONS: Record<string, string[]> = {
+  'Maintenance': ['Oil change', 'Tire rotation', 'Brakes', 'Filters', 'Fluids', 'Tune-up'],
+  'Body & Paint': ['Full repaint', 'Touch-up / spot repair', 'Rust repair', 'Body panel replacement', 'Prep & primer', 'Vinyl wrap'],
+  'Engine Swap': ['Complete swap', 'Engine rebuild', 'Top end only', 'Bottom end only', 'Forced induction', 'Other'],
+}
 
 type Vehicle = {
   id: string
@@ -65,14 +62,18 @@ const WaltBar = () => (
   </div>
 )
 
-function ConditionContent() {
+function WorkContent() {
   const searchParams = useSearchParams()
   const vehicleId = searchParams.get('vehicle') || ''
-  const goals = searchParams.get('goals') || ''
+  const goals = decodeURIComponent(searchParams.get('goals') || '')
+  const condition = searchParams.get('condition') || ''
+
+  const goalList = goals.split(',').filter(Boolean)
 
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<string[]>([])
+  const [notes, setNotes] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -92,13 +93,21 @@ function ConditionContent() {
     load()
   }, [vehicleId])
 
-  const toggle = (c: string) =>
-    setSelected(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])
+  const toggle = (item: string) =>
+    setSelected(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item])
 
-  const handleContinue = (skip = false) => {
-    const condition = skip ? '' : encodeURIComponent(selected.join(','))
-    window.location.href = `/create-project/work?vehicle=${vehicleId}&goals=${goals}&condition=${condition}`
+  const canContinue = selected.length > 0 || notes.trim().length > 0
+
+  const handleContinue = () => {
+    const work = encodeURIComponent(selected.join(','))
+    const notesEnc = encodeURIComponent(notes.trim())
+    window.location.href = `/create-project/name?vehicle=${vehicleId}&goals=${encodeURIComponent(goals)}&condition=${condition}&work=${work}&notes=${notesEnc}`
   }
+
+  // Goals that have sub-options defined
+  const goalsWithOptions = goalList.filter(g => GOAL_SUB_OPTIONS[g])
+  // Goals without sub-options yet — will just show in text prompt
+  const goalsWithoutOptions = goalList.filter(g => !GOAL_SUB_OPTIONS[g])
 
   if (loading) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
@@ -119,7 +128,7 @@ function ConditionContent() {
 
       {/* Header */}
       <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <button onClick={() => window.location.href = `/create-project/goal?vehicle=${vehicleId}`}
+        <button onClick={() => window.location.href = `/create-project/condition?vehicle=${vehicleId}&goals=${encodeURIComponent(goals)}`}
           style={{ background: 'none', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-nunito)', display: 'flex', alignItems: 'center', gap: 4 }}>
           ← Back
         </button>
@@ -134,14 +143,14 @@ function ConditionContent() {
         <div style={{ height: 160, position: 'relative', overflow: 'hidden', borderRadius: 16, boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
           <img src={getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make}
             style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 16px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
-          <p style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
-            {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-          </p>
-          <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.65rem', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2 }}>
-            {vehicle.year} {vehicle.make} {vehicle.model}
-          </p>
-        </div>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 16px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
+            <p style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
+              {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+            </p>
+            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.65rem', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2 }}>
+              {vehicle.year} {vehicle.make} {vehicle.model}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -149,43 +158,77 @@ function ConditionContent() {
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
 
-          <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>What are we working with?</p>
+          <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>What needs to be done?</p>
           <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', marginBottom: 16 }}>Select all that apply</p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
-            {CONDITIONS.map(c => {
-              const isSelected = selected.includes(c)
-              return (
-                <div key={c} onClick={() => toggle(c)}
-                  style={{
-                    background: isSelected ? '#4da8da' : 'white',
-                    border: `1.5px solid ${isSelected ? '#4da8da' : 'var(--border)'}`,
-                    borderRadius: 12,
-                    padding: '14px 12px',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    color: isSelected ? 'white' : 'var(--dark-blue)',
-                    lineHeight: 1.3,
-                  }}>
-                  {c}
-                </div>
-              )
-            })}
+          {/* Sections for goals with defined sub-options */}
+          {goalsWithOptions.map(goal => (
+            <div key={goal} style={{ marginBottom: 20 }}>
+              <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 8 }}>{goal}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {GOAL_SUB_OPTIONS[goal].map(item => {
+                  const isSelected = selected.includes(item)
+                  return (
+                    <div key={item} onClick={() => toggle(item)}
+                      style={{
+                        background: isSelected ? '#4da8da' : 'white',
+                        border: `1.5px solid ${isSelected ? '#4da8da' : 'var(--border)'}`,
+                        borderRadius: 12,
+                        padding: '14px 12px',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        color: isSelected ? 'white' : 'var(--dark-blue)',
+                        lineHeight: 1.3,
+                      }}>
+                      {item}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+
+          {/* Walt tip card */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12, background: 'var(--dark-blue)', borderRadius: 14, padding: '12px 14px' }}>
+            <img src={WALT} alt="Walt" style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #e8750a', flexShrink: 0 }} />
+            <p style={{ fontSize: '0.85rem', color: 'white', margin: 0, lineHeight: 1.5 }}>
+              The more you tell me, the better your plan will be. Don&apos;t hold back — mileage, symptoms, what you&apos;ve already tried, parts you have on hand. I&apos;ll use all of it.
+            </p>
           </div>
 
-          {/* Skip / Continue */}
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={() => handleContinue(true)}
-              style={{ flex: 1, padding: '13px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>
-              Skip
-            </button>
-            <button onClick={() => handleContinue(false)} disabled={selected.length === 0}
-              style={{ flex: 2, padding: '13px', background: selected.length > 0 ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', cursor: selected.length > 0 ? 'pointer' : 'not-allowed', boxShadow: selected.length > 0 ? '0 6px 20px rgba(232,117,10,0.3)' : 'none' }}>
-              Continue →
-            </button>
+          {/* Free text field */}
+          <div style={{ marginBottom: 24 }}>
+            <textarea
+              placeholder={goalsWithoutOptions.length > 0
+                ? `Describe what needs to be done for: ${goalsWithoutOptions.join(', ')}. Add any other details Walt should know...`
+                : "Add any other details — symptoms, parts on hand, what you've already tried..."}
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              rows={4}
+              style={{
+                width: '100%', padding: '12px 14px', background: 'white',
+                border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 16,
+                fontFamily: 'var(--font-nunito)', outline: 'none',
+                boxSizing: 'border-box' as const, resize: 'vertical' as const,
+                color: 'var(--dark-blue)'
+              }}
+            />
           </div>
+
+          {/* Continue button */}
+          <button onClick={handleContinue} disabled={!canContinue}
+            style={{
+              width: '100%', padding: '14px',
+              background: canContinue ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb',
+              borderRadius: 25, border: 'none', color: 'white',
+              fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)',
+              cursor: canContinue ? 'pointer' : 'not-allowed',
+              boxShadow: canContinue ? '0 6px 20px rgba(232,117,10,0.3)' : 'none',
+            }}>
+            Continue →
+          </button>
 
         </div>
       </main>
@@ -196,10 +239,10 @@ function ConditionContent() {
   )
 }
 
-export default function ConditionPage() {
+export default function WorkPage() {
   return (
     <Suspense fallback={<div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}><p style={{ color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)' }}>Loading...</p></div>}>
-      <ConditionContent />
+      <WorkContent />
     </Suspense>
   )
 }
