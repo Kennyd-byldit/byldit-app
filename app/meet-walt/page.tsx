@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 const WALT_AVATAR = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 const WALT_VOICE_ID = 'g3Z5pIW1TcQjt5JV10L3'
 
-const WALT_INTRO = "Hey. Name's Walt. I'm your build partner — think of me as the crew chief who actually answers the phone. Full restorations, quick mods, or just trying to figure out what broke... I'm your guy. Here's the deal — I'm always at the bottom of every screen. That little face down there? That's me. Tap it anytime — day or night. I don't sleep. Now let's get your garage set up. I've got questions."
+const WALT_INTRO = "Hey there. Name's Walt. Spent my whole life around cars — starting when I was a kid helping my old man in his shop. Then I spent the past 35 years turning wrenches in my own shop outside of Nashville. Seen everything from oil changes to ground-up restorations. Retired the shop, not the knowledge. Now I'm here at Build It, helping folks like you tackle any project you've got and get it done right. Take a few minutes and build out your profile — the more you tell me about yourself and the cars you have or dream of having, the more I can help. Once you land on your garage, you'll see my face at the bottom of every screen. Tap it anytime you've got a question or an idea. I'll always be here. Can't wait to see what you've got."
 
 const capabilities = [
   'Plan your build',
