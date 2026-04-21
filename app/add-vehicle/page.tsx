@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -28,6 +28,14 @@ export default function AddVehiclePage() {
     mileage: '', condition: '', title_status: '', notes: ''
   })
   const [saving, setSaving] = useState(false)
+  const [fromCreateProject, setFromCreateProject] = useState(false)
+  const [isDream, setIsDream] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('from') === 'create-project') setFromCreateProject(true)
+    if (params.get('type') === 'dream') setIsDream(true)
+  }, [])
   const [error, setError] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
   const [uploading, setUploading] = useState(false)
@@ -97,7 +105,14 @@ export default function AddVehiclePage() {
         return
       }
 
-      window.location.replace('/garage')
+      if (fromCreateProject) {
+        // Pass the new vehicle id to create-project goal screen
+        const { data: newVehicles } = await supabase.from('vehicles').select('id').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1)
+        const newId = newVehicles?.[0]?.id
+        window.location.replace(newId ? `/create-project/goal?vehicle=${newId}` : '/create-project')
+      } else {
+        window.location.replace('/garage')
+      }
     } catch (e) {
       setError('Something went wrong. Try again.')
       setSaving(false)
@@ -253,7 +268,7 @@ export default function AddVehiclePage() {
               fontFamily: 'var(--font-nunito)', cursor: vehicle.year && vehicle.make && vehicle.model ? 'pointer' : 'not-allowed',
               boxShadow: vehicle.year && vehicle.make && vehicle.model ? '0 6px 20px rgba(232,117,10,0.3)' : 'none'
             }}>
-            {saving ? 'Saving...' : 'Add to My Garage →'}
+            {saving ? 'Saving...' : fromCreateProject ? 'Add to garage & start my build →' : 'Add to My Garage →'}
           </button>
         </div>
       </main>
