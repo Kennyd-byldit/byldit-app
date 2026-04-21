@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
@@ -73,7 +73,7 @@ const WaltBar = () => (
   </div>
 )
 
-export default function CreateProjectGoalPage() {
+function CreateProjectGoalContent() {
   const searchParams = useSearchParams()
   const vehicleId = searchParams.get('vehicle') || ''
 
@@ -209,5 +209,12 @@ export default function CreateProjectGoalPage() {
       <WaltBar />
       <NavBar />
     </div>
+  )
+}
+export default function CreateProjectGoalPage() {
+  return (
+    <Suspense fallback={<div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}><p style={{ color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)' }}>Loading...</p></div>}>
+      <CreateProjectGoalContent />
+    </Suspense>
   )
 }
