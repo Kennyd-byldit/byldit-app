@@ -203,7 +203,7 @@ export default function GaragePage() {
                   </>
                 ) : (
                   <>
-                    <p style={{ color: 'white', fontWeight: 700, fontSize: '0.95rem' }}>Start a Build →</p>
+                    <p style={{ color: 'white', fontWeight: 700, fontSize: '0.95rem' }}>Create a New Project →</p>
                     <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.7rem', marginTop: 2 }}>Create your first project</p>
                   </>
                 )}
