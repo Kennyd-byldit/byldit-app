@@ -24,10 +24,7 @@ export default function MeetWaltPage() {
   }, [])
 
   const playWalt = async () => {
-    // If loading, ignore tap
     if (loading) return
-
-    // If playing, stop
     if (playing && audio) {
       audio.pause()
       audio.currentTime = 0
@@ -37,16 +34,31 @@ export default function MeetWaltPage() {
 
     setLoading(true)
     try {
-      const res = await fetch('/api/walt-speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: WALT_INTRO }),
-      })
-      if (!res.ok) throw new Error('TTS failed')
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = new Audio(url)
-      a.onended = () => { setPlaying(false); URL.revokeObjectURL(url) }
+      // Try cached audio first (instant), fall back to generating
+      let audioUrl: string | null = null
+
+      const cacheRes = await fetch('/api/walt-speak')
+      if (cacheRes.ok) {
+        const { url } = await cacheRes.json()
+        // Verify the cached file actually exists by doing a HEAD request
+        const headRes = await fetch(url, { method: 'HEAD' }).catch(() => null)
+        if (headRes?.ok) audioUrl = url
+      }
+
+      if (!audioUrl) {
+        // Generate fresh audio
+        const res = await fetch('/api/walt-speak', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: WALT_INTRO }),
+        })
+        if (!res.ok) throw new Error('TTS failed')
+        const blob = await res.blob()
+        audioUrl = URL.createObjectURL(blob)
+      }
+
+      const a = new Audio(audioUrl)
+      a.onended = () => { setPlaying(false) }
       setAudio(a)
       setLoading(false)
       setPlaying(true)
