@@ -201,12 +201,7 @@ export default function BuildProfilePage() {
         })
       }
     } catch(e) { console.error('Save error:', e) }
-    if (destination === 'garage') {
-      window.location.replace("/garage")
-    } else {
-      setStep(6)
-      setSaving(false)
-    }
+    window.location.replace("/garage")
   }
 
   const handleFinish = async () => {
