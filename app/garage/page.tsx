@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import WaltPanel from '@/components/WaltPanel'
 import { Yellowtail } from 'next/font/google'
 import { createClient } from '@supabase/supabase-js'
 
@@ -23,11 +24,11 @@ const NavBar = () => (
   </nav>
 )
 
-const WaltBar = () => (
+const WaltBar = ({ onOpenWalt }: { onOpenWalt: () => void }) => (
   <div style={{ background: 'white', padding: '8px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ flex: 1, background: 'var(--bg)', borderRadius: 25, padding: '10px 16px', fontSize: '0.85rem', color: '#aaa', fontFamily: 'var(--font-nunito)' }}>Ask me about your garage...</div>
-      <div style={{ width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--orange)', flexShrink: 0, cursor: 'pointer' }}>
+      <div onClick={onOpenWalt} style={{ flex: 1, background: 'var(--bg)', borderRadius: 25, padding: '10px 16px', fontSize: '0.85rem', color: '#aaa', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>Ask me about your garage...</div>
+      <div onClick={onOpenWalt} style={{ width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--orange)', flexShrink: 0, cursor: 'pointer' }}>
         <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
     </div>
@@ -57,6 +58,7 @@ export default function GaragePage() {
   const [hasActiveProject, setHasActiveProject] = useState(false)
   const [loading, setLoading] = useState(true)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [waltOpen, setWaltOpen] = useState(false)
 
   useEffect(() => {
     window.history.pushState(null, "", window.location.href)
@@ -297,7 +299,7 @@ export default function GaragePage() {
         </div>
       </main>
 
-      <WaltBar />
+      <WaltBar onOpenWalt={() => setWaltOpen(true)} />
       <NavBar />
 
       {/* Overlay */}
@@ -370,6 +372,14 @@ export default function GaragePage() {
           <span style={{ fontSize: '0.95rem', color: '#e74c3c', fontWeight: 700 }}>Log Out</span>
         </div>
       </div>
+
+      {/* Walt Panel */}
+      <WaltPanel
+        open={waltOpen}
+        onClose={() => setWaltOpen(false)}
+        context={`User: ${userName}\nVehicles: ${vehicles.map(v => v.nickname || `${v.year} ${v.make} ${v.model}`).join(', ')}\nScreen: Garage`}
+        openingLine="Talk to me."
+      />
     </div>
   )
 }
