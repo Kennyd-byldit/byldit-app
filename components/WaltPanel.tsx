@@ -177,60 +177,49 @@ export default function WaltPanel({
 
   const startListening = () => {
     initAudio()
-    if (listening) {
-      recognitionRef.current?.stop()
-      setListening(false)
-      // Send whatever is in the input when mic is tapped to stop
-      setTimeout(() => {
-        setInput(prev => {
-          if (prev.trim()) sendMessage(prev.trim())
-          return ''
-        })
-      }, 150)
-      return
-    }
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) {
-      alert('Voice input not supported on this browser. Try Chrome or Safari on iPhone.')
+      alert('Voice input not supported. Try Chrome or Safari on iPhone.')
       return
     }
     const recognition = new SpeechRecognition()
     recognition.lang = 'en-US'
     recognition.interimResults = true
-    recognition.continuous = false
+    recognition.continuous = true
     recognition.maxAlternatives = 1
     recognitionRef.current = recognition
     setListening(true)
 
+    let baseText = ''
+    // Capture whatever is already in the input before we start
+    setInput(prev => { baseText = prev ? prev + ' ' : ''; return prev })
+
     recognition.onresult = (event: any) => {
-      let interimTranscript = ''
-      let finalTranscript = ''
+      let interim = ''
+      let final = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript
-        } else {
-          interimTranscript += transcript
-        }
+        const t = event.results[i][0].transcript
+        if (event.results[i].isFinal) final += t
+        else interim += t
       }
-      // Show live text in input field
-      if (interimTranscript) setInput(interimTranscript)
-      if (finalTranscript) {
-        // Just populate the field — user taps mic again or Send to submit
-        setInput(prev => prev ? prev + ' ' + finalTranscript : finalTranscript)
-      }
+      if (final) baseText += final
+      // Show live combined text
+      setInput(baseText + interim)
     }
     recognition.onerror = (e: any) => {
-      console.error('Speech error:', e)
+      console.error('Speech error:', e.error)
       setListening(false)
     }
-    recognition.onend = () => setListening(false)
+    recognition.onend = () => {
+      setListening(false)
+    }
     recognition.start()
   }
 
   const stopListening = () => {
     recognitionRef.current?.stop()
     setListening(false)
+    // Don't send — user reviews and taps Send manually
   }
 
   if (!open) return null
@@ -308,29 +297,36 @@ export default function WaltPanel({
 
         {/* Input bar */}
         <div style={{ padding: '10px 12px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-          <input
-            type="text"
+          <textarea
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
-            placeholder={listening ? 'Listening... tap mic again to send' : 'Type here, or tap the mic to speak & send'}
+            placeholder={listening ? 'Hold mic and speak... release when done' : 'Type here, or hold 🎤 to speak'}
+            rows={1}
             style={{
               flex: 1, padding: '10px 16px', background: listening ? '#eaf4fb' : 'var(--bg)',
               border: `1.5px solid ${listening ? '#4da8da' : 'var(--border)'}`,
-              borderRadius: 25, fontSize: 16,
-              fontFamily: 'var(--font-nunito)', outline: 'none', color: 'var(--dark-blue)'
+              borderRadius: 16, fontSize: 16, resize: 'none' as const,
+              fontFamily: 'var(--font-nunito)', outline: 'none', color: 'var(--dark-blue)',
+              maxHeight: 100, overflowY: 'auto' as const, lineHeight: '1.4',
             }}
           />
-          {/* Mic button — tap to toggle */}
+          {/* Mic button — hold to talk */}
           <button
-            onClick={listening ? stopListening : startListening}
+            onMouseDown={startListening}
+            onMouseUp={stopListening}
+            onMouseLeave={stopListening}
+            onTouchStart={(e) => { e.preventDefault(); startListening() }}
+            onTouchEnd={(e) => { e.preventDefault(); stopListening() }}
             style={{
-              width: 40, height: 40, borderRadius: '50%', border: 'none', flexShrink: 0, cursor: 'pointer',
+              width: 44, height: 44, borderRadius: '50%', border: 'none', flexShrink: 0, cursor: 'pointer',
               background: listening ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb',
-              fontSize: '1rem',
+              fontSize: '1.1rem',
               boxShadow: listening ? '0 0 0 6px rgba(232,117,10,0.25)' : 'none',
-              WebkitUserSelect: 'none',
-              userSelect: 'none',
+              WebkitUserSelect: 'none' as const,
+              userSelect: 'none' as const,
+              touchAction: 'none',
+              WebkitTouchCallout: 'none' as any,
             }}>
             🎤
           </button>
