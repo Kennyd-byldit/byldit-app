@@ -76,6 +76,7 @@ function WorkContent() {
   const [notes, setNotes] = useState('')
 
   useEffect(() => {
+    window.scrollTo(0, 0)
     async function load() {
       if (!vehicleId) { window.location.replace('/create-project'); return }
       const { data: { user } } = await supabase.auth.getUser()
@@ -138,25 +139,26 @@ function WorkContent() {
         <div style={{ width: 48 }} />
       </header>
 
-      {/* Pinned hero photo */}
-      <div style={{ padding: '12px 14px 0', flexShrink: 0 }}>
-        <div style={{ height: 160, position: 'relative', overflow: 'hidden', borderRadius: 16, boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
-          <img src={getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 16px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
-            <p style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
-              {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-            </p>
-            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.65rem', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2 }}>
-              {vehicle.year} {vehicle.make} {vehicle.model}
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Scrollable content */}
-      <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
+      <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '0 0 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
+
+          {/* Hero photo — scrolls with content */}
+          <div style={{ padding: '12px 14px 16px' }}>
+            <div style={{ height: 160, position: 'relative', overflow: 'hidden', borderRadius: 16, boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
+              <img src={getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 16px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
+                <p style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
+                  {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                </p>
+                <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.65rem', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2 }}>
+                  {vehicle.year} {vehicle.make} {vehicle.model}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div style={{ padding: '0 18px' }}>
 
           <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>What needs to be done?</p>
           <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', marginBottom: 16 }}>Select all that apply</p>
@@ -230,6 +232,7 @@ function WorkContent() {
             Continue →
           </button>
 
+          </div>
         </div>
       </main>
 

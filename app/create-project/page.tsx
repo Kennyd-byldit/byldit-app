@@ -63,6 +63,7 @@ export default function CreateProjectPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    window.scrollTo(0, 0)
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.replace('/login'); return }
