@@ -45,6 +45,7 @@ export default function WaltPanel({
   const [muted, setMuted] = useState(false)
   const [initialized, setInitialized] = useState(false)
   const [listening, setListening] = useState(false)
+  const [micReady, setMicReady] = useState(true)
   const userIdRef = useRef<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -177,6 +178,7 @@ export default function WaltPanel({
   }
 
   const startListening = () => {
+    if (!micReady) return
     initAudio()
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) {
@@ -221,7 +223,8 @@ export default function WaltPanel({
     try { recognitionRef.current?.stop() } catch (e) {}
     recognitionRef.current = null
     setListening(false)
-    // Don't send — user reviews and taps Send manually
+    setMicReady(false)
+    setTimeout(() => setMicReady(true), 600)
   }
 
   if (!open) return null
@@ -314,24 +317,35 @@ export default function WaltPanel({
             }}
           />
           {/* Mic button — hold to talk */}
-          <button
-            onMouseDown={startListening}
-            onMouseUp={stopListening}
-            onMouseLeave={stopListening}
-            onTouchStart={(e) => { e.preventDefault(); startListening() }}
-            onTouchEnd={(e) => { e.preventDefault(); stopListening() }}
-            style={{
-              width: 44, height: 44, borderRadius: '50%', border: 'none', flexShrink: 0, cursor: 'pointer',
-              background: listening ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb',
-              fontSize: '1.1rem',
-              boxShadow: listening ? '0 0 0 6px rgba(232,117,10,0.25)' : 'none',
-              WebkitUserSelect: 'none' as const,
-              userSelect: 'none' as const,
-              touchAction: 'none',
-              WebkitTouchCallout: 'none' as any,
-            }}>
-            🎤
-          </button>
+          <div style={{ position: 'relative', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <style>{`@keyframes mic-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2); opacity: 0; } }`}</style>
+            {listening && <>
+              <div style={{ position: 'absolute', inset: -6, borderRadius: '50%', border: '2px solid #e8750a', animation: 'mic-pulse 1.2s ease-out infinite', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', inset: -6, borderRadius: '50%', border: '2px solid #e8750a', animation: 'mic-pulse 1.2s ease-out 0.4s infinite', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', inset: -6, borderRadius: '50%', border: '2px solid #e8750a', animation: 'mic-pulse 1.2s ease-out 0.8s infinite', pointerEvents: 'none' }} />
+            </>}
+            <button
+              onMouseDown={startListening}
+              onMouseUp={stopListening}
+              onMouseLeave={stopListening}
+              onTouchStart={(e) => { e.preventDefault(); startListening() }}
+              onTouchEnd={(e) => { e.preventDefault(); stopListening() }}
+              style={{
+                width: 56, height: 56, borderRadius: '50%', border: 'none', cursor: micReady ? 'pointer' : 'default',
+                background: listening ? 'linear-gradient(135deg, #e8750a, #f4a543)' : micReady ? '#4da8da' : '#d4e0eb',
+                fontSize: '1.3rem',
+                WebkitUserSelect: 'none' as const,
+                userSelect: 'none' as const,
+                touchAction: 'none',
+                WebkitTouchCallout: 'none' as any,
+                opacity: micReady ? 1 : 0.5,
+              }}>
+              🎤
+            </button>
+            <span style={{ fontSize: '0.55rem', color: 'var(--secondary-text)', whiteSpace: 'nowrap' }}>
+              {listening ? 'recording...' : 'hold to speak'}
+            </span>
+          </div>
           {/* Send button */}
           <button onClick={() => { initAudio(); sendMessage() }} disabled={!input.trim() || loading}
             style={{
