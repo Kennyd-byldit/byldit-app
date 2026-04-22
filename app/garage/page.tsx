@@ -378,7 +378,7 @@ export default function GaragePage() {
         open={waltOpen}
         onClose={() => setWaltOpen(false)}
         context={`User: ${userName}\nVehicles: ${vehicles.map(v => v.nickname || `${v.year} ${v.make} ${v.model}`).join(', ')}\nScreen: Garage`}
-        openingLine="Talk to me."
+        openingLine={`Talk to me, ${userName}.`}
       />
     </div>
   )
