@@ -293,7 +293,7 @@ export default function WaltPanel({
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
-            placeholder={listening ? 'Listening...' : 'Talk to Walt...'}
+            placeholder={listening ? 'Listening... tap mic again to send' : 'Type here, or tap the mic to speak & send'}
             style={{
               flex: 1, padding: '10px 16px', background: listening ? '#eaf4fb' : 'var(--bg)',
               border: `1.5px solid ${listening ? '#4da8da' : 'var(--border)'}`,
@@ -317,12 +317,12 @@ export default function WaltPanel({
           {/* Send button */}
           <button onClick={() => { initAudio(); sendMessage() }} disabled={!input.trim() || loading}
             style={{
-              width: 40, height: 40, borderRadius: '50%', border: 'none', flexShrink: 0,
+              height: 40, borderRadius: 20, border: 'none', flexShrink: 0, padding: '0 14px',
               background: input.trim() && !loading ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb',
               cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
-              fontSize: '1rem',
+              fontSize: '0.8rem', fontWeight: 700, color: 'white', fontFamily: 'var(--font-nunito)',
             }}>
-            ↑
+            Send
           </button>
         </div>
       </div>
