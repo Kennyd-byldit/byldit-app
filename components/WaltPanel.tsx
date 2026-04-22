@@ -123,12 +123,15 @@ export default function WaltPanel({
       if (!res.ok) return
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
-      if (audioRef.current) {
+      // Stop any currently playing audio first
+      if (audioRef.current && !audioRef.current.paused) {
         audioRef.current.pause()
+        audioRef.current.currentTime = 0
       }
       const audio = new Audio(url)
       audioRef.current = audio
-      audio.onended = () => URL.revokeObjectURL(url)
+      audio.onended = () => { URL.revokeObjectURL(url); }
+      audio.onerror = (e) => console.error('Audio error:', e)
       audio.play().catch(e => console.error('Play error:', e))
     } catch (e) {
       console.error('TTS error:', e)
@@ -181,6 +184,13 @@ export default function WaltPanel({
     if (listening) {
       recognitionRef.current?.stop()
       setListening(false)
+      // Send whatever is in the input when mic is tapped to stop
+      setTimeout(() => {
+        setInput(prev => {
+          if (prev.trim()) sendMessage(prev.trim())
+          return ''
+        })
+      }, 150)
       return
     }
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -210,10 +220,8 @@ export default function WaltPanel({
       // Show live text in input field
       if (interimTranscript) setInput(interimTranscript)
       if (finalTranscript) {
-        setInput(finalTranscript)
-        setListening(false)
-        // Auto-send after a short delay to let user see what was captured
-        setTimeout(() => sendMessage(finalTranscript), 300)
+        // Just populate the field — user taps mic again or Send to submit
+        setInput(prev => prev ? prev + ' ' + finalTranscript : finalTranscript)
       }
     }
     recognition.onerror = (e: any) => {
