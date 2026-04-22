@@ -51,6 +51,7 @@ export default function WaltPanel({
   }
   const [initialized, setInitialized] = useState(false)
   const [listening, setListening] = useState(false)
+  const userIdRef = useRef<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const recognitionRef = useRef<any>(null)
@@ -67,6 +68,7 @@ export default function WaltPanel({
   const loadHistory = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+    userIdRef.current = user.id
 
     const { data } = await supabase
       .from('walt_messages')
@@ -88,19 +90,16 @@ export default function WaltPanel({
   }
 
   const saveMessage = async (msg: Message, userId?: string) => {
-    let uid = userId
-    if (!uid) {
-      const { data: { user } } = await supabase.auth.getUser()
-      uid = user?.id
-    }
+    const uid = userId || userIdRef.current
     if (!uid) return
-    await supabase.from('walt_messages').insert({
+    const { error } = await supabase.from('walt_messages').insert({
       user_id: uid,
       role: msg.role,
       content: msg.content,
       vehicle_id: vehicleId || null,
       screen,
     })
+    if (error) console.error('Save message error:', error)
   }
 
   // Scroll to bottom
@@ -204,6 +203,7 @@ export default function WaltPanel({
     const recognition = new SpeechRecognition()
     recognition.lang = 'en-US'
     recognition.interimResults = true
+    recognition.continuous = false
     recognition.maxAlternatives = 1
     recognitionRef.current = recognition
     setListening(true)
@@ -222,9 +222,10 @@ export default function WaltPanel({
       // Show live text in input field
       if (interimTranscript) setInput(interimTranscript)
       if (finalTranscript) {
-        setInput('')
+        setInput(finalTranscript)
         setListening(false)
-        sendMessage(finalTranscript)
+        // Auto-send after a short delay to let user see what was captured
+        setTimeout(() => sendMessage(finalTranscript), 300)
       }
     }
     recognition.onerror = (e: any) => {
