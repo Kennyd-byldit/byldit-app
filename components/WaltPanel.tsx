@@ -106,13 +106,26 @@ export default function WaltPanel({
       if (!res.ok) return
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
-      if (audioRef.current) audioRef.current.pause()
-      const audio = new Audio(url)
-      audioRef.current = audio
-      audio.play().catch(() => {})
-      audio.onended = () => URL.revokeObjectURL(url)
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.src = url
+        audioRef.current.onended = () => URL.revokeObjectURL(url)
+        audioRef.current.play().catch(e => console.error('Play error:', e))
+      } else {
+        const audio = new Audio(url)
+        audioRef.current = audio
+        audio.onended = () => URL.revokeObjectURL(url)
+        audio.play().catch(e => console.error('Play error:', e))
+      }
     } catch (e) {
       console.error('TTS error:', e)
+    }
+  }
+
+  // Pre-authorize audio on first user interaction with the panel
+  const initAudio = () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio()
     }
   }
 
@@ -150,6 +163,7 @@ export default function WaltPanel({
   }
 
   const startListening = () => {
+    initAudio()
     if (listening) {
       recognitionRef.current?.stop()
       setListening(false)
@@ -301,7 +315,7 @@ export default function WaltPanel({
             🎤
           </button>
           {/* Send button */}
-          <button onClick={() => sendMessage()} disabled={!input.trim() || loading}
+          <button onClick={() => { initAudio(); sendMessage() }} disabled={!input.trim() || loading}
             style={{
               width: 40, height: 40, borderRadius: '50%', border: 'none', flexShrink: 0,
               background: input.trim() && !loading ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb',
