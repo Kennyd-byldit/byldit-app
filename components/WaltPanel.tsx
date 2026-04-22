@@ -76,7 +76,9 @@ export default function WaltPanel({
       .limit(20)
 
     if (data && data.length > 0) {
-      setMessages(data as Message[])
+      // Filter out any error messages from history
+      const filtered = (data as Message[]).filter(m => !m.content.includes('Having trouble connecting'))
+      setMessages(filtered)
     } else {
       // First time — show opening line
       const opening = { role: 'walt' as const, content: openingLine }
@@ -172,6 +174,7 @@ export default function WaltPanel({
       console.error('sendMessage error:', e)
       const errMsg: Message = { role: 'walt', content: "Having trouble connecting right now. Try again in a sec." }
       setMessages(prev => [...prev, errMsg])
+      // Don't save error messages to DB
     } finally {
       setLoading(false)
     }
