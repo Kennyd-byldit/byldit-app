@@ -142,7 +142,7 @@ export default function WaltPanel({
   }
 
   const sendMessage = async (text?: string) => {
-    const messageText = text || input.trim()
+    const messageText = (text || input).trim()
     if (!messageText || loading) return
     setInput('')
 
@@ -168,6 +168,7 @@ export default function WaltPanel({
       saveMessage(assistantMsg)
       if (!mutedRef.current) speakText(reply)
     } catch (e) {
+      console.error('sendMessage error:', e)
       const errMsg: Message = { role: 'walt', content: "Having trouble connecting right now. Try again in a sec." }
       setMessages(prev => [...prev, errMsg])
     } finally {
@@ -217,7 +218,8 @@ export default function WaltPanel({
   }
 
   const stopListening = () => {
-    recognitionRef.current?.stop()
+    try { recognitionRef.current?.stop() } catch (e) {}
+    recognitionRef.current = null
     setListening(false)
     // Don't send — user reviews and taps Send manually
   }
