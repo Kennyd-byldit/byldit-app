@@ -31,11 +31,18 @@ export default function WaltPanel({
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [muted, setMuted] = useState(false)
+  const toggleMuted = () => {
+    setMuted(m => {
+      mutedRef.current = !m
+      return !m
+    })
+  }
   const [initialized, setInitialized] = useState(false)
   const [listening, setListening] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const recognitionRef = useRef<any>(null)
+  const mutedRef = useRef(false)
 
   // Load conversation history on first open
   useEffect(() => {
@@ -64,7 +71,7 @@ export default function WaltPanel({
       const opening = { role: 'assistant' as const, content: openingLine }
       setMessages([opening])
       saveMessage(opening, user.id)
-      if (!muted) speakText(openingLine)
+      if (!mutedRef.current) speakText(openingLine)
     }
   }
 
@@ -133,7 +140,7 @@ export default function WaltPanel({
       const assistantMsg: Message = { role: 'assistant', content: reply }
       setMessages(prev => [...prev, assistantMsg])
       saveMessage(assistantMsg)
-      if (!muted) speakText(reply)
+      if (!mutedRef.current) speakText(reply)
     } catch (e) {
       const errMsg: Message = { role: 'assistant', content: "Having trouble connecting right now. Try again in a sec." }
       setMessages(prev => [...prev, errMsg])
@@ -155,15 +162,29 @@ export default function WaltPanel({
     }
     const recognition = new SpeechRecognition()
     recognition.lang = 'en-US'
-    recognition.interimResults = false
+    recognition.interimResults = true
     recognition.maxAlternatives = 1
     recognitionRef.current = recognition
     setListening(true)
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript
-      setListening(false)
-      sendMessage(transcript)
+      let interimTranscript = ''
+      let finalTranscript = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript
+        } else {
+          interimTranscript += transcript
+        }
+      }
+      // Show live text in input field
+      if (interimTranscript) setInput(interimTranscript)
+      if (finalTranscript) {
+        setInput('')
+        setListening(false)
+        sendMessage(finalTranscript)
+      }
     }
     recognition.onerror = (e: any) => {
       console.error('Speech error:', e)
@@ -208,7 +229,7 @@ export default function WaltPanel({
             <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--dark-blue)', margin: 0 }}>Walt</p>
             <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', margin: 0 }}>Your crew chief</p>
           </div>
-          <button onClick={() => setMuted(m => !m)}
+          <button onClick={() => toggleMuted()}
             style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', padding: '4px', color: muted ? '#d4e0eb' : 'var(--orange)' }}>
             {muted ? '🔇' : '🔊'}
           </button>
