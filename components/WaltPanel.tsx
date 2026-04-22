@@ -6,6 +6,18 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
+// Strip markdown formatting from Walt's responses
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')  // **bold**
+    .replace(/\*([^*]+)\*/g, '$1')       // *italic*
+    .replace(/`([^`]+)`/g, '$1')         // `code`
+    .replace(/#{1,6}\s/g, '')            // # headers
+    .replace(/>\s/g, '')                 // > blockquotes
+    .replace(/---/g, '')                 // horizontal rules
+    .trim()
+}
+
 const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 
 type Message = { role: 'user' | 'assistant'; content: string }
@@ -149,7 +161,8 @@ export default function WaltPanel({
         body: JSON.stringify({ messages: recentMessages, context }),
       })
       const data = await res.json()
-      const reply = data.message || "Having trouble connecting right now. Try again."
+      const rawReply = data.message || "Having trouble connecting right now. Try again."
+      const reply = stripMarkdown(rawReply)
       const assistantMsg: Message = { role: 'assistant', content: reply }
       setMessages(prev => [...prev, assistantMsg])
       saveMessage(assistantMsg)
