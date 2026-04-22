@@ -121,7 +121,7 @@ export default function WaltPanel({
       const reader = res.body?.getReader()
       if (!reader) return
 
-      const chunks: Uint8Array[] = []
+      const chunks: BlobPart[] = []
       let firstChunk = true
 
       const processChunk = async () => {
