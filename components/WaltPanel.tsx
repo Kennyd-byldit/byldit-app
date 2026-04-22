@@ -154,7 +154,11 @@ export default function WaltPanel({
 
     try {
       // Send last 10 messages for context efficiency
-      const recentMessages = newMessages.slice(-10)
+      // Map 'walt' role to 'assistant' for Claude API
+      const recentMessages = newMessages.slice(-10).map(m => ({
+        role: m.role === 'walt' ? 'assistant' : m.role,
+        content: m.content,
+      }))
       const res = await fetch('/api/walt-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
