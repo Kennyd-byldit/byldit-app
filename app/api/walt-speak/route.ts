@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Streaming TTS — returns audio as a stream so playback starts immediately
-  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream`, {
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
     method: 'POST',
     headers: {
       'xi-api-key': process.env.ELEVENLABS_API_KEY!,
@@ -65,10 +65,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Stream the response directly to the client
-  return new NextResponse(res.body, {
-    headers: {
-      'Content-Type': 'audio/mpeg',
-      'Transfer-Encoding': 'chunked',
-    },
+  const audio = await res.arrayBuffer()
+  return new NextResponse(audio, {
+    headers: { 'Content-Type': 'audio/mpeg' },
   })
 }

@@ -115,33 +115,15 @@ export default function WaltPanel({
         body: JSON.stringify({ text }),
       })
       if (!res.ok) return
-
-      // Stream the audio — starts playing as chunks arrive
-      const reader = res.body?.getReader()
-      if (!reader) return
-
-      const chunks: BlobPart[] = []
-      let firstChunk = true
-
-      const processChunk = async () => {
-        const { done, value } = await reader.read()
-        if (done) return
-        chunks.push(value)
-
-        // Start playing as soon as we have the first chunk
-        if (firstChunk && chunks.length > 0) {
-          firstChunk = false
-          const blob = new Blob(chunks, { type: 'audio/mpeg' })
-          const url = URL.createObjectURL(blob)
-          if (audioRef.current) audioRef.current.pause()
-          const audio = new Audio(url)
-          audioRef.current = audio
-          audio.play().catch(e => console.error('Play error:', e))
-        }
-        await processChunk()
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      if (audioRef.current) {
+        audioRef.current.pause()
       }
-
-      await processChunk()
+      const audio = new Audio(url)
+      audioRef.current = audio
+      audio.onended = () => URL.revokeObjectURL(url)
+      audio.play().catch(e => console.error('Play error:', e))
     } catch (e) {
       console.error('TTS error:', e)
     }
