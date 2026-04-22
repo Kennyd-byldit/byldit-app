@@ -111,35 +111,31 @@ export default function WaltPanel({
 
   const speakText = async (text: string) => {
     try {
+      // Stop any currently playing audio
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.src = ''
+      }
       const res = await fetch('/api/walt-speak', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
       })
-      if (!res.ok) return
+      if (!res.ok) { console.error('TTS response not ok:', res.status); return }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
-      // Stop any currently playing audio first
-      if (audioRef.current && !audioRef.current.paused) {
-        audioRef.current.pause()
-        audioRef.current.currentTime = 0
-      }
       const audio = new Audio(url)
       audioRef.current = audio
-      audio.onended = () => { URL.revokeObjectURL(url); }
+      audio.onended = () => URL.revokeObjectURL(url)
       audio.onerror = (e) => console.error('Audio error:', e)
-      audio.play().catch(e => console.error('Play error:', e))
+      const playPromise = audio.play()
+      if (playPromise) playPromise.catch(e => console.error('Play blocked:', e))
     } catch (e) {
       console.error('TTS error:', e)
     }
   }
 
-  // Pre-authorize audio on first user interaction with the panel
-  const initAudio = () => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio()
-    }
-  }
+  const initAudio = () => {} // no-op, kept for compatibility
 
   const sendMessage = async (text?: string) => {
     const messageText = (text || input).trim()
