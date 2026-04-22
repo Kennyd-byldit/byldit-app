@@ -1,6 +1,11 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { createClient } from '@supabase/supabase-js'
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 
 type Message = { role: 'user' | 'assistant'; content: string }
@@ -10,36 +15,76 @@ interface WaltPanelProps {
   onClose: () => void
   context: string
   openingLine?: string
+  vehicleId?: string
+  screen?: string
 }
 
-export default function WaltPanel({ open, onClose, context, openingLine = 'Talk to me.' }: WaltPanelProps) {
+export default function WaltPanel({
+  open,
+  onClose,
+  context,
+  openingLine = 'Talk to me.',
+  vehicleId,
+  screen = 'garage',
+}: WaltPanelProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [muted, setMuted] = useState(false)
   const [initialized, setInitialized] = useState(false)
+  const [listening, setListening] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const recognitionRef = useRef<any>(null)
 
-  // Show opening line when panel first opens
+  // Load conversation history on first open
   useEffect(() => {
     if (open && !initialized) {
       setInitialized(true)
-      setMessages([{ role: 'assistant', content: openingLine }])
+      loadHistory()
+    }
+  }, [open])
+
+  const loadHistory = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data } = await supabase
+      .from('walt_messages')
+      .select('role, content')
+      .eq('user_id', user.id)
+      .eq('screen', screen)
+      .order('created_at', { ascending: true })
+      .limit(20)
+
+    if (data && data.length > 0) {
+      setMessages(data as Message[])
+    } else {
+      // First time — show opening line
+      const opening = { role: 'assistant' as const, content: openingLine }
+      setMessages([opening])
+      saveMessage(opening, user.id)
       if (!muted) speakText(openingLine)
     }
-  }, [open])
+  }
 
-  // Reset when closed
-  useEffect(() => {
-    if (!open) {
-      setInitialized(false)
-      setMessages([])
-      setInput('')
+  const saveMessage = async (msg: Message, userId?: string) => {
+    let uid = userId
+    if (!uid) {
+      const { data: { user } } = await supabase.auth.getUser()
+      uid = user?.id
     }
-  }, [open])
+    if (!uid) return
+    await supabase.from('walt_messages').insert({
+      user_id: uid,
+      role: msg.role,
+      content: msg.content,
+      vehicle_id: vehicleId || null,
+      screen,
+    })
+  }
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -54,9 +99,7 @@ export default function WaltPanel({ open, onClose, context, openingLine = 'Talk 
       if (!res.ok) return
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
-      if (audioRef.current) {
-        audioRef.current.pause()
-      }
+      if (audioRef.current) audioRef.current.pause()
       const audio = new Audio(url)
       audioRef.current = audio
       audio.play().catch(() => {})
@@ -66,30 +109,65 @@ export default function WaltPanel({ open, onClose, context, openingLine = 'Talk 
     }
   }
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return
-    const userMessage = input.trim()
+  const sendMessage = async (text?: string) => {
+    const messageText = text || input.trim()
+    if (!messageText || loading) return
     setInput('')
 
-    const newMessages: Message[] = [...messages, { role: 'user', content: userMessage }]
+    const userMsg: Message = { role: 'user', content: messageText }
+    const newMessages: Message[] = [...messages, userMsg]
     setMessages(newMessages)
+    saveMessage(userMsg)
     setLoading(true)
 
     try {
+      // Send last 10 messages for context efficiency
+      const recentMessages = newMessages.slice(-10)
       const res = await fetch('/api/walt-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages, context }),
+        body: JSON.stringify({ messages: recentMessages, context }),
       })
       const data = await res.json()
-      const reply = data.message || "Sorry, I didn't catch that."
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+      const reply = data.message || "Having trouble connecting right now. Try again."
+      const assistantMsg: Message = { role: 'assistant', content: reply }
+      setMessages(prev => [...prev, assistantMsg])
+      saveMessage(assistantMsg)
       if (!muted) speakText(reply)
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Having trouble connecting right now. Try again in a sec." }])
+      const errMsg: Message = { role: 'assistant', content: "Having trouble connecting right now. Try again in a sec." }
+      setMessages(prev => [...prev, errMsg])
     } finally {
       setLoading(false)
     }
+  }
+
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      alert('Voice input not supported on this browser. Try Chrome or Safari.')
+      return
+    }
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'en-US'
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognitionRef.current = recognition
+    setListening(true)
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript
+      setListening(false)
+      sendMessage(transcript)
+    }
+    recognition.onerror = () => setListening(false)
+    recognition.onend = () => setListening(false)
+    recognition.start()
+  }
+
+  const stopListening = () => {
+    recognitionRef.current?.stop()
+    setListening(false)
   }
 
   if (!open) return null
@@ -142,20 +220,16 @@ export default function WaltPanel({ open, onClose, context, openingLine = 'Talk 
                 </div>
               )}
               <div style={{
-                maxWidth: '72%',
-                padding: '10px 14px',
+                maxWidth: '72%', padding: '10px 14px',
                 borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                 background: msg.role === 'user' ? '#24507a' : '#4da8da',
-                color: 'white',
-                fontSize: '0.9rem',
-                lineHeight: 1.5,
+                color: 'white', fontSize: '0.9rem', lineHeight: 1.5,
               }}>
                 {msg.content}
               </div>
             </div>
           ))}
 
-          {/* Typing indicator */}
           {loading && (
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
               <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--orange)', flexShrink: 0 }}>
@@ -176,18 +250,30 @@ export default function WaltPanel({ open, onClose, context, openingLine = 'Talk 
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
-            placeholder="Talk to Walt..."
+            placeholder={listening ? 'Listening...' : 'Talk to Walt...'}
             style={{
-              flex: 1, padding: '10px 16px', background: 'var(--bg)',
-              border: '1.5px solid var(--border)', borderRadius: 25, fontSize: 16,
+              flex: 1, padding: '10px 16px', background: listening ? '#eaf4fb' : 'var(--bg)',
+              border: `1.5px solid ${listening ? '#4da8da' : 'var(--border)'}`,
+              borderRadius: 25, fontSize: 16,
               fontFamily: 'var(--font-nunito)', outline: 'none', color: 'var(--dark-blue)'
             }}
           />
-          {/* Mic — placeholder */}
-          <button style={{ width: 40, height: 40, borderRadius: '50%', background: '#d4e0eb', border: 'none', cursor: 'not-allowed', fontSize: '1rem', flexShrink: 0 }}>
+          {/* Mic button — active */}
+          <button
+            onMouseDown={startListening}
+            onMouseUp={stopListening}
+            onTouchStart={startListening}
+            onTouchEnd={stopListening}
+            style={{
+              width: 40, height: 40, borderRadius: '50%', border: 'none', flexShrink: 0, cursor: 'pointer',
+              background: listening ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb',
+              fontSize: '1rem',
+              boxShadow: listening ? '0 0 0 4px rgba(232,117,10,0.3)' : 'none',
+            }}>
             🎤
           </button>
-          <button onClick={sendMessage} disabled={!input.trim() || loading}
+          {/* Send button */}
+          <button onClick={() => sendMessage()} disabled={!input.trim() || loading}
             style={{
               width: 40, height: 40, borderRadius: '50%', border: 'none', flexShrink: 0,
               background: input.trim() && !loading ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb',
