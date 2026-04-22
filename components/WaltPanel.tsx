@@ -90,8 +90,14 @@ export default function WaltPanel({
   }
 
   const saveMessage = async (msg: Message, userId?: string) => {
-    const uid = userId || userIdRef.current
-    if (!uid) return
+    let uid = userId || userIdRef.current
+    if (!uid) {
+      // Fetch fresh if ref is empty
+      const { data: { user } } = await supabase.auth.getUser()
+      uid = user?.id || null
+      if (uid) userIdRef.current = uid
+    }
+    if (!uid) { console.error('No user ID for saveMessage'); return }
     const { error } = await supabase.from('walt_messages').insert({
       user_id: uid,
       role: msg.role,
@@ -99,7 +105,7 @@ export default function WaltPanel({
       vehicle_id: vehicleId || null,
       screen,
     })
-    if (error) console.error('Save message error:', error)
+    if (error) console.error('Save message error:', JSON.stringify(error))
   }
 
   // Scroll to bottom
