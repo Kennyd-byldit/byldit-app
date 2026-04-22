@@ -143,9 +143,14 @@ export default function WaltPanel({
   }
 
   const startListening = () => {
+    if (listening) {
+      recognitionRef.current?.stop()
+      setListening(false)
+      return
+    }
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) {
-      alert('Voice input not supported on this browser. Try Chrome or Safari.')
+      alert('Voice input not supported on this browser. Try Chrome or Safari on iPhone.')
       return
     }
     const recognition = new SpeechRecognition()
@@ -160,7 +165,10 @@ export default function WaltPanel({
       setListening(false)
       sendMessage(transcript)
     }
-    recognition.onerror = () => setListening(false)
+    recognition.onerror = (e: any) => {
+      console.error('Speech error:', e)
+      setListening(false)
+    }
     recognition.onend = () => setListening(false)
     recognition.start()
   }
@@ -258,17 +266,16 @@ export default function WaltPanel({
               fontFamily: 'var(--font-nunito)', outline: 'none', color: 'var(--dark-blue)'
             }}
           />
-          {/* Mic button — active */}
+          {/* Mic button — tap to toggle */}
           <button
-            onMouseDown={startListening}
-            onMouseUp={stopListening}
-            onTouchStart={startListening}
-            onTouchEnd={stopListening}
+            onClick={listening ? stopListening : startListening}
             style={{
               width: 40, height: 40, borderRadius: '50%', border: 'none', flexShrink: 0, cursor: 'pointer',
               background: listening ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb',
               fontSize: '1rem',
-              boxShadow: listening ? '0 0 0 4px rgba(232,117,10,0.3)' : 'none',
+              boxShadow: listening ? '0 0 0 6px rgba(232,117,10,0.25)' : 'none',
+              WebkitUserSelect: 'none',
+              userSelect: 'none',
             }}>
             🎤
           </button>
