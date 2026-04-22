@@ -20,7 +20,7 @@ function stripMarkdown(text: string): string {
 
 const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 
-type Message = { role: 'user' | 'assistant'; content: string }
+type Message = { role: 'user' | 'walt'; content: string }
 
 interface WaltPanelProps {
   open: boolean
@@ -43,12 +43,6 @@ export default function WaltPanel({
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [muted, setMuted] = useState(false)
-  const toggleMuted = () => {
-    setMuted(m => {
-      mutedRef.current = !m
-      return !m
-    })
-  }
   const [initialized, setInitialized] = useState(false)
   const [listening, setListening] = useState(false)
   const userIdRef = useRef<string | null>(null)
@@ -56,6 +50,8 @@ export default function WaltPanel({
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const recognitionRef = useRef<any>(null)
   const mutedRef = useRef(false)
+  // Keep mutedRef in sync with muted state
+  useEffect(() => { mutedRef.current = muted }, [muted])
 
   // Load conversation history on first open
   useEffect(() => {
@@ -82,7 +78,7 @@ export default function WaltPanel({
       setMessages(data as Message[])
     } else {
       // First time — show opening line
-      const opening = { role: 'assistant' as const, content: openingLine }
+      const opening = { role: 'walt' as const, content: openingLine }
       setMessages([opening])
       saveMessage(opening, user.id)
       if (!mutedRef.current) speakText(openingLine)
@@ -167,12 +163,12 @@ export default function WaltPanel({
       const data = await res.json()
       const rawReply = data.message || "Having trouble connecting right now. Try again."
       const reply = stripMarkdown(rawReply)
-      const assistantMsg: Message = { role: 'assistant', content: reply }
+      const assistantMsg: Message = { role: 'walt', content: reply }
       setMessages(prev => [...prev, assistantMsg])
       saveMessage(assistantMsg)
       if (!mutedRef.current) speakText(reply)
     } catch (e) {
-      const errMsg: Message = { role: 'assistant', content: "Having trouble connecting right now. Try again in a sec." }
+      const errMsg: Message = { role: 'walt', content: "Having trouble connecting right now. Try again in a sec." }
       setMessages(prev => [...prev, errMsg])
     } finally {
       setLoading(false)
@@ -267,7 +263,7 @@ export default function WaltPanel({
             <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--dark-blue)', margin: 0 }}>Walt</p>
             <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', margin: 0 }}>Your crew chief</p>
           </div>
-          <button onClick={() => toggleMuted()}
+          <button onClick={() => setMuted(m => !m)}
             style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', padding: '4px', color: muted ? '#d4e0eb' : 'var(--orange)' }}>
             {muted ? '🔇' : '🔊'}
           </button>
@@ -281,7 +277,7 @@ export default function WaltPanel({
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           {messages.map((msg, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 8 }}>
-              {msg.role === 'assistant' && (
+              {msg.role === 'walt' && (
                 <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--orange)', flexShrink: 0 }}>
                   <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
