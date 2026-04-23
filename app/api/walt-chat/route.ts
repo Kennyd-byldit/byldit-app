@@ -25,6 +25,22 @@ export async function POST(req: NextRequest) {
       ? `${WALT_SYSTEM_PROMPT}\n\nCurrent context:\n${context}`
       : WALT_SYSTEM_PROMPT
 
+    // Ensure strict alternation — Claude requires user/assistant/user/assistant
+    // Deduplicate consecutive same-role messages
+    const cleanMessages = messages.reduce((acc: any[], msg: any) => {
+      const mapped = { role: msg.role === 'walt' ? 'assistant' : msg.role, content: msg.content }
+      if (acc.length > 0 && acc[acc.length - 1].role === mapped.role) {
+        // Merge consecutive same-role messages
+        acc[acc.length - 1].content += ' ' + mapped.content
+        return acc
+      }
+      acc.push(mapped)
+      return acc
+    }, [])
+
+    // Must start with user message
+    const finalMessages = cleanMessages[0]?.role === 'assistant' ? cleanMessages.slice(1) : cleanMessages
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -36,7 +52,7 @@ export async function POST(req: NextRequest) {
         model: 'claude-sonnet-4-6',
         max_tokens: 1024,
         system: systemWithContext,
-        messages: messages,
+        messages: finalMessages,
       }),
     })
 
