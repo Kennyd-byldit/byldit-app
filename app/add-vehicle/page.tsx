@@ -8,7 +8,7 @@ const supabase = createClient(
 )
 const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 
-const YEARS = Array.from({ length: 2026 - 1984 }, (_, i) => 2026 - i) // 2026 down to 1985
+const YEARS = Array.from({ length: 2026 - 1899 }, (_, i) => 2026 - i) // 2026 down to 1900
 
 const COLORS = [
   'White', 'Black', 'Silver', 'Gray', 'Red', 'Blue', 'Dark Blue', 'Navy',

@@ -38,7 +38,7 @@ const WaltBar = ({ onOpenWalt }: { onOpenWalt: () => void }) => (
 type Vehicle = { id: string, nickname: string, year: number, make: string, model: string, is_primary: boolean, color: string|null, engine: string|null, transmission: string|null, drivetrain: string|null, fuel_type: string|null, mileage: number|null, condition: string|null, cover_photo_url: string|null }
 
 const getCompletion = (v: Vehicle) => {
-  const fields = [v.color, v.engine, v.transmission, v.drivetrain, v.fuel_type, v.mileage, v.condition]
+  const fields = [v.color, v.engine, v.transmission, v.drivetrain, v.mileage, v.condition]
   const filled = fields.filter(Boolean).length
   return Math.round((filled / fields.length) * 100)
 }
