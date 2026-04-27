@@ -102,18 +102,11 @@ export default function AddVehiclePage() {
       .catch(() => setLoadingModels(false))
   }, [make])
 
-  // Generate photo URL when year/make/model/color all filled
+  // No auto-photo — user uploads their own
+  // photoUrl stays empty until user taps to upload
   useEffect(() => {
-    if (year && make && model && color && color !== 'Other') {
-      const colorSlug = color.toLowerCase().replace(/\s+/g, '-')
-      const makeSlug = make.toLowerCase().replace(/\s+/g, '-')
-      const modelSlug = model.toLowerCase().replace(/\s+/g, '-')
-      const url = `https://cdn.imagin.studio/getimage?customer=img&make=${makeSlug}&modelFamily=${modelSlug}&modelYear=${year}&paintId=color-${colorSlug}`
-      setPhotoUrl(url)
-    } else {
-      setPhotoUrl('')
-    }
-  }, [year, make, model, color])
+    if (!year && !make && !model) setPhotoUrl('')
+  }, [year, make, model])
 
   const handlePhotoUpload = async (file: File) => {
     setUploading(true)
@@ -262,18 +255,17 @@ export default function AddVehiclePage() {
             </div>
           </div>
 
-          {/* PHOTO — appears after year/make/model/color filled */}
-          {(photoUrl || (year && make && model && color)) && (
+          {/* PHOTO — shows placeholder once year/make/model filled, replaces with real photo on upload */}
+          {(year && make && model) && (
             <div style={{ marginBottom: 16 }}>
               <label style={{ ...labelStyle, marginBottom: 8 }}>Photo</label>
               <label style={{ display: 'block', cursor: 'pointer' }}>
                 <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
                   onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f) }} />
-                <div style={{ height: 180, borderRadius: 14, overflow: 'hidden', position: 'relative', background: 'var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                <div style={{ height: 180, borderRadius: 14, overflow: 'hidden', position: 'relative', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
                   {photoUrl ? (
                     <>
-                      <img src={photoUrl} alt="Vehicle" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        onError={() => setPhotoUrl('')} />
+                      <img src={photoUrl} alt="Vehicle" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       <div style={{ position: 'absolute', top: 10, right: 12, background: 'rgba(0,0,0,0.5)', borderRadius: 20, padding: '5px 12px' }}>
                         <span style={{ fontSize: '0.75rem', color: 'white', fontWeight: 700 }}>📷 Change</span>
                       </div>
@@ -284,18 +276,18 @@ export default function AddVehiclePage() {
                       )}
                     </>
                   ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                      <span style={{ fontSize: '2rem' }}>📷</span>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--secondary-text)', fontWeight: 700 }}>{uploading ? 'Uploading...' : 'Tap to add a photo'}</span>
+                    <div style={{ width: '100%', height: '100%', background: 'var(--dark-blue)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                      <span style={{ fontSize: '2.5rem' }}>🚗</span>
+                      <p style={{ color: 'white', fontWeight: 800, fontSize: '0.95rem', margin: 0 }}>{year} {make} {model}</p>
+                      {nickname && <p style={{ color: 'var(--light-blue)', fontSize: '0.85rem', margin: 0, fontStyle: 'italic' }}>&ldquo;{nickname}&rdquo;</p>}
+                      <div style={{ marginTop: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: '6px 16px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: '0.8rem' }}>📷</span>
+                        <span style={{ fontSize: '0.75rem', color: 'white', fontWeight: 700 }}>{uploading ? 'Uploading...' : 'Tap to add a photo'}</span>
+                      </div>
                     </div>
                   )}
                 </div>
               </label>
-              {photoUrl && photoUrl.includes('imagin.studio') && (
-                <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', marginTop: 6, textAlign: 'center' }}>
-                  Stock photo • Tap to upload your own
-                </p>
-              )}
             </div>
           )}
 

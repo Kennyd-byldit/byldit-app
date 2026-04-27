@@ -117,9 +117,7 @@ export default function VehicleDetailPage() {
     { label: 'Transmission', field: 'transmission', type: 'text', placeholder: 'e.g. 4-speed manual, 10-speed auto' },
     { label: 'Mileage', field: 'mileage', type: 'number', placeholder: 'e.g. 87000' },
     { label: 'Drivetrain', field: 'drivetrain', type: 'select', opts: ['2WD', '4WD', 'AWD'] },
-    { label: 'Fuel Type', field: 'fuel_type', type: 'select', opts: ['Gas', 'Diesel', 'Electric', 'Hybrid'] },
-    { label: 'Condition', field: 'condition', type: 'select', opts: ['Daily driver', 'Weekend car', 'Project (non-running)', 'Stored'] },
-    { label: 'Title Status', field: 'title_status', type: 'select', opts: ['Clean', 'Salvage', 'Rebuilt'] },
+    { label: 'Vehicle Status', field: 'condition', type: 'select', opts: ['Daily Driver', 'Weekend Car', 'Project Build', 'In Storage'] },
     { label: 'Notes', field: 'notes', type: 'textarea', placeholder: 'Anything Walt should know — mods, issues, history...' },
   ]
 
