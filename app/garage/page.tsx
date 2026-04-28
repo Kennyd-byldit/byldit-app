@@ -43,12 +43,16 @@ const getCompletion = (v: Vehicle) => {
   return Math.round((filled / fields.length) * 100)
 }
 
-const getVehiclePhoto = (vehicle: Vehicle): string => {
+const getVehiclePhoto = (vehicle: Vehicle): string | null => {
   if (vehicle.cover_photo_url) return vehicle.cover_photo_url
   const model = vehicle.model?.toLowerCase() || ""
   if (model.includes("ranger")) return "/photos/ranger-2025.jpg"
   if (model.includes("f250") || model.includes("f-250")) return "/photos/f250-hiboy-68.jpg"
-  return "/photos/f250-hiboy-68.jpg"
+  return null // no photo available
+}
+
+const hasVehiclePhoto = (vehicle: Vehicle): boolean => {
+  return getVehiclePhoto(vehicle) !== null
 }
 
 export default function GaragePage() {
@@ -161,7 +165,7 @@ export default function GaragePage() {
             <>
               {/* 1. Hero Photo Card */}
               <div style={{ height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)', background: 'var(--border)' }}>
-                <img src={primaryVehicle ? getVehiclePhoto(primaryVehicle) : "/photos/f250-hiboy-68.jpg"} alt={primaryVehicle?.nickname || "My Vehicle"} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 35%" }} />
+                <img src={primaryVehicle && getVehiclePhoto(primaryVehicle) ? getVehiclePhoto(primaryVehicle)! : "/photos/f250-hiboy-68.jpg"} alt={primaryVehicle?.nickname || "My Vehicle"} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 35%" }} />
                 {hasActiveProject && (
                   <div style={{ position: 'absolute', top: 8, right: 10, background: 'var(--orange)', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>ACTIVE BUILD</div>
                 )}
@@ -238,8 +242,8 @@ export default function GaragePage() {
                   >
                     <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center' }}>
                       <div style={{ width: 110, height: 70, borderRadius: '10px', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
-                        {v.cover_photo_url ? (
-                          <img src={v.cover_photo_url} alt={v.nickname || v.make} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
+                        {hasVehiclePhoto(v) ? (
+                          <img src={getVehiclePhoto(v)!} alt={v.nickname || v.make} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
                         ) : (
                           <div style={{ width: '100%', height: '100%', background: 'var(--dark-blue)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                             <span style={{ fontSize: '1.2rem' }}>🚗</span>
