@@ -176,16 +176,11 @@ export default function GaragePage() {
             // ── GARAGE WITH VEHICLES ──────────────────────────────────────────
             <>
               {/* 1. Hero Photo Card */}
-              <label style={{ display: 'block', height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)', background: 'var(--border)', cursor: 'pointer' }}>
-                <input type="file" accept="image/*" style={{ display: 'none' }}
-                  onChange={e => { const f = e.target.files?.[0]; if (f && primaryVehicle) uploadVehiclePhoto(primaryVehicle.id, f) }} />
+              <div style={{ height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)', background: 'var(--border)' }}>
                 <img src={primaryVehicle && getVehiclePhoto(primaryVehicle) ? getVehiclePhoto(primaryVehicle)! : "/photos/f250-hiboy-68.jpg"} alt={primaryVehicle?.nickname || "My Vehicle"} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 35%" }} />
                 {hasActiveProject && (
                   <div style={{ position: 'absolute', top: 8, right: 10, background: 'var(--orange)', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>ACTIVE BUILD</div>
                 )}
-                <div style={{ position: 'absolute', top: 8, left: 10, background: 'rgba(0,0,0,0.5)', borderRadius: 20, padding: '5px 10px' }}>
-                  <span style={{ fontSize: '0.7rem', color: 'white', fontWeight: 700 }}>📷 Change photo</span>
-                </div>
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
                   <p style={{ color: 'white', fontWeight: 800, fontSize: '1.2rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
                     {primaryVehicle?.nickname || (primaryVehicle ? `${primaryVehicle.year} ${primaryVehicle.make} ${primaryVehicle.model}` : 'My Vehicle')}
@@ -196,7 +191,7 @@ export default function GaragePage() {
                     </p>
                   )}
                 </div>
-              </label>
+              </div>
 
               {/* 2. Progress bar — active project only */}
               {hasActiveProject && (
