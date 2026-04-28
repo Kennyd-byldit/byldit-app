@@ -41,12 +41,12 @@ type Vehicle = {
   cover_photo_url: string | null
 }
 
-const getVehiclePhoto = (v: Vehicle): string => {
+const getVehiclePhoto = (v: Vehicle): string | null => {
   if (v.cover_photo_url) return v.cover_photo_url
   const model = v.model?.toLowerCase() || ''
   if (model.includes('ranger')) return '/photos/ranger-2025.jpg'
   if (model.includes('f250') || model.includes('f-250')) return '/photos/f250-hiboy-68.jpg'
-  return '/photos/f250-hiboy-68.jpg'
+  return null
 }
 
 const NavBar = () => (
@@ -153,8 +153,16 @@ function CreateProjectGoalContent() {
           {/* Hero photo — scrolls with content */}
           <div style={{ padding: '12px 14px 16px' }}>
             <div style={{ height: 160, position: 'relative', overflow: 'hidden', borderRadius: 16, boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
-              <img src={getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
+              {getVehiclePhoto(vehicle) ? (
+                <img src={getVehiclePhoto(vehicle)!} alt={vehicle.nickname || vehicle.make}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: 'var(--dark-blue)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <p style={{ color: 'white', fontWeight: 800, fontSize: '1rem', margin: 0 }}>{vehicle.year} {vehicle.make}</p>
+                  <p style={{ color: 'var(--light-blue)', fontSize: '0.85rem', margin: 0 }}>{vehicle.model}</p>
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', margin: 0 }}>📷 No photo yet</p>
+                </div>
+              )}
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 16px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
                 <p style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
                   {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}

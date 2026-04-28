@@ -16,11 +16,12 @@ type Vehicle = {
   condition: string | null; title_status: string | null; notes: string | null; is_primary: boolean
 }
 
-const getVehiclePhoto = (v: Vehicle): string => {
+const getVehiclePhoto = (v: Vehicle): string | null => {
+  if ((v as any).cover_photo_url) return (v as any).cover_photo_url
   const model = v.model?.toLowerCase() || ''
   if (model.includes('ranger')) return '/photos/ranger-2025.jpg'
   if (model.includes('f250') || model.includes('f-250')) return '/photos/f250-hiboy-68.jpg'
-  return '/photos/f250-hiboy-68.jpg'
+  return null
 }
 
 const NavBar = () => (
@@ -144,7 +145,7 @@ export default function VehicleDetailPage() {
             <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
               onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f) }} />
             <div style={{ height: 180, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
-              <img src={(vehicle as any).cover_photo_url || getVehiclePhoto(vehicle)} alt={vehicle.nickname || vehicle.make}
+              <img src={getVehiclePhoto(vehicle) || '/photos/f250-hiboy-68.jpg'} alt={vehicle.nickname || vehicle.make}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
                 <p style={{ color: 'white', fontWeight: 800, fontSize: '1.2rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
