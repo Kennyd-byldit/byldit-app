@@ -260,7 +260,7 @@ export default function AddVehiclePage() {
             <div style={{ marginBottom: 16 }}>
               <label style={{ ...labelStyle, marginBottom: 8 }}>Photo</label>
               <label style={{ display: 'block', cursor: 'pointer' }}>
-                <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+                <input type="file" accept="image/*" style={{ display: 'none' }}
                   onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f) }} />
                 <div style={{ height: 180, borderRadius: 14, overflow: 'hidden', position: 'relative', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
                   {photoUrl ? (

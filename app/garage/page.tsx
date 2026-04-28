@@ -92,6 +92,18 @@ export default function GaragePage() {
     loadUser()
   }, [])
 
+  async function uploadVehiclePhoto(vehicleId: string, file: File) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const ext = file.name.split('.').pop()
+    const filePath = `${user.id}/${vehicleId}.${ext}`
+    const { error } = await supabase.storage.from('photos').upload(filePath, file, { upsert: true })
+    if (error) { console.error('Upload error:', error); return }
+    const { data } = supabase.storage.from('photos').getPublicUrl(filePath)
+    await supabase.from('vehicles').update({ cover_photo_url: data.publicUrl }).eq('id', vehicleId)
+    setVehicles(prev => prev.map(v => v.id === vehicleId ? { ...v, cover_photo_url: data.publicUrl } : v))
+  }
+
   async function setPrimary(vehicleId: string) {
     // Optimistic update
     setVehicles(prev => prev.map(v => ({ ...v, is_primary: v.id === vehicleId })))
@@ -241,7 +253,10 @@ export default function GaragePage() {
                     style={{ background: 'white', borderRadius: 14, marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer', overflow: 'hidden' }}
                   >
                     <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center' }}>
-                      <div style={{ width: 110, height: 70, borderRadius: '10px', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+                      <label style={{ width: 110, height: 70, borderRadius: '10px', overflow: 'hidden', flexShrink: 0, position: 'relative', cursor: 'pointer', display: 'block' }}
+                        onClick={e => e.stopPropagation()}>
+                        <input type="file" accept="image/*" style={{ display: 'none' }}
+                          onChange={e => { const f = e.target.files?.[0]; if (f) uploadVehiclePhoto(v.id, f) }} />
                         {hasVehiclePhoto(v) ? (
                           <img src={getVehiclePhoto(v)!} alt={v.nickname || v.make} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
                         ) : (
@@ -251,7 +266,10 @@ export default function GaragePage() {
                             <p style={{ fontSize: '0.4rem', color: 'rgba(255,255,255,0.5)', margin: 0 }}>📷 Add photo</p>
                           </div>
                         )}
-                      </div>
+                        <div style={{ position: 'absolute', bottom: 2, right: 2, background: 'rgba(0,0,0,0.5)', borderRadius: 6, padding: '2px 4px' }}>
+                          <span style={{ fontSize: '0.45rem', color: 'white' }}>📷</span>
+                        </div>
+                      </label>
                       <div style={{ flex: 1, padding: '10px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                         <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {v.nickname || `${v.year} ${v.make} ${v.model}`}

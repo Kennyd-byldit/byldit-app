@@ -142,7 +142,7 @@ export default function VehicleDetailPage() {
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
 
           <label style={{ display: 'block', cursor: 'pointer', marginBottom: 16 }}>
-            <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+            <input type="file" accept="image/*" style={{ display: 'none' }}
               onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f) }} />
             <div style={{ height: 180, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
               <img src={getVehiclePhoto(vehicle) || '/photos/f250-hiboy-68.jpg'} alt={vehicle.nickname || vehicle.make}
