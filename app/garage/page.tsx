@@ -258,10 +258,7 @@ export default function GaragePage() {
                     style={{ background: 'white', borderRadius: 14, marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer', overflow: 'hidden' }}
                   >
                     <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center' }}>
-                      <label style={{ width: 110, height: 70, borderRadius: '10px', overflow: 'hidden', flexShrink: 0, position: 'relative', cursor: 'pointer', display: 'block' }}
-                        onClick={e => e.stopPropagation()}>
-                        <input type="file" accept="image/*" style={{ display: 'none' }}
-                          onChange={e => { const f = e.target.files?.[0]; if (f) uploadVehiclePhoto(v.id, f) }} />
+                      <div style={{ width: 110, height: 70, borderRadius: '10px', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
                         {hasVehiclePhoto(v) ? (
                           <img src={getVehiclePhoto(v)!} alt={v.nickname || v.make} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
                         ) : (
@@ -270,15 +267,21 @@ export default function GaragePage() {
                             <p style={{ fontSize: '0.5rem', color: 'var(--light-blue)', textAlign: 'center', lineHeight: 1.3, margin: 0 }}>{v.model}</p>
                           </div>
                         )}
-                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.55)', padding: '3px 0', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.5rem', color: 'white', fontWeight: 600 }}>📷 {hasVehiclePhoto(v) ? 'Change photo' : 'Add photo'}</span>
-                        </div>
-                      </label>
+
+                      </div>
                       <div style={{ flex: 1, padding: '10px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                         <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {v.nickname || `${v.year} ${v.make} ${v.model}`}
                         </p>
                         <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)', marginTop: 3 }}>{v.year} {v.make} {v.model}</p>
+                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 4, cursor: 'pointer' }}
+                          onClick={e => e.stopPropagation()}>
+                          <input type="file" accept="image/*" style={{ display: 'none' }}
+                            onChange={e => { const f = e.target.files?.[0]; if (f) uploadVehiclePhoto(v.id, f) }} />
+                          <span style={{ fontSize: '0.7rem', color: 'var(--light-blue)', fontWeight: 600 }}>
+                            📷 {hasVehiclePhoto(v) ? 'Change photo' : 'Add photo'}
+                          </span>
+                        </label>
                       </div>
                       <button
                         onClick={e => { e.stopPropagation(); setPrimary(v.id) }}
