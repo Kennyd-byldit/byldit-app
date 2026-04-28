@@ -18,12 +18,12 @@ type Vehicle = {
   is_primary: boolean
 }
 
-const getVehiclePhoto = (v: Vehicle): string => {
+const getVehiclePhoto = (v: Vehicle): string | null => {
   if (v.cover_photo_url) return v.cover_photo_url
   const model = v.model?.toLowerCase() || ''
   if (model.includes('ranger')) return '/photos/ranger-2025.jpg'
   if (model.includes('f250') || model.includes('f-250')) return '/photos/f250-hiboy-68.jpg'
-  return '/photos/f250-hiboy-68.jpg'
+  return null
 }
 
 const NavBar = () => (
@@ -125,8 +125,15 @@ export default function CreateProjectPage() {
                   onMouseLeave={e => (e.currentTarget.style.borderColor = 'transparent')}
                 >
                   <div style={{ width: 90, flexShrink: 0, overflow: 'hidden' }}>
-                    <img src={getVehiclePhoto(v)} alt={v.nickname || v.make}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
+                    {getVehiclePhoto(v) ? (
+                      <img src={getVehiclePhoto(v)!} alt={v.nickname || v.make}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', background: 'var(--dark-blue)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                        <p style={{ color: 'white', fontWeight: 700, fontSize: '0.6rem', margin: 0 }}>{v.year} {v.make}</p>
+                        <p style={{ color: 'var(--light-blue)', fontSize: '0.55rem', margin: 0 }}>{v.model}</p>
+                      </div>
+                    )}
                   </div>
                   <div style={{ flex: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark-blue)', marginBottom: 2 }}>
