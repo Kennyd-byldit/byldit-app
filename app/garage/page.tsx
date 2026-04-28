@@ -245,9 +245,10 @@ export default function GaragePage() {
                         {hasVehiclePhoto(v) ? (
                           <img src={getVehiclePhoto(v)!} alt={v.nickname || v.make} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
                         ) : (
-                          <div style={{ width: '100%', height: '100%', background: 'var(--dark-blue)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                            <span style={{ fontSize: '1.2rem' }}>🚗</span>
-                            <span style={{ fontSize: '0.45rem', color: 'rgba(255,255,255,0.7)', textAlign: 'center', padding: '0 4px' }}>📷 Add photo</span>
+                          <div style={{ width: '100%', height: '100%', background: 'var(--dark-blue)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, padding: '4px' }}>
+                            <p style={{ fontSize: '0.5rem', color: 'white', fontWeight: 700, textAlign: 'center', lineHeight: 1.3, margin: 0 }}>{v.year} {v.make}</p>
+                            <p style={{ fontSize: '0.5rem', color: 'var(--light-blue)', textAlign: 'center', lineHeight: 1.3, margin: 0 }}>{v.model}</p>
+                            <p style={{ fontSize: '0.4rem', color: 'rgba(255,255,255,0.5)', margin: 0 }}>📷 Add photo</p>
                           </div>
                         )}
                       </div>
