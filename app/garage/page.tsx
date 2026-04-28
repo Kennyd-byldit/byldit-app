@@ -238,10 +238,12 @@ export default function GaragePage() {
                   >
                     <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center' }}>
                       <div style={{ width: 110, height: 70, borderRadius: '10px', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
-                        <img src={getVehiclePhoto(v)} alt={v.nickname || v.make} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
-                        {!v.cover_photo_url && (
-                          <div style={{ position: 'absolute', bottom: 3, left: 0, right: 0, textAlign: 'center' }}>
-                            <span style={{ fontSize: '0.55rem', color: 'white', background: 'rgba(0,0,0,0.5)', borderRadius: 8, padding: '1px 5px' }}>📷 Add photo</span>
+                        {v.cover_photo_url ? (
+                          <img src={v.cover_photo_url} alt={v.nickname || v.make} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', background: 'var(--dark-blue)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                            <span style={{ fontSize: '1.2rem' }}>🚗</span>
+                            <span style={{ fontSize: '0.45rem', color: 'rgba(255,255,255,0.7)', textAlign: 'center', padding: '0 4px' }}>📷 Add photo</span>
                           </div>
                         )}
                       </div>
