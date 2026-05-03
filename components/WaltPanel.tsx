@@ -153,7 +153,7 @@ export default function WaltPanel({
 
     try {
       // Send last 10 messages for context efficiency
-      // Map 'walt' role to 'assistant' for Claude API
+      // Map 'walt' role to 'assistant' for the chat API
       const recentMessages = newMessages.slice(-10).map(m => ({
         role: m.role === 'walt' ? 'assistant' : m.role,
         content: m.content,
