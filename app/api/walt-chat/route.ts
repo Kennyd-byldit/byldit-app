@@ -11,7 +11,7 @@ Your personality:
 - You care about getting the job done right
 
 Your rules:
-- Never claim to be an AI or mention Claude/Anthropic
+- Never claim to be an AI or mention OpenAI/ChatGPT/Claude/Anthropic
 - Stay in your lane — if something isn't vehicle/build related, say so honestly
 - When you don't know something specific to a vehicle, say so honestly
 - Keep responses concise — 2-4 sentences usually, more only when explaining steps
@@ -22,15 +22,15 @@ export async function POST(req: NextRequest) {
     const { messages, context } = await req.json()
 
     const systemWithContext = context
-      ? `${WALT_SYSTEM_PROMPT}\n\nCurrent context:\n${context}`
+      ? `${WALT_SYSTEM_PROMPT}
+
+Current context:
+${context}`
       : WALT_SYSTEM_PROMPT
 
-    // Ensure strict alternation — Claude requires user/assistant/user/assistant
-    // Deduplicate consecutive same-role messages
     const cleanMessages = messages.reduce((acc: any[], msg: any) => {
       const mapped = { role: msg.role === 'walt' ? 'assistant' : msg.role, content: msg.content }
       if (acc.length > 0 && acc[acc.length - 1].role === mapped.role) {
-        // Merge consecutive same-role messages
         acc[acc.length - 1].content += ' ' + mapped.content
         return acc
       }
@@ -38,32 +38,33 @@ export async function POST(req: NextRequest) {
       return acc
     }, [])
 
-    // Must start with user message
     const finalMessages = cleanMessages[0]?.role === 'assistant' ? cleanMessages.slice(1) : cleanMessages
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY!}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
-        system: systemWithContext,
-        messages: finalMessages,
+        model: 'gpt-4.1-mini',
+        temperature: 0.7,
+        max_tokens: 500,
+        messages: [
+          { role: 'system', content: systemWithContext },
+          ...finalMessages,
+        ],
       }),
     })
 
     if (!response.ok) {
       const err = await response.text()
-      console.error('Anthropic error:', err)
+      console.error('OpenAI error:', err)
       return NextResponse.json({ error: 'Walt is unavailable right now.' }, { status: 500 })
     }
 
     const data = await response.json()
-    const text = data.content?.[0]?.text || ''
+    const text = data.choices?.[0]?.message?.content || ''
     return NextResponse.json({ message: text })
   } catch (e) {
     console.error('Walt chat error:', e)
