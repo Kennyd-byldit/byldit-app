@@ -25,6 +25,7 @@ function BudgetContent() {
   const work = searchParams.get('work') || ''
   const notes = searchParams.get('notes') || ''
   const projectName = searchParams.get('name') || ''
+  const projectPhotoUrl = searchParams.get('photo') || ''
 
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(true)
@@ -47,7 +48,7 @@ function BudgetContent() {
 
   const chosenBudget = decideLater ? '' : (customBudget.trim() || budget)
   const canContinue = decideLater || chosenBudget.length > 0
-  const backHref = `/create-project/name?vehicle=${vehicleId}&goals=${encodeURIComponent(goals)}&condition=${encodeURIComponent(condition)}&work=${encodeURIComponent(work)}&notes=${encodeURIComponent(notes)}`
+  const backHref = `/create-project/name?vehicle=${vehicleId}&goals=${encodeURIComponent(goals)}&condition=${encodeURIComponent(condition)}&work=${encodeURIComponent(work)}&notes=${encodeURIComponent(notes)}&photo=${encodeURIComponent(projectPhotoUrl)}`
 
   const nextHref = useMemo(() => {
     const params = new URLSearchParams({
@@ -57,11 +58,12 @@ function BudgetContent() {
       work,
       notes,
       name: projectName,
+      photo: projectPhotoUrl,
       budget: chosenBudget,
       budgetMode: decideLater ? 'later' : 'estimate',
     })
     return `/create-project/build-plan?${params.toString()}`
-  }, [vehicleId, goals, condition, work, notes, projectName, chosenBudget, decideLater])
+  }, [vehicleId, goals, condition, work, notes, projectName, projectPhotoUrl, chosenBudget, decideLater])
 
   if (loading) return <LoadingScreen />
   if (!vehicle) return null
@@ -74,6 +76,7 @@ function BudgetContent() {
     `Condition: ${condition || 'not provided'}`,
     `Known work details: ${work || 'none selected'}`,
     `User notes: ${notes || 'none yet'}`,
+    `Project photo: ${projectPhotoUrl ? 'custom project photo selected' : 'using vehicle photo or add later'}`,
     `Budget selection: ${decideLater ? 'decide later' : chosenBudget || 'empty'}`,
     'Walt should help explain tradeoffs and set expectations, not force a budget.',
   ].join('\n')

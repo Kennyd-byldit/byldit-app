@@ -10,6 +10,20 @@ const supabase = createClient(
 const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
 
 const GOAL_SUB_OPTIONS: Record<string, string[]> = {
+  'Full Restoration': [
+    'Body teardown',
+    'Rust repair',
+    'Paint prep',
+    'Engine work',
+    'Brake system',
+    'Suspension',
+    'Electrical',
+    'Interior',
+    'Weather seals',
+    'Parts sourcing',
+  ],
+  'Partial Restoration': ['Body & paint', 'Mechanical refresh', 'Interior refresh', 'Wiring cleanup', 'Trim & seals', 'Parts sourcing'],
+  'Restomod': ['Drivetrain upgrade', 'Brake upgrade', 'Suspension upgrade', 'Wiring upgrade', 'Interior upgrade', 'Wheels & tires'],
   'Maintenance': ['Oil change', 'Tire rotation', 'Brakes', 'Filters', 'Fluids', 'Tune-up'],
   'Body & Paint': ['Full repaint', 'Touch-up / spot repair', 'Rust repair', 'Body panel replacement', 'Prep & primer', 'Vinyl wrap'],
   'Engine Swap': ['Complete swap', 'Engine rebuild', 'Top end only', 'Bottom end only', 'Forced induction', 'Other'],
@@ -129,7 +143,9 @@ function WorkContent() {
 
       {/* Header */}
       <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <button onClick={() => window.location.href = `/create-project/condition?vehicle=${vehicleId}&goals=${encodeURIComponent(goals)}`}
+        <button onClick={() => window.location.href = condition
+          ? `/create-project/condition?vehicle=${vehicleId}&goals=${encodeURIComponent(goals)}`
+          : `/create-project/goal?vehicle=${vehicleId}`}
           style={{ background: 'none', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-nunito)', display: 'flex', alignItems: 'center', gap: 4 }}>
           ← Back
         </button>
@@ -169,7 +185,9 @@ function WorkContent() {
           <div style={{ padding: '0 18px' }}>
 
           <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>What needs to be done?</p>
-          <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', marginBottom: 16 }}>Select all that apply</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', marginBottom: 16 }}>
+            {goalsWithOptions.length > 0 ? 'Pick the areas you already know about. Add notes for the messy parts.' : 'Add what you know so BYLDit.ai can shape the project.'}
+          </p>
 
           {/* Sections for goals with defined sub-options */}
           {goalsWithOptions.map(goal => (

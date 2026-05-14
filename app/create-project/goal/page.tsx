@@ -109,12 +109,10 @@ function CreateProjectGoalContent() {
   const toggle = (type: string) =>
     setSelected(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])
 
-  const allTypes = PROJECT_GROUPS.flatMap(g => g.types)
-
   const handleContinue = () => {
     if (selected.length === 0) return
     const goals = encodeURIComponent(selected.join(','))
-    window.location.href = `/create-project/work?vehicle=${vehicleId}&goals=${goals}&condition=`
+    window.location.href = `/create-project/condition?vehicle=${vehicleId}&goals=${goals}`
   }
 
   if (loading) return (

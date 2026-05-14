@@ -8,6 +8,7 @@ import {
   VehicleHero,
   getVehicleName,
   loadCreateProjectVehicle,
+  supabase,
 } from '../CreateProjectShared'
 
 function NameContent() {
@@ -19,8 +20,11 @@ function NameContent() {
   const notes = searchParams.get('notes') || ''
 
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
+  const [userId, setUserId] = useState('')
   const [loading, setLoading] = useState(true)
   const [name, setName] = useState('')
+  const [projectPhotoUrl, setProjectPhotoUrl] = useState(searchParams.get('photo') || '')
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [waltOpen, setWaltOpen] = useState(false)
 
   useEffect(() => {
@@ -29,6 +33,7 @@ function NameContent() {
       const result = await loadCreateProjectVehicle(vehicleId)
       if (result.needsRedirect) { window.location.replace(result.needsRedirect); return }
       setVehicle(result.vehicle)
+      setUserId(result.userId || '')
       if (result.vehicle) {
         const firstGoal = goals.split(',').filter(Boolean)[0]
         setName(firstGoal ? `${getVehicleName(result.vehicle)} ${firstGoal}` : `${getVehicleName(result.vehicle)} Build`)
@@ -42,6 +47,19 @@ function NameContent() {
   const canContinue = cleanName.length >= 3
   const backHref = `/create-project/work?vehicle=${vehicleId}&goals=${encodeURIComponent(goals)}&condition=${encodeURIComponent(condition)}&work=${encodeURIComponent(work)}&notes=${encodeURIComponent(notes)}`
 
+  const uploadProjectPhoto = async (file: File) => {
+    if (!userId) return
+    setUploadingPhoto(true)
+    const ext = file.name.split('.').pop() || 'jpg'
+    const filePath = `${userId}/project-cover-${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('photos').upload(filePath, file, { upsert: true })
+    if (!error) {
+      const { data } = supabase.storage.from('photos').getPublicUrl(filePath)
+      setProjectPhotoUrl(data.publicUrl)
+    }
+    setUploadingPhoto(false)
+  }
+
   const nextHref = useMemo(() => {
     const params = new URLSearchParams({
       vehicle: vehicleId,
@@ -50,9 +68,10 @@ function NameContent() {
       work,
       notes,
       name: cleanName,
+      photo: projectPhotoUrl,
     })
     return `/create-project/budget?${params.toString()}`
-  }, [vehicleId, goals, condition, work, notes, cleanName])
+  }, [vehicleId, goals, condition, work, notes, cleanName, projectPhotoUrl])
 
   if (loading) return <LoadingScreen />
   if (!vehicle) return null
@@ -65,6 +84,7 @@ function NameContent() {
     `Known work details: ${work || 'none selected'}`,
     `User notes: ${notes || 'none yet'}`,
     `Draft project name: ${cleanName || 'empty'}`,
+    `Project photo: ${projectPhotoUrl ? 'custom project photo selected' : 'using vehicle photo or add later'}`,
     'Walt should help explain naming or clarify the purpose of the project, but the user completes the form.',
   ].join('\n')
 
@@ -85,11 +105,11 @@ function NameContent() {
           <VehicleHero vehicle={vehicle} />
           <div style={{ padding: '0 18px' }}>
             <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>Name this project</p>
-            <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', marginBottom: 16 }}>Keep it simple. You can change it later.</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', marginBottom: 16 }}>We suggested a name. Keep it, tweak it, or rename it completely.</p>
 
             <div style={{ background: 'white', borderRadius: 14, padding: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 14 }}>
               <label style={{ display: 'block', fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 8 }}>
-                Project name
+                Suggested project name
               </label>
               <input
                 value={name}
@@ -109,6 +129,37 @@ function NameContent() {
                   color: 'var(--dark-blue)',
                 }}
               />
+              <p style={{ fontSize: '0.72rem', color: 'var(--secondary-text)', marginTop: 8, lineHeight: 1.4 }}>
+                This is just the label BYLDit.ai will use around the app.
+              </p>
+            </div>
+
+            <div style={{ background: 'white', borderRadius: 14, padding: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 14 }}>
+              <label style={{ display: 'block', fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 8 }}>
+                Project photo
+              </label>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <div style={{ width: 84, height: 58, borderRadius: 10, overflow: 'hidden', background: 'var(--bg)', border: '1.5px solid var(--border)', flexShrink: 0 }}>
+                  {(projectPhotoUrl || vehicle.cover_photo_url) ? (
+                    <img src={projectPhotoUrl || vehicle.cover_photo_url || ''} alt="Project cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--light-blue)', fontSize: '1.2rem' }}>📷</div>
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ color: 'var(--dark-blue)', fontSize: '0.86rem', fontWeight: 700, marginBottom: 2 }}>
+                    {projectPhotoUrl ? 'Custom project photo selected' : 'Use the vehicle photo, or add one now'}
+                  </p>
+                  <p style={{ color: 'var(--secondary-text)', fontSize: '0.72rem', lineHeight: 1.35 }}>This can be changed later from the project.</p>
+                </div>
+              </div>
+              <label style={{ display: 'block', marginTop: 12, cursor: uploadingPhoto ? 'default' : 'pointer' }}>
+                <input type="file" accept="image/*" disabled={uploadingPhoto} style={{ display: 'none' }}
+                  onChange={e => { const file = e.target.files?.[0]; if (file) uploadProjectPhoto(file) }} />
+                <div style={{ width: '100%', minHeight: 46, borderRadius: 25, border: '1.5px solid var(--light-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--light-blue)', fontWeight: 800, fontSize: '0.9rem' }}>
+                  {uploadingPhoto ? 'Adding photo...' : projectPhotoUrl ? 'Change project photo' : '+ Add project photo'}
+                </div>
+              </label>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 22, background: 'var(--dark-blue)', borderRadius: 14, padding: '12px 14px' }}>

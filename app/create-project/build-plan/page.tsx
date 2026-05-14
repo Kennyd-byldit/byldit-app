@@ -25,6 +25,7 @@ function BuildPlanContent() {
   const work = searchParams.get('work') || ''
   const notes = searchParams.get('notes') || ''
   const projectName = searchParams.get('name') || ''
+  const projectPhotoUrl = searchParams.get('photo') || ''
   const budget = searchParams.get('budget') || ''
   const budgetMode = searchParams.get('budgetMode') || 'estimate'
 
@@ -52,7 +53,8 @@ function BuildPlanContent() {
   const goalList = goals.split(',').filter(Boolean)
   const workList = work.split(',').filter(Boolean)
   const budgetEstimate = budgetMode === 'later' || !budget ? null : Number(budget)
-  const backHref = `/create-project/budget?${new URLSearchParams({ vehicle: vehicleId, goals, condition, work, notes, name: projectName }).toString()}`
+  const backHref = `/create-project/budget?${new URLSearchParams({ vehicle: vehicleId, goals, condition, work, notes, name: projectName, photo: projectPhotoUrl }).toString()}`
+  const reviewPhoto = projectPhotoUrl || vehicle?.cover_photo_url || ''
 
   const setupNote = useMemo(() => [
     `Create Project intake`,
@@ -60,8 +62,9 @@ function BuildPlanContent() {
     `Condition: ${condition || 'Not provided'}`,
     `Work details: ${workList.join(', ') || 'Not provided'}`,
     `Budget: ${budgetMode === 'later' ? 'Decide later' : currencyLabel(budget)}`,
+    `Project photo: ${projectPhotoUrl ? 'Custom project photo' : vehicle?.cover_photo_url ? 'Vehicle photo' : 'Add later'}`,
     notes ? `Notes: ${notes}` : '',
-  ].filter(Boolean).join('\n'), [goalList, condition, workList, budgetMode, budget, notes])
+  ].filter(Boolean).join('\n'), [goalList, condition, workList, budgetMode, budget, projectPhotoUrl, vehicle?.cover_photo_url, notes])
 
   const createProject = async () => {
     if (!vehicle || !userId || creating) return
@@ -78,7 +81,7 @@ function BuildPlanContent() {
         condition: condition || null,
         budget_estimate: budgetEstimate,
         status: 'active',
-        cover_photo_url: vehicle.cover_photo_url,
+        cover_photo_url: projectPhotoUrl || vehicle.cover_photo_url,
       })
       .select('id')
       .single()
@@ -114,6 +117,7 @@ function BuildPlanContent() {
     `Known work details: ${work || 'none selected'}`,
     `User notes: ${notes || 'none yet'}`,
     `Budget: ${budgetMode === 'later' ? 'decide later' : currencyLabel(budget)}`,
+    `Project photo: ${projectPhotoUrl ? 'custom project photo selected' : vehicle.cover_photo_url ? 'using vehicle photo' : 'add later'}`,
     'Walt should explain what happens next and help the user feel oriented. Do not pretend the full generated build plan exists yet.',
   ].join('\n')
 
@@ -137,15 +141,30 @@ function BuildPlanContent() {
               {projectId ? 'Project started' : 'Ready to build your plan'}
             </p>
             <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', marginBottom: 16 }}>
-              {projectId ? 'The setup is saved. Walt has the intake notes for the next pass.' : 'Review the setup, then BYLDit.ai will create the project handoff.'}
+              {projectId ? 'The setup is saved. Walt has the intake notes for the next pass.' : 'Check the details before BYLDit.ai starts the project.'}
             </p>
 
             <div style={{ background: 'white', borderRadius: 14, padding: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 14 }}>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                <div style={{ width: 92, height: 64, borderRadius: 12, overflow: 'hidden', background: 'var(--bg)', border: '1.5px solid var(--border)', flexShrink: 0 }}>
+                  {reviewPhoto ? (
+                    <img src={reviewPhoto} alt="Project cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--light-blue)', fontSize: '1.25rem' }}>📷</div>
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 3 }}>Project photo</p>
+                  <p style={{ fontSize: '0.92rem', color: 'var(--dark-blue)', fontWeight: 800, lineHeight: 1.3 }}>
+                    {projectPhotoUrl ? 'Custom photo selected' : reviewPhoto ? 'Using vehicle photo' : 'Add later'}
+                  </p>
+                </div>
+              </div>
               {[
-                { label: 'Project', value: projectName },
-                { label: 'Goals', value: goalList.join(', ') || 'Not provided' },
+                { label: 'Name', value: projectName },
+                { label: 'Goal', value: goalList.join(', ') || 'Not provided' },
                 { label: 'Condition', value: condition || 'Not provided' },
-                { label: 'Work', value: workList.join(', ') || 'Details in notes' },
+                { label: 'Work to include', value: workList.join(', ') || (notes ? 'Captured in your notes' : 'Not provided') },
                 { label: 'Budget', value: budgetMode === 'later' ? 'Decide later' : currencyLabel(budget) },
               ].map(item => (
                 <div key={item.label} style={{ padding: '10px 0', borderBottom: item.label === 'Budget' ? 'none' : '1px solid var(--border)' }}>
