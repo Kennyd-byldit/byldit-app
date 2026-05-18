@@ -281,12 +281,6 @@ export default function GaragePage() {
                           <span style={{ fontSize: "0.7rem", color: "var(--light-blue)", fontWeight: 700 }}>Edit {v.nickname || v.make}</span>
                         </div>
                       </div>
-                      {activeProject && (
-                        <button onClick={(e) => { e.stopPropagation(); window.location.href = `/projects?project=${activeProject.id}` }}
-                          style={{ width: '100%', marginTop: 8, minHeight: 38, borderRadius: 20, border: 'none', background: 'var(--dark-blue)', color: 'white', fontFamily: 'var(--font-nunito)', fontSize: '0.82rem', fontWeight: 800, cursor: 'pointer' }}>
-                          Active Project: {activeProject.name} →
-                        </button>
-                      )}
                       {/* Row 2: Walt message */}
                       {getCompletion(v) === 100 ? (
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
@@ -299,6 +293,12 @@ export default function GaragePage() {
                           <img src="https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png" alt="Walt" style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid #e8750a", flexShrink: 0 }} />
                           <span style={{ fontSize: "0.72rem", color: "var(--secondary-text)", fontStyle: "italic" }}>&quot;The more I know, the more I can help.&quot;</span>
                         </div>
+                      )}
+                      {activeProject && (
+                        <button onClick={(e) => { e.stopPropagation(); window.location.href = `/projects?project=${activeProject.id}` }}
+                          style={{ width: '100%', marginTop: 8, minHeight: 38, borderRadius: 20, border: 'none', background: 'var(--dark-blue)', color: 'white', fontFamily: 'var(--font-nunito)', fontSize: '0.82rem', fontWeight: 800, cursor: 'pointer' }}>
+                          Active Project: {activeProject.name} →
+                        </button>
                       )}
                     </div>
                   </div>
