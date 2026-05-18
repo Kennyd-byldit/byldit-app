@@ -364,7 +364,7 @@ export default function AddVehiclePage() {
               cursor: canSave ? 'pointer' : 'not-allowed',
               boxShadow: canSave ? '0 6px 20px rgba(232,117,10,0.3)' : 'none',
             }}>
-            {saving ? 'Saving...' : fromCreateProject ? 'Add to garage & start my build →' : 'Add to My Garage →'}
+            {saving ? 'Saving...' : fromCreateProject ? 'Add to garage & start my project →' : 'Add to My Garage →'}
           </button>
 
           <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', textAlign: 'center', marginTop: 10 }}>

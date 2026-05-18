@@ -36,7 +36,7 @@ function NameContent() {
       setUserId(result.userId || '')
       if (result.vehicle) {
         const firstGoal = goals.split(',').filter(Boolean)[0]
-        setName(firstGoal ? `${getVehicleName(result.vehicle)} ${firstGoal}` : `${getVehicleName(result.vehicle)} Build`)
+        setName(firstGoal ? `${getVehicleName(result.vehicle)} ${firstGoal}` : `${getVehicleName(result.vehicle)} Project`)
       }
       setLoading(false)
     }
@@ -96,7 +96,7 @@ function NameContent() {
       onCloseWalt={() => setWaltOpen(false)}
       waltContext={waltContext}
       waltOpeningLine="Name it like you would label a parts bin: clear enough to find later."
-      waltPrompt="Ask Walt about naming this build..."
+      waltPrompt="Ask Walt about naming this project..."
       vehicleId={vehicle.id}
       screen="create-project-name"
     >

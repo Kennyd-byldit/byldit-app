@@ -33,7 +33,6 @@ function BuildPlanContent() {
   const [userId, setUserId] = useState('')
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
-  const [projectId, setProjectId] = useState('')
   const [error, setError] = useState('')
   const [waltOpen, setWaltOpen] = useState(false)
 
@@ -101,15 +100,14 @@ function BuildPlanContent() {
       })
     }
 
-    setProjectId(data.id)
-    setCreating(false)
+    window.location.replace(`/projects?created=${data.id}`)
   }
 
   if (loading) return <LoadingScreen />
   if (!vehicle) return null
 
   const waltContext = [
-    `Screen: Create Project - Build My Plan handoff`,
+    `Screen: Create Project - Create This Project handoff`,
     `Vehicle: ${getVehicleName(vehicle)} (${vehicle.year} ${vehicle.make} ${vehicle.model})`,
     `Project name: ${projectName}`,
     `Selected goals: ${goals || 'not provided'}`,
@@ -128,7 +126,7 @@ function BuildPlanContent() {
       onOpenWalt={() => setWaltOpen(true)}
       onCloseWalt={() => setWaltOpen(false)}
       waltContext={waltContext}
-      waltOpeningLine="We have enough to start the project shell. The full plan comes next, once BYLDit.ai knows how KD wants that engine shaped."
+      waltOpeningLine="We have enough to create the project. The full plan comes next, once BYLDit.ai knows how KD wants that workspace shaped."
       waltPrompt="Ask Walt what happens next..."
       vehicleId={vehicle.id}
       screen="create-project-build-plan"
@@ -138,10 +136,10 @@ function BuildPlanContent() {
           <VehicleHero vehicle={vehicle} />
           <div style={{ padding: '0 18px' }}>
             <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>
-              {projectId ? 'Project started' : 'Ready to build your plan'}
+              Ready to create this project
             </p>
             <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', marginBottom: 16 }}>
-              {projectId ? 'The setup is saved. Walt has the intake notes for the next pass.' : 'Check the details before BYLDit.ai starts the project.'}
+              Check the details before BYLDit.ai saves the project.
             </p>
 
             <div style={{ background: 'white', borderRadius: 14, padding: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 14 }}>
@@ -174,12 +172,10 @@ function BuildPlanContent() {
               ))}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 18, background: projectId ? '#4da8da' : 'var(--dark-blue)', borderRadius: 14, padding: '12px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 18, background: 'var(--dark-blue)', borderRadius: 14, padding: '12px 14px' }}>
               <img src="https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png" alt="Walt" style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #e8750a', flexShrink: 0 }} />
               <p style={{ fontSize: '0.85rem', color: 'white', margin: 0, lineHeight: 1.5 }}>
-                {projectId
-                  ? 'Good. The project shell is in place. Next pass can turn this intake into phases, steps, parts, and budget tracking.'
-                  : 'I’ll keep the plan honest: scope, budget, and what needs to happen first. For now we’re saving the handoff cleanly.'}
+                I’ll keep the plan honest: scope, budget, and what needs to happen first. For now we’re saving the project cleanly.
               </p>
             </div>
 
@@ -189,8 +185,7 @@ function BuildPlanContent() {
               </div>
             )}
 
-            {!projectId ? (
-              <button onClick={createProject} disabled={creating}
+            <button onClick={createProject} disabled={creating}
                 style={{
                   width: '100%',
                   padding: '14px',
@@ -204,20 +199,8 @@ function BuildPlanContent() {
                   cursor: creating ? 'not-allowed' : 'pointer',
                   boxShadow: creating ? 'none' : '0 6px 20px rgba(232,117,10,0.3)',
                 }}>
-                {creating ? 'Starting project...' : 'Build My Plan →'}
+                {creating ? 'Creating project...' : 'Create This Project →'}
               </button>
-            ) : (
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => window.location.href = '/garage'}
-                  style={{ flex: 1, padding: '13px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.9rem', fontWeight: 700, color: 'var(--dark-blue)', fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>
-                  Garage
-                </button>
-                <button onClick={() => window.location.href = `/vehicle/${vehicle.id}`}
-                  style={{ flex: 1, padding: '13px', background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', cursor: 'pointer', boxShadow: '0 6px 20px rgba(232,117,10,0.3)' }}>
-                  View Vehicle
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </main>

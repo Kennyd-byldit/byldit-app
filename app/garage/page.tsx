@@ -15,7 +15,8 @@ const NavBar = () => (
   <nav style={{ background: 'white', borderTop: '1px solid var(--border)', padding: '6px 0 4px', flexShrink: 0 }}>
     <div style={{ display: 'flex', maxWidth: 480, margin: '0 auto' }}>
       {[{ icon: '🏠', label: 'Garage', active: true }, { icon: '🔧', label: 'Projects', active: false }, { icon: '🔩', label: 'Parts', active: false }, { icon: '📋', label: "Walt's Notes", active: false }].map(item => (
-        <div key={item.label} style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}>
+        <div key={item.label} style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
+          onClick={() => { if (item.label === 'Projects') window.location.href = '/projects' }}>
           <div style={{ fontSize: '1.1rem' }}>{item.icon}</div>
           <div style={{ fontSize: '0.55rem', fontWeight: item.active ? 700 : 400, color: item.active ? 'var(--orange)' : 'var(--secondary-text)', fontFamily: 'var(--font-nunito)' }}>{item.label}</div>
         </div>
@@ -36,6 +37,7 @@ const WaltBar = ({ onOpenWalt }: { onOpenWalt: () => void }) => (
 )
 
 type Vehicle = { id: string, nickname: string, year: number, make: string, model: string, is_primary: boolean, color: string|null, engine: string|null, transmission: string|null, drivetrain: string|null, fuel_type: string|null, mileage: number|null, condition: string|null, cover_photo_url: string|null }
+type Project = { id: string, vehicle_id: string, name: string, goal_type: string, status: string }
 
 const getCompletion = (v: Vehicle) => {
   const fields = [v.color, v.engine, v.transmission, v.drivetrain, v.mileage, v.condition]
@@ -59,7 +61,7 @@ export default function GaragePage() {
   const [userName, setUserName] = useState('')
   const [userId, setUserId] = useState('')
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [hasActiveProject, setHasActiveProject] = useState(false)
+  const [activeProjects, setActiveProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [waltOpen, setWaltOpen] = useState(false)
@@ -81,12 +83,12 @@ export default function GaragePage() {
       const [{ data: profile }, { data: vehicleData }, { data: projects }] = await Promise.all([
         supabase.from('profiles').select('name').eq('id', user.id).single(),
         supabase.from('vehicles').select('id, nickname, year, make, model, is_primary, color, engine, transmission, drivetrain, fuel_type, mileage, condition, cover_photo_url').eq('user_id', user.id).order('is_primary', { ascending: false }),
-        supabase.from('projects').select('id').eq('user_id', user.id).eq('status', 'active').limit(1),
+        supabase.from('projects').select('id, vehicle_id, name, goal_type, status').eq('user_id', user.id).eq('status', 'active').order('created_at', { ascending: false }),
       ])
 
       setUserName(profile?.name || user.email?.split('@')[0] || 'there')
       setVehicles(vehicleData || [])
-      setHasActiveProject((projects?.length ?? 0) > 0)
+      setActiveProjects(projects || [])
       setLoading(false)
     }
     loadUser()
@@ -123,6 +125,8 @@ export default function GaragePage() {
   )
 
   const primaryVehicle = vehicles.find(v => v.is_primary) || vehicles[0]
+  const hasActiveProject = activeProjects.length > 0
+  const getVehicleProject = (vehicleId: string) => activeProjects.find(project => project.vehicle_id === vehicleId)
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
@@ -162,13 +166,17 @@ export default function GaragePage() {
                   <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div style={{ background: 'var(--dark-blue)', color: 'white', borderRadius: 14, padding: '12px 16px', fontSize: '0.95rem', lineHeight: 1.6, flex: 1 }}>
-                  Your garage is empty. Let&apos;s fix that &mdash; add your first vehicle and we&apos;ll build your plan together.
+                  Your garage is empty. Let&apos;s fix that &mdash; add your first vehicle and we&apos;ll shape the project together.
                 </div>
               </div>
-              <div style={{ background: 'white', border: '2px dashed var(--light-blue)', borderRadius: 16, padding: '28px 20px', cursor: 'pointer', textAlign: 'center' }}>
+              <div onClick={() => window.location.href = '/add-vehicle'} style={{ background: 'white', border: '2px dashed var(--light-blue)', borderRadius: 16, padding: '28px 20px', cursor: 'pointer', textAlign: 'center', marginBottom: 12 }}>
                 <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>🚗</div>
                 <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--light-blue)', marginBottom: 4 }}>+ Add your first vehicle</p>
                 <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)' }}>Year &middot; Make &middot; Model &middot; Nickname</p>
+              </div>
+              <div onClick={() => window.location.href = '/create-project'}
+                style={{ background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, padding: '13px 16px', textAlign: 'center', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer' }}>
+                <p style={{ color: 'white', fontWeight: 800, fontSize: '0.95rem' }}>Create a New Project →</p>
               </div>
             </div>
 
@@ -178,8 +186,8 @@ export default function GaragePage() {
               {/* 1. Hero Photo Card */}
               <div style={{ height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)', background: 'var(--border)' }}>
                 <img src={primaryVehicle && getVehiclePhoto(primaryVehicle) ? getVehiclePhoto(primaryVehicle)! : "/photos/f250-hiboy-68.jpg"} alt={primaryVehicle?.nickname || "My Vehicle"} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 35%" }} />
-                {hasActiveProject && (
-                  <div style={{ position: 'absolute', top: 8, right: 10, background: 'var(--orange)', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>ACTIVE BUILD</div>
+                {primaryVehicle && getVehicleProject(primaryVehicle.id) && (
+                  <div style={{ position: 'absolute', top: 8, right: 10, background: 'var(--orange)', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>ACTIVE PROJECT</div>
                 )}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
                   <p style={{ color: 'white', fontWeight: 800, fontSize: '1.2rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
@@ -193,60 +201,35 @@ export default function GaragePage() {
                 </div>
               </div>
 
-              {/* 2. Progress bar — active project only */}
-              {hasActiveProject && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <div style={{ flex: 1, background: 'var(--border)', borderRadius: 4, height: 6 }}>
-                    <div style={{ width: '34%', height: '100%', background: 'var(--orange)', borderRadius: 4 }} />
-                  </div>
-                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--orange)' }}>34%</span>
-                </div>
-              )}
-
               {/* 3. Welcome / Welcome Back */}
               <div style={{ textAlign: 'center', marginBottom: 10 }}>
                 <p className={yellowtail.className} style={{ fontSize: '1.5rem', color: 'var(--light-blue)', lineHeight: 1 }}>
-                  {hasActiveProject ? 'Welcome Back,' : 'Welcome,'}
+                  Welcome,
                 </p>
                 <p style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--dark-blue)', letterSpacing: -0.5, lineHeight: 1.15 }}>{userName}</p>
               </div>
 
               {/* 4. CTA */}
-              <div onClick={() => window.location.href = '/create-project'}
-                style={{ background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 50, padding: '12px 16px', textAlign: 'center', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer', marginBottom: 10 }}>
-                {hasActiveProject ? (
-                  <>
-                    <p style={{ color: 'white', fontWeight: 700, fontSize: '0.95rem' }}>Pick Up Where I Left Off →</p>
-                    <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.7rem', marginTop: 2 }}>Continue your build</p>
-                  </>
-                ) : (
-                  <>
-                    <p style={{ color: 'white', fontWeight: 700, fontSize: '0.95rem' }}>Create a New Project →</p>
-                    <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.7rem', marginTop: 2 }}>Create your first project</p>
-                  </>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                <div onClick={() => window.location.href = '/create-project'}
+                  style={{ flex: 1, background: 'linear-gradient(135deg, #e8750a, #f4a543)', borderRadius: 25, padding: '12px 10px', textAlign: 'center', boxShadow: '0 6px 20px rgba(232,117,10,0.3)', cursor: 'pointer', minHeight: 58, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <p style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem' }}>Create a New Project →</p>
+                  <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.66rem', marginTop: 2 }}>Start from a vehicle</p>
+                </div>
+                {hasActiveProject && (
+                  <div onClick={() => window.location.href = '/projects'}
+                    style={{ flex: 1, background: 'white', border: '1.5px solid var(--light-blue)', borderRadius: 25, padding: '12px 10px', textAlign: 'center', cursor: 'pointer', minHeight: 58, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <p style={{ color: 'var(--light-blue)', fontWeight: 800, fontSize: '0.9rem' }}>See Active Projects</p>
+                    <p style={{ color: 'var(--secondary-text)', fontSize: '0.66rem', marginTop: 2 }}>{activeProjects.length} active</p>
+                  </div>
                 )}
               </div>
 
-              {/* 5. Stat Cards — active project only */}
-              {hasActiveProject && (
-                <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-                  {[
-                    { label: 'My Plan', value: '2/6', color: 'var(--dark-blue)' },
-                    { label: "Walt's Notes", value: '2', color: 'var(--orange)' },
-                    { label: 'Budget', value: '$13.8k', color: 'var(--dark-blue)' },
-                    { label: 'Up Next', value: '3', color: 'var(--light-blue)' },
-                  ].map((stat) => (
-                    <div key={stat.label} style={{ flex: 1, background: 'white', borderRadius: 12, padding: '8px 4px', textAlign: 'center', border: '1.5px solid ' + stat.color, cursor: 'pointer', minWidth: 0 }}>
-                      <p style={{ fontSize: '1rem', fontWeight: 800, color: stat.color }}>{stat.value}</p>
-                      <p style={{ fontSize: '0.5rem', color: 'var(--secondary-text)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.2 }}>{stat.label}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
               {/* 6. All vehicle cards */}
               <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10 }}>
-                {vehicles.map(v => (
+                {vehicles.map(v => {
+                  const activeProject = getVehicleProject(v.id)
+                  return (
                   <div
                     key={v.id}
                     onClick={() => window.location.href = '/vehicle/' + v.id}
@@ -298,6 +281,12 @@ export default function GaragePage() {
                           <span style={{ fontSize: "0.7rem", color: "var(--light-blue)", fontWeight: 700 }}>Edit {v.nickname || v.make}</span>
                         </div>
                       </div>
+                      {activeProject && (
+                        <button onClick={(e) => { e.stopPropagation(); window.location.href = `/projects?project=${activeProject.id}` }}
+                          style={{ width: '100%', marginTop: 8, minHeight: 38, borderRadius: 20, border: 'none', background: 'var(--dark-blue)', color: 'white', fontFamily: 'var(--font-nunito)', fontSize: '0.82rem', fontWeight: 800, cursor: 'pointer' }}>
+                          Active Project: {activeProject.name} →
+                        </button>
+                      )}
                       {/* Row 2: Walt message */}
                       {getCompletion(v) === 100 ? (
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
@@ -313,7 +302,8 @@ export default function GaragePage() {
                       )}
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
 
               {/* 7. Add to My Garage */}

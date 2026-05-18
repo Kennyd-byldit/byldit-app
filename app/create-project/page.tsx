@@ -36,7 +36,10 @@ const NavBar = () => (
         { icon: '📋', label: "Walt's Notes", active: false },
       ].map(item => (
         <div key={item.label} style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
-          onClick={() => { if (item.label === 'Garage') window.location.href = '/garage' }}>
+          onClick={() => {
+            if (item.label === 'Garage') window.location.href = '/garage'
+            if (item.label === 'Projects') window.location.href = '/projects'
+          }}>
           <div style={{ fontSize: '1.1rem' }}>{item.icon}</div>
           <div style={{ fontSize: '0.55rem', fontWeight: item.active ? 700 : 400, color: item.active ? 'var(--orange)' : 'var(--secondary-text)', fontFamily: 'var(--font-nunito)' }}>{item.label}</div>
         </div>
@@ -108,7 +111,7 @@ export default function CreateProjectPage() {
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '20px 18px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
 
-          <p style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>Start a Build</p>
+          <p style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>Start a Project</p>
           <p style={{ fontSize: '0.85rem', color: 'var(--secondary-text)', marginBottom: 24 }}>What are we working on?</p>
 
           {/* Option 1: Vehicle already in garage */}
@@ -159,16 +162,16 @@ export default function CreateProjectPage() {
             style={{ background: 'white', borderRadius: 14, padding: '16px 18px', marginBottom: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1.5px solid var(--border)' }}>
             <div>
               <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--dark-blue)', marginBottom: 2 }}>Add a new vehicle</p>
-              <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)' }}>Add it to your garage and start a build</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)' }}>Add it to your garage and start a project</p>
             </div>
             <span style={{ color: 'var(--light-blue)', fontSize: '1.2rem' }}>›</span>
           </div>
 
-          {/* Option 3: Dream build */}
+          {/* Option 3: Dream project */}
           <div onClick={() => window.location.href = '/add-vehicle?from=create-project&type=dream'}
             style={{ background: 'white', borderRadius: 14, padding: '16px 18px', marginBottom: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1.5px solid var(--border)' }}>
             <div>
-              <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--dark-blue)', marginBottom: 2 }}>Plan a dream build</p>
+              <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--dark-blue)', marginBottom: 2 }}>Plan a dream project</p>
               <p style={{ fontSize: '0.8rem', color: 'var(--secondary-text)' }}>You don&apos;t own it yet — but you can plan it</p>
             </div>
             <span style={{ color: 'var(--light-blue)', fontSize: '1.2rem' }}>›</span>

@@ -64,7 +64,10 @@ export const NavBar = () => (
         { icon: '📋', label: "Walt's Notes", active: false },
       ].map(item => (
         <div key={item.label} style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
-          onClick={() => { if (item.label === 'Garage') window.location.href = '/garage' }}>
+          onClick={() => {
+            if (item.label === 'Garage') window.location.href = '/garage'
+            if (item.label === 'Projects') window.location.href = '/projects'
+          }}>
           <div style={{ fontSize: '1.1rem' }}>{item.icon}</div>
           <div style={{ fontSize: '0.55rem', fontWeight: item.active ? 700 : 400, color: item.active ? 'var(--orange)' : 'var(--secondary-text)', fontFamily: 'var(--font-nunito)' }}>{item.label}</div>
         </div>
