@@ -3,7 +3,13 @@ import { createClient } from '@supabase/supabase-js'
 
 type GeneratedStep = {
   name: string
+  overview?: string
   instructions?: string
+  parts_materials?: string[]
+  tools?: string[]
+  warnings?: string[]
+  tips?: string[]
+  reference_notes?: string[]
   difficulty?: 'Easy' | 'Moderate' | 'Advanced' | 'Pro'
   estimated_hours?: number
   cost_estimate?: number
@@ -33,7 +39,13 @@ Schema:
       "steps": [
         {
           "name": "Step name",
-          "instructions": "Short, useful guidance for the user.",
+          "overview": "Plain-language explanation of what this step does and why it matters.",
+          "instructions": "Detailed garage-ready walkthrough. Include prep, sequence, practical checks, and what done looks like.",
+          "parts_materials": ["Specific parts, fluids, materials, quantities, or specs when knowable"],
+          "tools": ["Specific tools needed"],
+          "warnings": ["Safety cautions, common mistakes, torque/spec caveats, vehicle-specific uncertainty"],
+          "tips": ["Practical mechanic tips and sequencing notes"],
+          "reference_notes": ["Photos or measurements the user should capture, labels to make, references to check"],
           "difficulty": "Easy | Moderate | Advanced | Pro",
           "estimated_hours": 2,
           "cost_estimate": 100,
@@ -48,7 +60,10 @@ Rules:
 - Create 3 to 6 phases.
 - Each phase should have 2 to 5 steps.
 - Sequence the project in the order a mechanic would actually do it.
-- Keep step names short and garage-friendly.
+- Keep step names short and garage-friendly, but make each step's detail rich and useful.
+- Scale detail to the job: oil changes need exact supplies/spec guidance when possible; restorations need phased teardown, inspection, sourcing, safety, and reassembly guidance.
+- If exact vehicle specs are uncertain, say what to verify instead of inventing certainty.
+- Include concrete tools, materials, cautions, prep notes, and practical done-checks wherever relevant.
 - Cost and hour estimates can be rough.
 - Use "Shop" for paint, structural, safety-critical, or highly specialized work when appropriate.
 - Use only these difficulty values: Easy, Moderate, Advanced, Pro.
@@ -80,6 +95,11 @@ function normalizeMoney(value: unknown) {
 function normalizeHours(value: unknown) {
   const number = Number(value)
   return Number.isFinite(number) && number > 0 ? number : null
+}
+
+function normalizeStringArray(value: unknown) {
+  if (!Array.isArray(value)) return []
+  return value.map(item => String(item).trim()).filter(Boolean).slice(0, 12)
 }
 
 export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -158,7 +178,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
       body: JSON.stringify({
         model: 'gpt-4.1-mini',
         temperature: 0.45,
-        max_tokens: 2500,
+        max_tokens: 5000,
         messages: [
           { role: 'system', content: PLAN_SYSTEM_PROMPT },
           { role: 'user', content: `Generate the BYLDit.ai project plan for this intake:\n${planContext}` },
@@ -214,7 +234,15 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
         phase_id: savedPhase.id,
         user_id: user.id,
         name: String(step.name || `Step ${stepIndex + 1}`).slice(0, 140),
-        instructions: step.instructions ? String(step.instructions).slice(0, 1200) : null,
+        instructions: JSON.stringify({
+          overview: step.overview ? String(step.overview).slice(0, 1400) : '',
+          instructions: step.instructions ? String(step.instructions).slice(0, 4000) : '',
+          parts_materials: normalizeStringArray(step.parts_materials),
+          tools: normalizeStringArray(step.tools),
+          warnings: normalizeStringArray(step.warnings),
+          tips: normalizeStringArray(step.tips),
+          reference_notes: normalizeStringArray(step.reference_notes),
+        }),
         difficulty: normalizeDifficulty(step.difficulty),
         estimated_hours: normalizeHours(step.estimated_hours),
         cost_estimate: normalizeMoney(step.cost_estimate),
