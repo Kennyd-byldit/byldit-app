@@ -2,14 +2,10 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import WaltPanel from '@/components/WaltPanel'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+import { WALT_AVATAR_URL } from '@/lib/app-constants'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
-const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
+const WALT = WALT_AVATAR_URL
 
 type Vehicle = {
   id: string

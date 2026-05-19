@@ -17,6 +17,16 @@ create table if not exists vehicles (
   nickname text,
   type text not null default 'garage' check (type in ('build', 'garage')),
   cover_photo_url text,
+  color text,
+  engine text,
+  fuel_type text,
+  transmission text,
+  drivetrain text,
+  mileage integer,
+  condition text,
+  title_status text,
+  notes text,
+  is_primary boolean default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -181,10 +191,12 @@ create table if not exists walt_messages (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references auth.users(id) on delete cascade not null,
   project_id uuid references projects(id) on delete set null,
+  vehicle_id uuid references vehicles(id) on delete set null,
   role text not null check (role in ('user', 'walt')),
   content text not null,
   action_type text,
   action_ref_id uuid,
+  screen text default 'garage',
   created_at timestamptz default now()
 );
 alter table walt_messages enable row level security;
@@ -202,4 +214,3 @@ create policy "Users can upload own photos" on storage.objects
 
 create policy "Users can view own photos" on storage.objects
   for select using (auth.uid()::text = (storage.foldername(name))[1]);
-

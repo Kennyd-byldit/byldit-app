@@ -1,14 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
-import { Yellowtail } from 'next/font/google'
-
-const yellowtail = Yellowtail({ weight: '400', subsets: ['latin'] })
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabase } from '@/lib/supabase'
 
 async function getRedirectPath(userId: string): Promise<string> {
   const { data } = await supabase
@@ -43,6 +35,39 @@ const googleSvg = (
     <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.5 35.6 26.9 36.5 24 36.5c-5.2 0-9.6-3.5-11.2-8.3l-6.6 5.1C9.6 39.6 16.3 44 24 44z"/>
     <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C40.8 35.6 44 30.2 44 24c0-1.3-.1-2.7-.4-4z"/>
   </svg>
+)
+
+const Divider = () => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+    <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+    <span style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', whiteSpace: 'nowrap' }}>or jump right in</span>
+    <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+  </div>
+)
+
+const SimpleDivider = () => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+    <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+    <span style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', whiteSpace: 'nowrap' }}>or</span>
+    <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+  </div>
+)
+
+const GoogleButton = ({ loading, onClick }: { loading: boolean, onClick: () => void }) => (
+  <button onClick={onClick} disabled={loading}
+    style={{ width: '100%', padding: '14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.95rem', fontWeight: 700, color: 'var(--dark-blue)', fontFamily: 'var(--font-nunito)', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+    {googleSvg}
+    Continue with Google
+  </button>
+)
+
+const BackLink = ({ onBack }: { onBack: () => void }) => (
+  <p style={{ textAlign: 'center', marginTop: 4 }}>
+    <span onClick={onBack}
+      style={{ fontSize: '0.82rem', color: 'var(--secondary-text)', cursor: 'pointer' }}>
+      &larr; Back
+    </span>
+  </p>
 )
 
 export default function LoginPage() {
@@ -101,39 +126,6 @@ export default function LoginPage() {
     setLoading(false)
   }
 
-  const Divider = () => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-      <span style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', whiteSpace: 'nowrap' }}>or jump right in</span>
-      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-    </div>
-  )
-
-  const SimpleDivider = () => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-      <span style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', whiteSpace: 'nowrap' }}>or</span>
-      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-    </div>
-  )
-
-  const GoogleButton = () => (
-    <button onClick={handleGoogle} disabled={loading}
-      style={{ width: '100%', padding: '14px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 25, fontSize: '0.95rem', fontWeight: 700, color: 'var(--dark-blue)', fontFamily: 'var(--font-nunito)', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-      {googleSvg}
-      Continue with Google
-    </button>
-  )
-
-  const BackLink = () => (
-    <p style={{ textAlign: 'center', marginTop: 4 }}>
-      <span onClick={() => reset('landing')}
-        style={{ fontSize: '0.82rem', color: 'var(--secondary-text)', cursor: 'pointer' }}>
-        &larr; Back
-      </span>
-    </p>
-  )
-
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
       {/* Status bar */}
@@ -155,7 +147,7 @@ export default function LoginPage() {
           {view === 'landing' && (
             <>
               <div style={{ textAlign: 'center', marginBottom: 32 }}>
-                <p className={yellowtail.className} style={{ fontSize: '2.4rem', color: 'var(--dark-blue)', lineHeight: 1, marginBottom: 8 }}>Get Started</p>
+                <p style={{ fontFamily: 'var(--font-script)', fontSize: '2.4rem', color: 'var(--dark-blue)', lineHeight: 1, marginBottom: 8 }}>Get Started</p>
                 <p style={{ fontSize: '0.9rem', color: 'var(--secondary-text)' }}>Your build. Your way.</p>
               </div>
               <button onClick={() => reset('signup')}
@@ -167,7 +159,7 @@ export default function LoginPage() {
                 I Already Have an Account
               </button>
               <Divider />
-              <GoogleButton />
+              <GoogleButton loading={loading} onClick={handleGoogle} />
             </>
           )}
 
@@ -175,7 +167,7 @@ export default function LoginPage() {
           {view === 'signup' && (
             <>
               <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <p className={yellowtail.className} style={{ fontSize: '2.2rem', color: '#e8750a', lineHeight: 1, marginBottom: 8 }}>Create Account</p>
+                <p style={{ fontFamily: 'var(--font-script)', fontSize: '2.2rem', color: '#e8750a', lineHeight: 1, marginBottom: 8 }}>Create Account</p>
                 <p style={{ fontSize: '0.9rem', color: 'var(--secondary-text)' }}>Let&apos;s get your build started.</p>
               </div>
               <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
@@ -190,14 +182,14 @@ export default function LoginPage() {
                 {loading ? 'Loading...' : 'Create My Account \u2192'}
               </button>
               <SimpleDivider />
-              <GoogleButton />
+              <GoogleButton loading={loading} onClick={handleGoogle} />
               <p style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--secondary-text)', marginBottom: 8 }}>
                 Already have an account?{' '}
                 <span onClick={() => reset('signin')} style={{ color: 'var(--light-blue)', fontWeight: 700, cursor: 'pointer' }}>
                   Log in
                 </span>
               </p>
-              <BackLink />
+              <BackLink onBack={() => reset('landing')} />
             </>
           )}
 
@@ -205,7 +197,7 @@ export default function LoginPage() {
           {view === 'signin' && (
             <>
               <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <p className={yellowtail.className} style={{ fontSize: '2.2rem', color: 'var(--dark-blue)', lineHeight: 1, marginBottom: 8 }}>Welcome Back</p>
+                <p style={{ fontFamily: 'var(--font-script)', fontSize: '2.2rem', color: 'var(--dark-blue)', lineHeight: 1, marginBottom: 8 }}>Welcome Back</p>
                 <p style={{ fontSize: '0.9rem', color: 'var(--secondary-text)' }}>Good to see you again.</p>
               </div>
               <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
@@ -220,14 +212,14 @@ export default function LoginPage() {
                 {loading ? 'Loading...' : 'Sign In \u2192'}
               </button>
               <SimpleDivider />
-              <GoogleButton />
+              <GoogleButton loading={loading} onClick={handleGoogle} />
               <p style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--secondary-text)', marginBottom: 8 }}>
                 Don&apos;t have an account?{' '}
                 <span onClick={() => reset('signup')} style={{ color: '#e8750a', fontWeight: 700, cursor: 'pointer' }}>
                   Sign up free
                 </span>
               </p>
-              <BackLink />
+              <BackLink onBack={() => reset('landing')} />
             </>
           )}
 

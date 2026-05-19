@@ -14,6 +14,18 @@ const KNOWN_MAKES = new Set([
   'Volkswagen','Volvo'
 ])
 
+type NhtsaMake = {
+  MakeName?: string
+}
+
+type NhtsaModel = {
+  Model_Name?: string
+}
+
+type NhtsaResponse<T> = {
+  Results?: T[]
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const type = searchParams.get('type')
@@ -25,21 +37,22 @@ export async function GET(req: NextRequest) {
       const res = await fetch(`${NHTSA}/GetMakesForVehicleType/Passenger%20Car?format=json`, {
         next: { revalidate: 86400 } // cache 24 hours
       })
-      const data = await res.json()
+      const data = await res.json() as NhtsaResponse<NhtsaMake>
       
       // Also fetch truck makes
       const res2 = await fetch(`${NHTSA}/GetMakesForVehicleType/Truck?format=json`, {
         next: { revalidate: 86400 }
       })
-      const data2 = await res2.json()
+      const data2 = await res2.json() as NhtsaResponse<NhtsaMake>
       
       const allMakes = new Set([
-        ...data.Results.map((m: any) => m.MakeName),
-        ...data2.Results.map((m: any) => m.MakeName),
+        ...(data.Results || []).map(m => m.MakeName),
+        ...(data2.Results || []).map(m => m.MakeName),
       ])
       
       // Filter to well-known brands, title-case, sort
       const makes = [...allMakes]
+        .filter((m): m is string => Boolean(m))
         .map((m: string) => m.charAt(0).toUpperCase() + m.slice(1).toLowerCase())
         .map((m: string) => {
           // Fix specific capitalizations
@@ -59,10 +72,14 @@ export async function GET(req: NextRequest) {
         `${NHTSA}/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelyear/${year}?format=json`,
         { next: { revalidate: 86400 } }
       )
-      const data = await res.json()
-      const models = data.Results
-        .map((m: any) => m.Model_Name)
-        .filter((m: string) => m && !m.toLowerCase().includes('police') && !m.toLowerCase().includes('taxi'))
+      const data = await res.json() as NhtsaResponse<NhtsaModel>
+      const models = (data.Results || [])
+        .map(m => m.Model_Name)
+        .filter((m): m is string => {
+          if (!m) return false
+          const model = m.toLowerCase()
+          return !model.includes('police') && !model.includes('taxi')
+        })
         .sort()
       
       return NextResponse.json({ models })

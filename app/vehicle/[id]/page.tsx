@@ -1,28 +1,13 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+import { WALT_AVATAR_URL } from '@/lib/app-constants'
+import { getVehiclePhoto } from '@/lib/vehicle-display'
+import type { VehicleDetail } from '@/lib/types'
+const WALT = WALT_AVATAR_URL
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
-
-type Vehicle = {
-  id: string; nickname: string | null; year: number; make: string; model: string
-  color: string | null; engine: string | null; fuel_type: string | null
-  transmission: string | null; drivetrain: string | null; mileage: number | null
-  condition: string | null; title_status: string | null; notes: string | null; is_primary: boolean
-}
-
-const getVehiclePhoto = (v: Vehicle): string | null => {
-  if ((v as any).cover_photo_url) return (v as any).cover_photo_url
-  const model = v.model?.toLowerCase() || ''
-  if (model.includes('ranger')) return '/photos/ranger-2025.jpg'
-  if (model.includes('f250') || model.includes('f-250')) return '/photos/f250-hiboy-68.jpg'
-  return null
-}
+type Vehicle = VehicleDetail
 
 const NavBar = () => (
   <nav style={{ background: 'white', borderTop: '1px solid var(--border)', padding: '6px 0 4px', flexShrink: 0 }}>
@@ -89,7 +74,7 @@ export default function VehicleDetailPage() {
     const { data } = supabase.storage.from('photos').getPublicUrl(filePath)
     const publicUrl = data.publicUrl
     await supabase.from('vehicles').update({ cover_photo_url: publicUrl }).eq('id', vehicle.id)
-    setVehicle(prev => prev ? { ...prev, cover_photo_url: publicUrl } as any : prev)
+    setVehicle(prev => prev ? { ...prev, cover_photo_url: publicUrl } : prev)
     setSavedMsg(true)
     setTimeout(() => setSavedMsg(false), 2000)
   }
@@ -154,7 +139,7 @@ export default function VehicleDetailPage() {
               </div>
               <div style={{ position: 'absolute', top: 10, right: 12, background: 'rgba(0,0,0,0.5)', borderRadius: 20, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontSize: '0.8rem' }}>📷</span>
-                <span style={{ fontSize: '0.75rem', color: 'white', fontWeight: 700 }}>{(vehicle as any).cover_photo_url ? 'Change photo' : 'Add a photo'}</span>
+                <span style={{ fontSize: '0.75rem', color: 'white', fontWeight: 700 }}>{vehicle.cover_photo_url ? 'Change photo' : 'Add a photo'}</span>
               </div>
             </div>
           </label>

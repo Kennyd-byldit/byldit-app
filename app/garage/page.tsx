@@ -1,15 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
 import WaltPanel from '@/components/WaltPanel'
-import { Yellowtail } from 'next/font/google'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+import { WALT_AVATAR_URL } from '@/lib/app-constants'
 
-const yellowtail = Yellowtail({ weight: '400', subsets: ['latin'] })
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
+const WALT = WALT_AVATAR_URL
 
 const NavBar = () => (
   <nav style={{ background: 'white', borderTop: '1px solid var(--border)', padding: '6px 0 4px', flexShrink: 0 }}>
@@ -203,7 +198,7 @@ export default function GaragePage() {
 
               {/* 3. Welcome / Welcome Back */}
               <div style={{ textAlign: 'center', marginBottom: 10 }}>
-                <p className={yellowtail.className} style={{ fontSize: '1.5rem', color: 'var(--light-blue)', lineHeight: 1 }}>
+                <p style={{ fontFamily: 'var(--font-script)', fontSize: '1.5rem', color: 'var(--light-blue)', lineHeight: 1 }}>
                   Welcome,
                 </p>
                 <p style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--dark-blue)', letterSpacing: -0.5, lineHeight: 1.15 }}>{userName}</p>
@@ -284,13 +279,13 @@ export default function GaragePage() {
                       {/* Row 2: Walt message */}
                       {getCompletion(v) === 100 ? (
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
-                          <img src="https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png" alt="Walt" style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid #e8750a", flexShrink: 0 }} />
+                          <img src={WALT} alt="Walt" style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid #e8750a", flexShrink: 0 }} />
                           <span style={{ fontSize: "0.72rem", color: "#4da8da", fontWeight: 700 }}>Great job! Profile complete.</span>
                         </div>
                       ) : (
                         <div onClick={(e) => { e.stopPropagation(); window.location.href = "/vehicle/" + v.id }}
                           style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, cursor: "pointer" }}>
-                          <img src="https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png" alt="Walt" style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid #e8750a", flexShrink: 0 }} />
+                          <img src={WALT} alt="Walt" style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid #e8750a", flexShrink: 0 }} />
                           <span style={{ fontSize: "0.72rem", color: "var(--secondary-text)", fontStyle: "italic" }}>&quot;The more I know, the more I can help.&quot;</span>
                         </div>
                       )}

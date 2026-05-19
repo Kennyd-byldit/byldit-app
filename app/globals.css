@@ -10,6 +10,9 @@
   --secondary-text: #8395a7;
   --border: #d4e0eb;
   --white: #ffffff;
+  --font-nunito: "Nunito", "Trebuchet MS", Arial, sans-serif;
+  --font-barlow: "Barlow Condensed", Impact, "Arial Narrow", sans-serif;
+  --font-script: "Yellowtail", "Brush Script MT", cursive;
 }
 
 * {

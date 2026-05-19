@@ -1,13 +1,9 @@
 'use client'
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
+import { supabase } from '@/lib/supabase'
+import { WALT_AVATAR_URL } from '@/lib/app-constants'
+const WALT = WALT_AVATAR_URL
 
 const GOAL_SUB_OPTIONS: Record<string, string[]> = {
   'Full Restoration': [

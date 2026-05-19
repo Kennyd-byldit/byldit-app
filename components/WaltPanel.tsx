@@ -1,11 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabase } from '@/lib/supabase'
+import { WALT_AVATAR_URL } from '@/lib/app-constants'
 // Strip markdown formatting from Walt's responses
 function stripMarkdown(text: string): string {
   return text
@@ -18,7 +14,7 @@ function stripMarkdown(text: string): string {
     .trim()
 }
 
-const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
+const WALT = WALT_AVATAR_URL
 
 type Message = { role: 'user' | 'walt'; content: string }
 

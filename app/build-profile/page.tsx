@@ -1,12 +1,8 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
+import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { WALT_AVATAR_URL } from '@/lib/app-constants'
+const WALT = WALT_AVATAR_URL
 
 const expOptions = [
   { emoji: '🔰', label: 'Just getting started' },
@@ -61,6 +57,22 @@ const WaltBar = ({ placeholder }: { placeholder: string }) => (
   </div>
 )
 
+const BuildProfileHeader = ({ onBack }: { onBack: () => void }) => (
+  <>
+    <div style={{ background: 'var(--bg)', padding: '6px 16px 4px', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
+      <span style={{ fontSize: '0.8rem', color: 'var(--dark-blue)', fontWeight: 600 }}>10:12 AM</span>
+      <span style={{ fontSize: '0.8rem', color: 'var(--dark-blue)' }}>📶 🔋</span>
+    </div>
+    <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-nunito)', display: 'flex', alignItems: 'center', gap: 4 }}>← Back</button>
+      <span style={{ fontFamily: 'var(--font-barlow)', fontSize: '1.8rem', fontWeight: 800, fontStyle: 'italic', color: 'white' }}>
+        BYLD<span style={{ fontFamily: 'var(--font-nunito)', fontWeight: 300, fontStyle: 'normal', color: 'var(--light-blue)' }}>it</span>
+      </span>
+      <div style={{ width: 48 }} />
+    </header>
+  </>
+)
+
 export default function BuildProfilePage() {
   // ── ALL STATE AT THE TOP ──────────────────────────────────────────────────
   const [step, setStep] = useState(1)
@@ -96,22 +108,6 @@ export default function BuildProfilePage() {
       setStep(2)
     }
   }
-
-  const Header = () => (
-    <>
-      <div style={{ background: 'var(--bg)', padding: '6px 16px 4px', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
-        <span style={{ fontSize: '0.8rem', color: 'var(--dark-blue)', fontWeight: 600 }}>10:12 AM</span>
-        <span style={{ fontSize: '0.8rem', color: 'var(--dark-blue)' }}>📶 🔋</span>
-      </div>
-      <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <button onClick={goBack} style={{ background: 'none', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-nunito)', display: 'flex', alignItems: 'center', gap: 4 }}>← Back</button>
-        <span style={{ fontFamily: 'var(--font-barlow)', fontSize: '1.8rem', fontWeight: 800, fontStyle: 'italic', color: 'white' }}>
-          BYLD<span style={{ fontFamily: 'var(--font-nunito)', fontWeight: 300, fontStyle: 'normal', color: 'var(--light-blue)' }}>it</span>
-        </span>
-        <div style={{ width: 48 }} />
-      </header>
-    </>
-  )
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '10px 14px', background: 'var(--bg)',
@@ -177,7 +173,7 @@ export default function BuildProfilePage() {
   // ── STEP 1: ABOUT YOU ─────────────────────────────────────────────────────
   if (step === 1) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
-      <Header />
+      <BuildProfileHeader onBack={goBack} />
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>Build Your Profile</p>
@@ -282,7 +278,7 @@ export default function BuildProfilePage() {
   // ── STEP 2: WHAT'S IN YOUR GARAGE ────────────────────────────────────────
   if (step === 2) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
-      <Header />
+      <BuildProfileHeader onBack={goBack} />
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>What&apos;s in your garage?</p>
@@ -393,7 +389,7 @@ export default function BuildProfilePage() {
   // ── STEP 3: YOUR SETUP ────────────────────────────────────────────────────
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)', overflowX: 'hidden' }}>
-      <Header />
+      <BuildProfileHeader onBack={goBack} />
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 18px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
           <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 2 }}>Your Setup</p>

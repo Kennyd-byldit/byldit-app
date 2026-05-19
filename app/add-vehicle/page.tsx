@@ -1,12 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png'
+import { supabase } from '@/lib/supabase'
+import { WALT_AVATAR_URL } from '@/lib/app-constants'
+const WALT = WALT_AVATAR_URL
 
 const YEARS = Array.from({ length: 2026 - 1899 }, (_, i) => 2026 - i) // 2026 down to 1900
 
@@ -100,7 +96,7 @@ export default function AddVehiclePage() {
       .then(r => r.json())
       .then(d => { setModels(d.models || []); setLoadingModels(false) })
       .catch(() => setLoadingModels(false))
-  }, [make])
+  }, [year, make])
 
   // No auto-photo — user uploads their own
   // photoUrl stays empty until user taps to upload
@@ -162,7 +158,7 @@ export default function AddVehiclePage() {
       } else {
         window.location.replace('/garage')
       }
-    } catch (e) {
+    } catch {
       setError('Something went wrong. Try again.')
       setSaving(false)
     }

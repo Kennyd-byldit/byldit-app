@@ -6,6 +6,7 @@ import {
   LoadingScreen,
   Vehicle,
   VehicleHero,
+  WALT,
   getVehicleName,
   loadCreateProjectVehicle,
   supabase,
@@ -173,7 +174,7 @@ function BuildPlanContent() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 18, background: 'var(--dark-blue)', borderRadius: 14, padding: '12px 14px' }}>
-              <img src="https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/Assets/walt-v1.png" alt="Walt" style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #e8750a', flexShrink: 0 }} />
+              <img src={WALT} alt="Walt" style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #e8750a', flexShrink: 0 }} />
               <p style={{ fontSize: '0.85rem', color: 'white', margin: 0, lineHeight: 1.5 }}>
                 I’ll keep the plan honest: scope, budget, and what needs to happen first. For now we’re saving the project cleanly.
               </p>
