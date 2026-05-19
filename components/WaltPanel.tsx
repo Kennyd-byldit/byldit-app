@@ -22,11 +22,36 @@ const WALT = 'https://bvhdfoemvsrosmlslfro.supabase.co/storage/v1/object/public/
 
 type Message = { role: 'user' | 'walt'; content: string }
 
+type SpeechRecognitionResultLike = {
+  isFinal: boolean
+  0: { transcript: string }
+}
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number
+  results: ArrayLike<SpeechRecognitionResultLike>
+}
+
+type SpeechRecognitionLike = {
+  lang: string
+  interimResults: boolean
+  continuous: boolean
+  maxAlternatives: number
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null
+  onerror: ((event: { error?: string }) => void) | null
+  onend: (() => void) | null
+  start: () => void
+  stop: () => void
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
+
 interface WaltPanelProps {
   open: boolean
   onClose: () => void
   context: string
   openingLine?: string
+  speakOpeningOnOpen?: boolean
   vehicleId?: string
   screen?: string
 }
@@ -36,6 +61,7 @@ export default function WaltPanel({
   onClose,
   context,
   openingLine = 'Talk to me.',
+  speakOpeningOnOpen = false,
   vehicleId,
   screen = 'garage',
 }: WaltPanelProps) {
@@ -49,18 +75,29 @@ export default function WaltPanel({
   const userIdRef = useRef<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const recognitionRef = useRef<any>(null)
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const mutedRef = useRef(false)
+  const lastScreenRef = useRef(screen)
   // Keep mutedRef in sync with muted state
   useEffect(() => { mutedRef.current = muted }, [muted])
 
-  // Load conversation history on first open
+  // Load conversation history when the panel opens. Phase/step coaching can opt into
+  // a fresh spoken opener so tapping Walt feels intentional and consistent.
   useEffect(() => {
+    if (open && lastScreenRef.current !== screen) {
+      lastScreenRef.current = screen
+      setInitialized(false)
+      setMessages([])
+      return
+    }
     if (open && !initialized) {
       setInitialized(true)
       loadHistory()
     }
-  }, [open])
+    if (!open && initialized) {
+      setInitialized(false)
+    }
+  }, [open, initialized, screen])
 
   const loadHistory = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -78,7 +115,13 @@ export default function WaltPanel({
     if (data && data.length > 0) {
       // Filter out any error messages from history
       const filtered = (data as Message[]).filter(m => !m.content.includes('Having trouble connecting'))
-      setMessages(filtered)
+      if (speakOpeningOnOpen) {
+        const opening = { role: 'walt' as const, content: openingLine }
+        setMessages([...filtered, opening])
+        if (!mutedRef.current) speakText(openingLine)
+      } else {
+        setMessages(filtered)
+      }
     } else {
       // First time — show opening line
       const opening = { role: 'walt' as const, content: openingLine }
@@ -183,7 +226,11 @@ export default function WaltPanel({
   const startListening = () => {
     if (!micReady) return
     initAudio()
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    const speechWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionConstructor
+      webkitSpeechRecognition?: SpeechRecognitionConstructor
+    }
+    const SpeechRecognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition
     if (!SpeechRecognition) {
       alert('Voice input not supported. Try Chrome or Safari on iPhone.')
       return
@@ -200,7 +247,7 @@ export default function WaltPanel({
     // Capture whatever is already in the input before we start
     setInput(prev => { baseText = prev ? prev + ' ' : ''; return prev })
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEventLike) => {
       let interim = ''
       let final = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -212,7 +259,7 @@ export default function WaltPanel({
       // Show live combined text
       setInput(baseText + interim)
     }
-    recognition.onerror = (e: any) => {
+    recognition.onerror = (e: { error?: string }) => {
       console.error('Speech error:', e.error)
       setListening(false)
     }
@@ -223,7 +270,7 @@ export default function WaltPanel({
   }
 
   const stopListening = () => {
-    try { recognitionRef.current?.stop() } catch (e) {}
+    try { recognitionRef.current?.stop() } catch {}
     recognitionRef.current = null
     setListening(false)
     setMicReady(false)
@@ -340,7 +387,6 @@ export default function WaltPanel({
                 WebkitUserSelect: 'none' as const,
                 userSelect: 'none' as const,
                 touchAction: 'none',
-                WebkitTouchCallout: 'none' as any,
                 opacity: micReady ? 1 : 0.5,
               }}>
               🎤

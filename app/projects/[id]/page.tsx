@@ -18,6 +18,13 @@ type Vehicle = {
   make: string
   model: string
   cover_photo_url: string | null
+  color: string | null
+  engine: string | null
+  transmission: string | null
+  drivetrain: string | null
+  mileage: number | null
+  condition: string | null
+  notes: string | null
 }
 
 type Project = {
@@ -52,6 +59,28 @@ type Step = {
   order_index: number
 }
 
+type StepDetail = {
+  overview: string
+  instructions: string
+  parts_materials: string[]
+  tools: string[]
+  notes: string[]
+  warnings: string[]
+  tips: string[]
+  reference_notes: string[]
+}
+
+const emptyStepDetail: StepDetail = {
+  overview: '',
+  instructions: '',
+  parts_materials: [],
+  tools: [],
+  notes: [],
+  warnings: [],
+  tips: [],
+  reference_notes: [],
+}
+
 const getVehicleName = (vehicle: Vehicle | null) => {
   if (!vehicle) return 'Vehicle'
   return vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`
@@ -69,6 +98,39 @@ const getProjectPhoto = (project: Project) => {
 const formatMoney = (value: number | null) => {
   if (!value) return 'TBD'
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
+}
+
+const formatVehicleContext = (vehicle: Vehicle | null) => {
+  if (!vehicle) return 'Vehicle: not available'
+  return [
+    `Vehicle: ${getVehicleName(vehicle)} (${vehicle.year} ${vehicle.make} ${vehicle.model})`,
+    vehicle.color ? `Color: ${vehicle.color}` : '',
+    vehicle.engine ? `Engine: ${vehicle.engine}` : '',
+    vehicle.transmission ? `Transmission: ${vehicle.transmission}` : '',
+    vehicle.drivetrain ? `Drivetrain: ${vehicle.drivetrain}` : '',
+    vehicle.mileage ? `Mileage: ${vehicle.mileage}` : '',
+    vehicle.condition ? `Garage condition: ${vehicle.condition}` : '',
+    vehicle.notes ? `Garage notes: ${vehicle.notes}` : '',
+  ].filter(Boolean).join('\n')
+}
+
+const parseStepDetail = (instructions: string | null): StepDetail => {
+  if (!instructions) return emptyStepDetail
+  try {
+    const parsed = JSON.parse(instructions)
+    return {
+      overview: parsed.overview || '',
+      instructions: parsed.instructions || '',
+      parts_materials: Array.isArray(parsed.parts_materials) ? parsed.parts_materials : [],
+      tools: Array.isArray(parsed.tools) ? parsed.tools : [],
+      notes: Array.isArray(parsed.notes) ? parsed.notes : [],
+      warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
+      tips: Array.isArray(parsed.tips) ? parsed.tips : [],
+      reference_notes: Array.isArray(parsed.reference_notes) ? parsed.reference_notes : [],
+    }
+  } catch {
+    return { ...emptyStepDetail, overview: instructions }
+  }
 }
 
 const NavBar = () => (
@@ -116,12 +178,14 @@ export default function ProjectPlanPage() {
   const [project, setProject] = useState<Project | null>(null)
   const [phases, setPhases] = useState<Phase[]>([])
   const [steps, setSteps] = useState<Step[]>([])
+  const [notes, setNotes] = useState<string[]>([])
   const [notesCount, setNotesCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [expandedPhaseIds, setExpandedPhaseIds] = useState<string[]>([])
   const [waltOpen, setWaltOpen] = useState(false)
   const [waltContext, setWaltContext] = useState('')
   const [waltOpeningLine, setWaltOpeningLine] = useState('Tell me where you want to start.')
+  const [waltScreen, setWaltScreen] = useState(`project-plan-${projectId}`)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -145,7 +209,14 @@ export default function ProjectPlanPage() {
             year,
             make,
             model,
-            cover_photo_url
+            cover_photo_url,
+            color,
+            engine,
+            transmission,
+            drivetrain,
+            mileage,
+            condition,
+            notes
           )
         `)
         .eq('id', projectId)
@@ -171,15 +242,17 @@ export default function ProjectPlanPage() {
           .order('order_index', { ascending: true })
         : { data: [] }
 
-      const { count } = await supabase
+      const { data: noteData, count } = await supabase
         .from('notes')
-        .select('id', { count: 'exact', head: true })
+        .select('content', { count: 'exact' })
         .eq('project_id', projectId)
         .eq('user_id', user.id)
+        .order('created_at', { ascending: true })
 
       setProject(projectData as unknown as Project)
       setPhases((phaseData || []) as Phase[])
       setSteps((stepData || []) as Step[])
+      setNotes((noteData || []).map(note => note.content as string).filter(Boolean))
       setNotesCount(count || 0)
       setLoading(false)
     }
@@ -210,14 +283,27 @@ export default function ProjectPlanPage() {
     setWaltContext([
       `Screen: Project phase coach`,
       `Project: ${project.name}`,
-      `Vehicle: ${getVehicleName(project.vehicle)}`,
+      formatVehicleContext(project.vehicle),
       `Project type: ${project.goal_type}`,
+      `Project condition/intake: ${project.condition || 'not specified'}`,
+      `Budget estimate: ${formatMoney(project.budget_estimate)}`,
+      `Project notes and intake details: ${notes.join('\n---\n') || 'none saved'}`,
       `Phase: ${phase.name}`,
       `Phase status: ${phase.status}`,
-      `Phase steps: ${phaseSteps.map(step => `${step.name} (${step.status})`).join(', ') || 'none'}`,
-      'Walt should act like a real phase coach. Explain what this phase is about, why it matters, how the steps fit together, what to prepare, likely tools/parts, safety cautions, sequencing tips, and how the user will know they are ready to move on. Do not give a shallow one-line summary unless the user asks for that.',
+      `Phase steps and saved detail: ${phaseSteps.map(step => {
+        const detail = parseStepDetail(step.instructions)
+        return [
+          `${step.name} (${step.status})`,
+          detail.overview ? `overview: ${detail.overview}` : '',
+          detail.parts_materials.length ? `parts/materials: ${detail.parts_materials.join(', ')}` : '',
+          detail.tools.length ? `tools: ${detail.tools.join(', ')}` : '',
+          detail.warnings.length ? `warnings: ${detail.warnings.join(', ')}` : '',
+        ].filter(Boolean).join(' | ')
+      }).join('\n') || 'none'}`,
+      'Walt should act like a real phase coach for this exact vehicle and project. Explain what this phase is about, why it matters, how the steps fit together, what to prepare, likely tools/parts, safety cautions, sequencing tips, and how the user will know they are ready to move on. Use vehicle engine/transmission/drivetrain/notes when relevant. Do not give a shallow one-line summary unless the user asks for that.',
     ].join('\n'))
     setWaltOpeningLine(`Let's look at ${phase.name}. I’ll give you the shape of it before you start turning bolts.`)
+    setWaltScreen(`project-phase-${phase.id}`)
     setWaltOpen(true)
   }
 
@@ -225,10 +311,11 @@ export default function ProjectPlanPage() {
     setWaltContext([
       `Screen: Project plan coach`,
       `Project: ${project.name}`,
-      `Vehicle: ${getVehicleName(project.vehicle)}`,
+      formatVehicleContext(project.vehicle),
       `Project type: ${project.goal_type}`,
       `Condition: ${project.condition || 'not specified'}`,
       `Budget estimate: ${formatMoney(project.budget_estimate)}`,
+      `Project notes and intake details: ${notes.join('\n---\n') || 'none saved'}`,
       `Phases: ${phases.map(phase => {
         const phaseSteps = stepsByPhase[phase.id] || []
         return `${phase.name} (${phase.status}, ${phaseSteps.length} steps)`
@@ -237,6 +324,7 @@ export default function ProjectPlanPage() {
       'Walt should help the user understand the whole project plan, choose where to start, and explain the practical order of work with useful mechanical context.',
     ].join('\n'))
     setWaltOpeningLine(`I’m here with the full plan for ${project.name}. Ask me where to start or what any phase means.`)
+    setWaltScreen(`project-plan-${project.id}`)
     setWaltOpen(true)
   }
 
@@ -371,8 +459,9 @@ export default function ProjectPlanPage() {
         onClose={() => setWaltOpen(false)}
         context={waltContext}
         openingLine={waltOpeningLine}
+        speakOpeningOnOpen={waltScreen.startsWith('project-phase-')}
         vehicleId={project.vehicle?.id}
-        screen={`project-phase-${project.id}`}
+        screen={waltScreen}
       />
     </div>
   )

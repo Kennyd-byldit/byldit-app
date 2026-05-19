@@ -65,7 +65,9 @@ Rules:
 - Keep step names short, practical, and garage-friendly. Avoid weak names like "Gather supplies" when "Parts, Tools, and Prep" or a more specific task name is clearer.
 - Make each step's detail rich and useful enough that it feels like a mechanic is coaching that exact step.
 - Scale detail to the job: oil changes need exact supplies/spec guidance when possible; restorations need phased teardown, inspection, sourcing, safety, and reassembly guidance.
-- If exact vehicle specs are uncertain, say what to verify instead of inventing certainty.
+- Use the actual stored vehicle profile, project goal, intake condition, work details, and notes. Reference year/make/model/engine/transmission/drivetrain when they matter.
+- When a spec is generally knowable for the exact vehicle/engine, provide the likely value with careful wording such as "typically" or "commonly", then tell the user what label/manual/source to verify. Do not hide behind generic "verify everything" language when the vehicle context is available.
+- If exact vehicle specs are uncertain, say exactly what to verify and where, instead of inventing certainty.
 - Include concrete tools, materials, cautions, prep notes, supporting notes, and practical done-checks wherever relevant.
 - For every step, populate overview, instructions, notes, warnings, tips, and reference_notes with useful content. Populate tools and parts_materials when relevant; if exact specs are unknown, say what to verify.
 - Cost and hour estimates can be rough.
@@ -199,7 +201,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
         max_tokens: 5000,
         messages: [
           { role: 'system', content: PLAN_SYSTEM_PROMPT },
-          { role: 'user', content: `Generate the BYLDit.ai project plan for this intake:\n${planContext}` },
+          { role: 'user', content: `Generate the BYLDit.ai project plan for this exact stored intake. Ground the result in the actual vehicle and project data, not generic boilerplate:\n${planContext}` },
         ],
       }),
     })

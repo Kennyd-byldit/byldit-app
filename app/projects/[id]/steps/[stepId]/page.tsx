@@ -17,12 +17,21 @@ type Vehicle = {
   year: number
   make: string
   model: string
+  color: string | null
+  engine: string | null
+  transmission: string | null
+  drivetrain: string | null
+  mileage: number | null
+  condition: string | null
+  notes: string | null
 }
 
 type Project = {
   id: string
   name: string
   goal_type: string
+  condition: string | null
+  budget_estimate: number | null
   vehicle: Vehicle | null
 }
 
@@ -76,6 +85,27 @@ const formatMoney = (value: number | null) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
 }
 
+const formatVehicleContext = (vehicle: Vehicle | null) => {
+  if (!vehicle) return 'Vehicle: not available'
+  return [
+    `Vehicle: ${getVehicleName(vehicle)} (${vehicle.year} ${vehicle.make} ${vehicle.model})`,
+    vehicle.color ? `Color: ${vehicle.color}` : '',
+    vehicle.engine ? `Engine: ${vehicle.engine}` : '',
+    vehicle.transmission ? `Transmission: ${vehicle.transmission}` : '',
+    vehicle.drivetrain ? `Drivetrain: ${vehicle.drivetrain}` : '',
+    vehicle.mileage ? `Mileage: ${vehicle.mileage}` : '',
+    vehicle.condition ? `Garage condition: ${vehicle.condition}` : '',
+    vehicle.notes ? `Garage notes: ${vehicle.notes}` : '',
+  ].filter(Boolean).join('\n')
+}
+
+const getVehicleDescriptor = (vehicle: Vehicle | null) => {
+  if (!vehicle) return 'this vehicle'
+  const engine = vehicle.engine ? ` with the ${vehicle.engine}` : ''
+  const drivetrain = vehicle.drivetrain ? `, ${vehicle.drivetrain}` : ''
+  return `${vehicle.year} ${vehicle.make} ${vehicle.model}${engine}${drivetrain}`
+}
+
 const parseStepDetail = (instructions: string | null): StepDetail => {
   if (!instructions) return emptyDetail
   try {
@@ -96,14 +126,14 @@ const parseStepDetail = (instructions: string | null): StepDetail => {
 }
 
 const withFallbackDetail = (detail: StepDetail, project: Project, phase: Phase, step: Step): StepDetail => ({
-  overview: detail.overview || `${step.name} is part of ${phase.name} for ${project.name}. This step should be handled in order so the work stays safe, traceable, and ready for the next task.`,
-  instructions: detail.instructions || `Confirm the vehicle is stable and the work area is clear before starting ${step.name}. Review the phase order, document what you find, keep removed parts labeled, and ask Walt to walk the step with the exact vehicle context before you turn bolts.`,
-  parts_materials: detail.parts_materials.length > 0 ? detail.parts_materials : ['Verify the exact replacement parts, fluids, seals, gaskets, fasteners, and consumables for this vehicle before starting.'],
-  tools: detail.tools.length > 0 ? detail.tools : ['Gather the standard hand tools for this area of the vehicle, plus safety gear, lighting, containers, labels, and any vehicle-specific tools Walt recommends.'],
-  notes: detail.notes.length > 0 ? detail.notes : ['Document current condition with photos before disassembly and keep parts grouped by side, location, and order removed.'],
-  warnings: detail.warnings.length > 0 ? detail.warnings : ['Do not rely on memory for torque specs, fluid specs, wiring, brake, fuel, suspension, or safety-critical work. Verify the service information for this exact vehicle.'],
+  overview: detail.overview || `${step.name} is part of ${phase.name} for ${project.name} on ${getVehicleDescriptor(project.vehicle)}. This step should be handled in order so the work stays safe, traceable, and ready for the next task.`,
+  instructions: detail.instructions || `Before starting ${step.name}, confirm ${getVehicleDescriptor(project.vehicle)} is safely supported, the work area is clear, and the phase order still makes sense for the vehicle's current condition. Review any garage notes, document what you find, label parts as they come off, and use Walt for vehicle-specific part/spec checks before committing to the work.`,
+  parts_materials: detail.parts_materials.length > 0 ? detail.parts_materials : [`Use the ${project.vehicle?.engine ? `${project.vehicle.engine} engine and ` : ''}${project.vehicle?.year || ''} ${project.vehicle?.make || ''} ${project.vehicle?.model || 'vehicle'} profile to confirm the exact parts, fluids, seals, gaskets, fasteners, and consumables for this step.`],
+  tools: detail.tools.length > 0 ? detail.tools : [`Start with safety gear, lighting, containers, labels, and the standard hand tools for this area of the ${project.vehicle?.make || 'vehicle'}; ask Walt for likely vehicle-specific socket sizes or specialty tools before teardown.`],
+  notes: detail.notes.length > 0 ? detail.notes : [`Use the saved vehicle/project context here: ${project.condition || project.vehicle?.condition || 'condition not specified'}. Capture current condition before disassembly and keep anything removed grouped by side, location, and order.`],
+  warnings: detail.warnings.length > 0 ? detail.warnings : [`For ${getVehicleDescriptor(project.vehicle)}, verify safety-critical specs before final assembly: torque, fluid type/capacity, wiring, brake, fuel, suspension, and drivetrain details as applicable.`],
   tips: detail.tips.length > 0 ? detail.tips : ['Work slowly enough that the next step stays obvious. Bag and label hardware as you go, and take reference photos before anything comes apart.'],
-  reference_notes: detail.reference_notes.length > 0 ? detail.reference_notes : ['Capture before photos, close-ups of routing/orientation, part numbers, fastener locations, and any measurements you may need during reassembly.'],
+  reference_notes: detail.reference_notes.length > 0 ? detail.reference_notes : ['Capture before photos, close-ups of routing/orientation, part numbers, fastener locations, labels, and any measurements you may need during reassembly.'],
 })
 
 const firstLines = (text: string, maxLength: number) => (
@@ -176,6 +206,7 @@ export default function StepDetailPage() {
   const [project, setProject] = useState<Project | null>(null)
   const [phase, setPhase] = useState<Phase | null>(null)
   const [step, setStep] = useState<Step | null>(null)
+  const [notes, setNotes] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [waltOpen, setWaltOpen] = useState(false)
@@ -192,12 +223,21 @@ export default function StepDetailPage() {
           id,
           name,
           goal_type,
+          condition,
+          budget_estimate,
           vehicle:vehicles (
             id,
             nickname,
             year,
             make,
-            model
+            model,
+            color,
+            engine,
+            transmission,
+            drivetrain,
+            mileage,
+            condition,
+            notes
           )
         `)
         .eq('id', projectId)
@@ -222,9 +262,17 @@ export default function StepDetailPage() {
         .eq('user_id', user.id)
         .single()
 
+      const { data: noteData } = await supabase
+        .from('notes')
+        .select('content')
+        .eq('project_id', projectId)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true })
+
       setProject(projectData as unknown as Project)
       setStep(stepData as Step)
       setPhase((phaseData || null) as Phase | null)
+      setNotes((noteData || []).map(note => note.content as string).filter(Boolean))
       setLoading(false)
     }
     loadStep()
@@ -250,8 +298,11 @@ export default function StepDetailPage() {
   const waltContext = [
     `Screen: Step detail`,
     `Project: ${project.name}`,
-    `Vehicle: ${getVehicleName(project.vehicle)}`,
+    formatVehicleContext(project.vehicle),
     `Project type: ${project.goal_type}`,
+    `Project condition/intake: ${project.condition || 'not specified'}`,
+    `Budget estimate: ${formatMoney(project.budget_estimate) || 'not specified'}`,
+    `Project notes and intake details: ${notes.join('\n---\n') || 'none saved'}`,
     `Phase: ${phase.name}`,
     `Step: ${step.name}`,
     `Step status: ${step.status}`,
@@ -263,7 +314,7 @@ export default function StepDetailPage() {
     `Warnings: ${detail.warnings.join(', ') || 'none listed'}`,
     `Tips: ${detail.tips.join(', ') || 'none listed'}`,
     `Reference notes: ${detail.reference_notes.join(', ') || 'none listed'}`,
-    'Walt should act like a mechanic standing beside the user. Explain this exact step in detail: what it is, why it matters, prep, sequence, parts/materials, tools, cautions, common mistakes, done-checks, and what to do next. Do not give a shallow one-line answer unless the user explicitly asks for a short version.',
+    'Walt should act like a mechanic standing beside the user for this exact vehicle and project. Explain this exact step in detail: what it is, why it matters, prep, sequence, parts/materials, tools, cautions, common mistakes, done-checks, and what to do next. Use the vehicle engine/transmission/drivetrain/notes when relevant. If a common spec is likely for this vehicle, provide it carefully and tell the user what to verify. Do not give a shallow one-line answer unless the user explicitly asks for a short version.',
   ].join('\n')
 
   return (
@@ -346,6 +397,7 @@ export default function StepDetailPage() {
         onClose={() => setWaltOpen(false)}
         context={waltContext}
         openingLine={`Let's walk through ${step.name}.`}
+        speakOpeningOnOpen
         vehicleId={project.vehicle?.id}
         screen={`project-step-${step.id}`}
       />
