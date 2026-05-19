@@ -7,6 +7,7 @@ type GeneratedStep = {
   instructions?: string
   parts_materials?: string[]
   tools?: string[]
+  notes?: string[]
   warnings?: string[]
   tips?: string[]
   reference_notes?: string[]
@@ -43,6 +44,7 @@ Schema:
           "instructions": "Detailed garage-ready walkthrough. Include prep, sequence, practical checks, and what done looks like.",
           "parts_materials": ["Specific parts, fluids, materials, quantities, or specs when knowable"],
           "tools": ["Specific tools needed"],
+          "notes": ["Supporting detail that helps the user understand this step better"],
           "warnings": ["Safety cautions, common mistakes, torque/spec caveats, vehicle-specific uncertainty"],
           "tips": ["Practical mechanic tips and sequencing notes"],
           "reference_notes": ["Photos or measurements the user should capture, labels to make, references to check"],
@@ -60,10 +62,12 @@ Rules:
 - Create 3 to 6 phases.
 - Each phase should have 2 to 5 steps.
 - Sequence the project in the order a mechanic would actually do it.
-- Keep step names short and garage-friendly, but make each step's detail rich and useful.
+- Keep step names short, practical, and garage-friendly. Avoid weak names like "Gather supplies" when "Parts, Tools, and Prep" or a more specific task name is clearer.
+- Make each step's detail rich and useful enough that it feels like a mechanic is coaching that exact step.
 - Scale detail to the job: oil changes need exact supplies/spec guidance when possible; restorations need phased teardown, inspection, sourcing, safety, and reassembly guidance.
 - If exact vehicle specs are uncertain, say what to verify instead of inventing certainty.
-- Include concrete tools, materials, cautions, prep notes, and practical done-checks wherever relevant.
+- Include concrete tools, materials, cautions, prep notes, supporting notes, and practical done-checks wherever relevant.
+- For every step, populate overview, instructions, notes, warnings, tips, and reference_notes with useful content. Populate tools and parts_materials when relevant; if exact specs are unknown, say what to verify.
 - Cost and hour estimates can be rough.
 - Use "Shop" for paint, structural, safety-critical, or highly specialized work when appropriate.
 - Use only these difficulty values: Easy, Moderate, Advanced, Pro.
@@ -100,6 +104,20 @@ function normalizeHours(value: unknown) {
 function normalizeStringArray(value: unknown) {
   if (!Array.isArray(value)) return []
   return value.map(item => String(item).trim()).filter(Boolean).slice(0, 12)
+}
+
+function normalizeStepName(name: unknown) {
+  const raw = String(name || '').trim()
+  const lower = raw.toLowerCase()
+
+  if (['gather supplies', 'gather materials', 'collect supplies', 'collect materials'].includes(lower)) {
+    return 'Parts, Tools, and Prep'
+  }
+  if (lower === 'prep' || lower === 'preparation') return 'Prepare the Work Area'
+  if (lower === 'inspect') return 'Inspect and Document Current Condition'
+  if (lower === 'review') return 'Review Plan and Safety Notes'
+
+  return raw
 }
 
 export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -233,12 +251,13 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
       const steps = phase.steps.slice(0, 5).map((step, stepIndex) => ({
         phase_id: savedPhase.id,
         user_id: user.id,
-        name: String(step.name || `Step ${stepIndex + 1}`).slice(0, 140),
+        name: normalizeStepName(step.name || `Step ${stepIndex + 1}`).slice(0, 140),
         instructions: JSON.stringify({
           overview: step.overview ? String(step.overview).slice(0, 1400) : '',
           instructions: step.instructions ? String(step.instructions).slice(0, 4000) : '',
           parts_materials: normalizeStringArray(step.parts_materials),
           tools: normalizeStringArray(step.tools),
+          notes: normalizeStringArray(step.notes),
           warnings: normalizeStringArray(step.warnings),
           tips: normalizeStringArray(step.tips),
           reference_notes: normalizeStringArray(step.reference_notes),

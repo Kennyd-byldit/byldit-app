@@ -1,6 +1,7 @@
 'use client'
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import WaltPanel from '@/components/WaltPanel'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -68,6 +69,23 @@ const NavBar = () => (
   </nav>
 )
 
+function WaltBar({ onOpenWalt }: { onOpenWalt: () => void }) {
+  return (
+    <div style={{ background: 'white', padding: '8px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 480, margin: '0 auto' }}>
+        <div onClick={onOpenWalt}
+          style={{ flex: 1, background: 'var(--bg)', borderRadius: 25, padding: '10px 16px', fontSize: '0.85rem', color: '#8395a7', cursor: 'pointer' }}>
+          Ask Walt about your projects...
+        </div>
+        <button onClick={onOpenWalt}
+          style={{ width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--orange)', padding: 0, background: 'white', flexShrink: 0, cursor: 'pointer' }}>
+          <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function ProjectsContent() {
   const searchParams = useSearchParams()
   const highlightedProjectId = searchParams.get('created') || searchParams.get('project') || ''
@@ -76,6 +94,7 @@ function ProjectsContent() {
   const [loading, setLoading] = useState(true)
   const [generatingProjectId, setGeneratingProjectId] = useState('')
   const [error, setError] = useState('')
+  const [waltOpen, setWaltOpen] = useState(false)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -270,7 +289,19 @@ function ProjectsContent() {
         </div>
       </main>
 
+      <WaltBar onOpenWalt={() => setWaltOpen(true)} />
       <NavBar />
+      <WaltPanel
+        open={waltOpen}
+        onClose={() => setWaltOpen(false)}
+        context={[
+          'Screen: Projects list',
+          `Active projects: ${projects.map(project => `${project.name} for ${getVehicleName(project.vehicle)} (${project.goal_type}, ${project.hasPlan ? 'plan ready' : 'needs project plan'})`).join('; ') || 'none'}`,
+          'Walt should help the user understand which projects have plans, which need project plan generation, and what to open or create next.',
+        ].join('\n')}
+        openingLine="I’m here with your Projects list. Tell me what you’re trying to sort out."
+        screen="projects"
+      />
     </div>
   )
 }

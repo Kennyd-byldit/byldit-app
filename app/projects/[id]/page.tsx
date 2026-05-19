@@ -93,6 +93,23 @@ const NavBar = () => (
   </nav>
 )
 
+function WaltBar({ onOpenWalt }: { onOpenWalt: () => void }) {
+  return (
+    <div style={{ background: 'white', padding: '8px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 480, margin: '0 auto' }}>
+        <div onClick={onOpenWalt}
+          style={{ flex: 1, background: 'var(--bg)', borderRadius: 25, padding: '10px 16px', fontSize: '0.85rem', color: '#8395a7', cursor: 'pointer' }}>
+          Ask Walt about this project...
+        </div>
+        <button onClick={onOpenWalt}
+          style={{ width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--orange)', padding: 0, background: 'white', flexShrink: 0, cursor: 'pointer' }}>
+          <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function ProjectPlanPage() {
   const params = useParams()
   const projectId = params.id as string
@@ -198,9 +215,28 @@ export default function ProjectPlanPage() {
       `Phase: ${phase.name}`,
       `Phase status: ${phase.status}`,
       `Phase steps: ${phaseSteps.map(step => `${step.name} (${step.status})`).join(', ') || 'none'}`,
-      'Walt should explain this phase, summarize the steps, and orient the user before they dive in.',
+      'Walt should act like a real phase coach. Explain what this phase is about, why it matters, how the steps fit together, what to prepare, likely tools/parts, safety cautions, sequencing tips, and how the user will know they are ready to move on. Do not give a shallow one-line summary unless the user asks for that.',
     ].join('\n'))
     setWaltOpeningLine(`Let's look at ${phase.name}. I’ll give you the shape of it before you start turning bolts.`)
+    setWaltOpen(true)
+  }
+
+  const openProjectWalt = () => {
+    setWaltContext([
+      `Screen: Project plan coach`,
+      `Project: ${project.name}`,
+      `Vehicle: ${getVehicleName(project.vehicle)}`,
+      `Project type: ${project.goal_type}`,
+      `Condition: ${project.condition || 'not specified'}`,
+      `Budget estimate: ${formatMoney(project.budget_estimate)}`,
+      `Phases: ${phases.map(phase => {
+        const phaseSteps = stepsByPhase[phase.id] || []
+        return `${phase.name} (${phase.status}, ${phaseSteps.length} steps)`
+      }).join('; ') || 'none'}`,
+      `Up next: ${upNext?.name || 'none'}`,
+      'Walt should help the user understand the whole project plan, choose where to start, and explain the practical order of work with useful mechanical context.',
+    ].join('\n'))
+    setWaltOpeningLine(`I’m here with the full plan for ${project.name}. Ask me where to start or what any phase means.`)
     setWaltOpen(true)
   }
 
@@ -328,6 +364,7 @@ export default function ProjectPlanPage() {
         </div>
       </main>
 
+      <WaltBar onOpenWalt={openProjectWalt} />
       <NavBar />
       <WaltPanel
         open={waltOpen}

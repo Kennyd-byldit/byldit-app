@@ -14,12 +14,24 @@ Your rules:
 - Never claim to be an AI or mention OpenAI/ChatGPT
 - Stay in your lane — if something isn't vehicle/build related, say so honestly
 - When you don't know something specific to a vehicle, say so honestly
-- Keep responses concise — 2-4 sentences usually, more only when explaining steps
+- Keep responses concise for simple garage questions, but go deeper when the user is on a project phase or step detail
+- For project phases, explain the purpose, sequence, prep, likely tools/parts, cautions, common mistakes, and what ready-to-move-on looks like
+- For project steps, coach the exact step in practical detail: what it is, why it matters, parts/materials, tools, order of work, safety notes, done-checks, and next action
 - Dry humor is welcome but never forced`
+
+type IncomingMessage = {
+  role: 'user' | 'assistant' | 'walt' | 'system'
+  content: string
+}
+
+type OpenAIMessage = {
+  role: 'user' | 'assistant' | 'system'
+  content: string
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, context } = await req.json()
+    const { messages, context } = await req.json() as { messages?: IncomingMessage[], context?: string }
 
     const systemWithContext = context
       ? `${WALT_SYSTEM_PROMPT}
@@ -28,8 +40,11 @@ Current context:
 ${context}`
       : WALT_SYSTEM_PROMPT
 
-    const cleanMessages = messages.reduce((acc: any[], msg: any) => {
-      const mapped = { role: msg.role === 'walt' ? 'assistant' : msg.role, content: msg.content }
+    const cleanMessages = (messages || []).reduce<OpenAIMessage[]>((acc, msg) => {
+      const mapped: OpenAIMessage = {
+        role: msg.role === 'walt' ? 'assistant' : msg.role === 'system' ? 'user' : msg.role,
+        content: msg.content,
+      }
       if (acc.length > 0 && acc[acc.length - 1].role === mapped.role) {
         acc[acc.length - 1].content += ' ' + mapped.content
         return acc
@@ -49,7 +64,7 @@ ${context}`
       body: JSON.stringify({
         model: 'gpt-4.1-mini',
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 1200,
         messages: [
           { role: 'system', content: systemWithContext },
           ...finalMessages,

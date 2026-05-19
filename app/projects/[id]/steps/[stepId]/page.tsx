@@ -49,6 +49,7 @@ type StepDetail = {
   instructions: string
   parts_materials: string[]
   tools: string[]
+  notes: string[]
   warnings: string[]
   tips: string[]
   reference_notes: string[]
@@ -59,6 +60,7 @@ const emptyDetail: StepDetail = {
   instructions: '',
   parts_materials: [],
   tools: [],
+  notes: [],
   warnings: [],
   tips: [],
   reference_notes: [],
@@ -83,6 +85,7 @@ const parseStepDetail = (instructions: string | null): StepDetail => {
       instructions: parsed.instructions || '',
       parts_materials: Array.isArray(parsed.parts_materials) ? parsed.parts_materials : [],
       tools: Array.isArray(parsed.tools) ? parsed.tools : [],
+      notes: Array.isArray(parsed.notes) ? parsed.notes : [],
       warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
       tips: Array.isArray(parsed.tips) ? parsed.tips : [],
       reference_notes: Array.isArray(parsed.reference_notes) ? parsed.reference_notes : [],
@@ -91,6 +94,21 @@ const parseStepDetail = (instructions: string | null): StepDetail => {
     return { ...emptyDetail, overview: instructions }
   }
 }
+
+const withFallbackDetail = (detail: StepDetail, project: Project, phase: Phase, step: Step): StepDetail => ({
+  overview: detail.overview || `${step.name} is part of ${phase.name} for ${project.name}. This step should be handled in order so the work stays safe, traceable, and ready for the next task.`,
+  instructions: detail.instructions || `Confirm the vehicle is stable and the work area is clear before starting ${step.name}. Review the phase order, document what you find, keep removed parts labeled, and ask Walt to walk the step with the exact vehicle context before you turn bolts.`,
+  parts_materials: detail.parts_materials.length > 0 ? detail.parts_materials : ['Verify the exact replacement parts, fluids, seals, gaskets, fasteners, and consumables for this vehicle before starting.'],
+  tools: detail.tools.length > 0 ? detail.tools : ['Gather the standard hand tools for this area of the vehicle, plus safety gear, lighting, containers, labels, and any vehicle-specific tools Walt recommends.'],
+  notes: detail.notes.length > 0 ? detail.notes : ['Document current condition with photos before disassembly and keep parts grouped by side, location, and order removed.'],
+  warnings: detail.warnings.length > 0 ? detail.warnings : ['Do not rely on memory for torque specs, fluid specs, wiring, brake, fuel, suspension, or safety-critical work. Verify the service information for this exact vehicle.'],
+  tips: detail.tips.length > 0 ? detail.tips : ['Work slowly enough that the next step stays obvious. Bag and label hardware as you go, and take reference photos before anything comes apart.'],
+  reference_notes: detail.reference_notes.length > 0 ? detail.reference_notes : ['Capture before photos, close-ups of routing/orientation, part numbers, fastener locations, and any measurements you may need during reassembly.'],
+})
+
+const firstLines = (text: string, maxLength: number) => (
+  text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text
+)
 
 const NavBar = () => (
   <nav style={{ background: 'white', borderTop: '1px solid var(--border)', padding: '6px 0 4px', flexShrink: 0 }}>
@@ -130,6 +148,23 @@ function SectionList({ title, items, empty }: { title: string, items: string[], 
       ) : (
         <p style={{ color: 'var(--secondary-text)', fontSize: '0.84rem', lineHeight: 1.45 }}>{empty}</p>
       )}
+    </div>
+  )
+}
+
+function WaltBar({ onOpenWalt }: { onOpenWalt: () => void }) {
+  return (
+    <div style={{ background: 'white', padding: '8px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 480, margin: '0 auto' }}>
+        <div onClick={onOpenWalt}
+          style={{ flex: 1, background: 'var(--bg)', borderRadius: 25, padding: '10px 16px', fontSize: '0.85rem', color: '#8395a7', cursor: 'pointer' }}>
+          Ask Walt about this step...
+        </div>
+        <button onClick={onOpenWalt}
+          style={{ width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--orange)', padding: 0, background: 'white', flexShrink: 0, cursor: 'pointer' }}>
+          <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </button>
+      </div>
     </div>
   )
 }
@@ -211,7 +246,7 @@ export default function StepDetailPage() {
 
   if (!project || !phase || !step) return null
 
-  const detail = parseStepDetail(step.instructions)
+  const detail = withFallbackDetail(parseStepDetail(step.instructions), project, phase, step)
   const waltContext = [
     `Screen: Step detail`,
     `Project: ${project.name}`,
@@ -224,9 +259,11 @@ export default function StepDetailPage() {
     `Walkthrough: ${detail.instructions}`,
     `Parts/materials: ${detail.parts_materials.join(', ') || 'none listed'}`,
     `Tools: ${detail.tools.join(', ') || 'none listed'}`,
+    `Notes: ${detail.notes.join(', ') || 'none listed'}`,
     `Warnings: ${detail.warnings.join(', ') || 'none listed'}`,
     `Tips: ${detail.tips.join(', ') || 'none listed'}`,
-    'Walt should help the user understand and perform this exact step, including parts, tools, cautions, and sequencing.',
+    `Reference notes: ${detail.reference_notes.join(', ') || 'none listed'}`,
+    'Walt should act like a mechanic standing beside the user. Explain this exact step in detail: what it is, why it matters, prep, sequence, parts/materials, tools, cautions, common mistakes, done-checks, and what to do next. Do not give a shallow one-line answer unless the user explicitly asks for a short version.',
   ].join('\n')
 
   return (
@@ -268,17 +305,18 @@ export default function StepDetailPage() {
 
           <div style={{ background: 'white', borderRadius: 14, padding: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 12 }}>
             <p style={{ fontSize: '0.68rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 900, marginBottom: 8 }}>Overview</p>
-            <p style={{ color: 'var(--dark-blue)', fontSize: '0.9rem', lineHeight: 1.55 }}>{detail.overview || 'Walt did not add a separate overview for this step yet.'}</p>
+            <p style={{ color: 'var(--dark-blue)', fontSize: '0.9rem', lineHeight: 1.55 }}>{firstLines(detail.overview, 900)}</p>
           </div>
 
           <div style={{ background: 'white', borderRadius: 14, padding: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 12 }}>
             <p style={{ fontSize: '0.68rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 900, marginBottom: 8 }}>Step walkthrough</p>
-            <p style={{ color: 'var(--dark-blue)', fontSize: '0.9rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{detail.instructions || 'No walkthrough saved yet.'}</p>
+            <p style={{ color: 'var(--dark-blue)', fontSize: '0.9rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{detail.instructions}</p>
           </div>
 
           <SectionList title="Parts / Materials Needed" items={detail.parts_materials} empty="No parts or materials listed yet." />
           <SectionList title="Tools Needed" items={detail.tools} empty="No tools listed yet." />
-          <SectionList title="Notes / Tips / Warnings" items={[...detail.warnings, ...detail.tips]} empty="No tips or warnings listed yet." />
+          <SectionList title="Notes" items={detail.notes} empty="No supporting notes saved yet." />
+          <SectionList title="Tips and Warnings" items={[...detail.tips, ...detail.warnings]} empty="No tips or warnings listed yet." />
           <SectionList title="Photos / Reference Area" items={detail.reference_notes} empty="Simple scaffold for now: add reference photos, labels, measurements, and before/after shots here in a future pass." />
 
           <button onClick={markComplete} disabled={saving || step.status === 'complete'}
@@ -301,6 +339,7 @@ export default function StepDetailPage() {
         </div>
       </main>
 
+      <WaltBar onOpenWalt={() => setWaltOpen(true)} />
       <NavBar />
       <WaltPanel
         open={waltOpen}
