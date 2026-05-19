@@ -29,6 +29,7 @@ type Project = {
   cover_photo_url: string | null
   created_at: string
   vehicle: Vehicle | null
+  hasPlan: boolean
 }
 
 const getVehicleName = (vehicle: Vehicle | null) => {
@@ -73,6 +74,8 @@ function ProjectsContent() {
 
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [generatingProjectId, setGeneratingProjectId] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -104,11 +107,48 @@ function ProjectsContent() {
         .eq('status', 'active')
         .order('created_at', { ascending: false })
 
-      setProjects((data || []) as unknown as Project[])
+      const projectRows = (data || []) as unknown as Omit<Project, 'hasPlan'>[]
+      const projectIds = projectRows.map(project => project.id)
+      const { data: phases } = projectIds.length > 0
+        ? await supabase.from('phases').select('project_id').in('project_id', projectIds)
+        : { data: [] }
+      const plannedProjectIds = new Set((phases || []).map(phase => phase.project_id as string))
+
+      setProjects(projectRows.map(project => ({
+        ...project,
+        hasPlan: plannedProjectIds.has(project.id),
+      })))
       setLoading(false)
     }
     loadProjects()
   }, [])
+
+  const handleProjectAction = async (project: Project) => {
+    if (project.hasPlan) {
+      window.location.assign(`/projects/${project.id}`)
+      return
+    }
+
+    setError('')
+    setGeneratingProjectId(project.id)
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`/api/projects/${project.id}/generate-plan`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session?.access_token || ''}`,
+      },
+    })
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error || 'Walt could not create the project plan right now.')
+      setGeneratingProjectId('')
+      return
+    }
+
+    window.location.assign(`/projects/${project.id}`)
+  }
 
   if (loading) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
@@ -147,6 +187,12 @@ function ProjectsContent() {
               <p style={{ fontSize: '0.85rem', color: 'white', margin: 0, lineHeight: 1.5 }}>
                 Project created. I saved the intake notes so the next workspace pass has something real to build from.
               </p>
+            </div>
+          )}
+
+          {error && (
+            <div style={{ background: '#fff1e6', border: '1.5px solid var(--orange)', borderRadius: 12, padding: '10px 12px', marginBottom: 12 }}>
+              <p style={{ color: 'var(--dark-blue)', fontSize: '0.84rem', fontWeight: 700 }}>{error}</p>
             </div>
           )}
 
@@ -205,11 +251,15 @@ function ProjectsContent() {
                     <div style={{ borderTop: '1px solid var(--border)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7 }}>Status</p>
-                        <p style={{ fontSize: '0.82rem', color: 'var(--dark-blue)', fontWeight: 800 }}>Active Project</p>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--dark-blue)', fontWeight: 800 }}>
+                          {project.hasPlan ? 'Plan Ready' : 'Needs Project Plan'}
+                        </p>
                       </div>
-                      <button onClick={() => window.location.href = `/projects?project=${project.id}`}
-                        style={{ minHeight: 40, padding: '0 16px', borderRadius: 20, border: 'none', background: 'var(--dark-blue)', color: 'white', fontSize: '0.82rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: 'pointer', flexShrink: 0 }}>
-                        Open Project
+                      <button onClick={() => handleProjectAction(project)} disabled={generatingProjectId === project.id}
+                        style={{ minHeight: 40, padding: '0 16px', borderRadius: 20, border: 'none', background: generatingProjectId === project.id ? '#d4e0eb' : 'var(--dark-blue)', color: 'white', fontSize: '0.82rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: generatingProjectId === project.id ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
+                        {generatingProjectId === project.id
+                          ? 'Creating...'
+                          : project.hasPlan ? 'Open Project' : 'Create Project Plan'}
                       </button>
                     </div>
                   </div>
