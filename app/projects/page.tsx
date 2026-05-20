@@ -89,6 +89,8 @@ function ProjectsContent() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [generatingProjectId, setGeneratingProjectId] = useState('')
+  const [deletingProjectId, setDeletingProjectId] = useState('')
+  const [confirmDeleteProjectId, setConfirmDeleteProjectId] = useState('')
   const [error, setError] = useState('')
   const [waltOpen, setWaltOpen] = useState(false)
 
@@ -165,6 +167,33 @@ function ProjectsContent() {
     window.location.assign(`/projects/${project.id}`)
   }
 
+  const handleDeleteProject = async (project: Project) => {
+    setError('')
+    setDeletingProjectId(project.id)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      window.location.replace('/login')
+      return
+    }
+
+    const { error: deleteError } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', project.id)
+      .eq('user_id', user.id)
+
+    if (deleteError) {
+      setError('Could not delete that project yet. Please try again.')
+      setDeletingProjectId('')
+      return
+    }
+
+    setProjects(currentProjects => currentProjects.filter(currentProject => currentProject.id !== project.id))
+    setConfirmDeleteProjectId('')
+    setDeletingProjectId('')
+  }
+
   if (loading) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
       <p style={{ color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', fontSize: '0.9rem' }}>Loading projects...</p>
@@ -227,6 +256,8 @@ function ProjectsContent() {
                 const vehicle = project.vehicle
                 const photo = getProjectPhoto(project)
                 const isHighlighted = highlightedProjectId === project.id
+                const isConfirmingDelete = confirmDeleteProjectId === project.id
+                const isDeleting = deletingProjectId === project.id
 
                 return (
                   <div key={project.id}
@@ -277,6 +308,40 @@ function ProjectsContent() {
                           : project.hasPlan ? 'Open Project' : 'Create Project Plan'}
                       </button>
                     </div>
+                    {isConfirmingDelete ? (
+                      <div style={{ borderTop: '1px solid var(--border)', background: '#fff7f2', padding: '11px 14px 12px' }}>
+                        <p style={{ color: 'var(--dark-blue)', fontSize: '0.82rem', fontWeight: 800, marginBottom: 3 }}>Delete this project?</p>
+                        <p style={{ color: 'var(--secondary-text)', fontSize: '0.76rem', lineHeight: 1.4, marginBottom: 10 }}>
+                          This removes its build plan, steps, notes, parts, expenses, and photos.
+                        </p>
+                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={() => setConfirmDeleteProjectId('')}
+                            disabled={isDeleting}
+                            style={{ minHeight: 36, padding: '0 14px', borderRadius: 18, border: '1.5px solid var(--border)', background: 'white', color: 'var(--dark-blue)', fontSize: '0.78rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: isDeleting ? 'not-allowed' : 'pointer' }}
+                          >
+                            Keep Project
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProject(project)}
+                            disabled={isDeleting}
+                            style={{ minHeight: 36, padding: '0 14px', borderRadius: 18, border: 'none', background: isDeleting ? '#d4e0eb' : '#b42318', color: 'white', fontSize: '0.78rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: isDeleting ? 'not-allowed' : 'pointer' }}
+                          >
+                            {isDeleting ? 'Deleting...' : 'Delete Project'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ borderTop: '1px solid var(--border)', padding: '8px 14px 10px', display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                          onClick={() => setConfirmDeleteProjectId(project.id)}
+                          disabled={Boolean(deletingProjectId)}
+                          style={{ background: 'none', border: 'none', color: '#b42318', fontSize: '0.76rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: deletingProjectId ? 'not-allowed' : 'pointer', padding: '4px 0' }}
+                        >
+                          Delete project
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )
               })}

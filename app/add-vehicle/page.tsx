@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { WALT_AVATAR_URL } from '@/lib/app-constants'
 const WALT = WALT_AVATAR_URL
@@ -42,11 +42,14 @@ const NavBar = () => (
 export default function AddVehiclePage() {
   const [fromCreateProject, setFromCreateProject] = useState(false)
   const [isDream, setIsDream] = useState(false)
+  const preserveDecodedFields = useRef(false)
 
   // Form state
   const [year, setYear] = useState('')
   const [make, setMake] = useState('')
   const [model, setModel] = useState('')
+  const [trim, setTrim] = useState('')
+  const [vin, setVin] = useState('')
   const [color, setColor] = useState('')
   const [nickname, setNickname] = useState('')
   const [engine, setEngine] = useState('')
@@ -61,6 +64,7 @@ export default function AddVehiclePage() {
   const [models, setModels] = useState<string[]>([])
   const [loadingMakes, setLoadingMakes] = useState(false)
   const [loadingModels, setLoadingModels] = useState(false)
+  const [decodingVin, setDecodingVin] = useState(false)
 
   // Photo
   const [photoUrl, setPhotoUrl] = useState('')
@@ -78,9 +82,11 @@ export default function AddVehiclePage() {
   useEffect(() => {
     if (!year) { setMakes([]); setMake(''); setModels([]); setModel(''); return }
     setLoadingMakes(true)
-    setMake('')
-    setModels([])
-    setModel('')
+    if (!preserveDecodedFields.current) {
+      setMake('')
+      setModels([])
+      setModel('')
+    }
     fetch(`/api/vehicle-data?type=makes&year=${year}`)
       .then(r => r.json())
       .then(d => { setMakes(d.makes || []); setLoadingMakes(false) })
@@ -91,7 +97,7 @@ export default function AddVehiclePage() {
   useEffect(() => {
     if (!year || !make) { setModels([]); setModel(''); return }
     setLoadingModels(true)
-    setModel('')
+    if (!preserveDecodedFields.current) setModel('')
     fetch(`/api/vehicle-data?type=models&year=${year}&make=${encodeURIComponent(make)}`)
       .then(r => r.json())
       .then(d => { setModels(d.models || []); setLoadingModels(false) })
@@ -103,6 +109,41 @@ export default function AddVehiclePage() {
   useEffect(() => {
     if (!year && !make && !model) setPhotoUrl('')
   }, [year, make, model])
+
+  const decodeVin = async () => {
+    const cleanVin = vin.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
+    if (cleanVin.length !== 17) {
+      setError('Enter a 17-character VIN so Walt can decode it.')
+      return
+    }
+    setDecodingVin(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/vehicle-data?type=decode-vin&vin=${encodeURIComponent(cleanVin)}${year ? `&year=${year}` : ''}`)
+      const data = await res.json()
+      if (!res.ok || !data.vehicle) {
+        setError(data.error || 'VIN could not be decoded.')
+        return
+      }
+      preserveDecodedFields.current = true
+      const decoded = data.vehicle as {
+        year?: string; make?: string; model?: string; trim?: string
+        engine?: string; transmission?: string; drivetrain?: string; fuel_type?: string
+      }
+      if (decoded.year) setYear(decoded.year)
+      if (decoded.make) setMake(decoded.make)
+      if (decoded.model) setModel(decoded.model)
+      if (decoded.trim) setTrim(decoded.trim)
+      if (decoded.engine) setEngine(decoded.engine)
+      if (decoded.transmission) setTransmission(decoded.transmission)
+      if (decoded.drivetrain) setDrivetrain(decoded.drivetrain)
+      setTimeout(() => { preserveDecodedFields.current = false }, 0)
+    } catch {
+      setError('VIN lookup is unavailable right now.')
+    } finally {
+      setDecodingVin(false)
+    }
+  }
 
   const handlePhotoUpload = async (file: File) => {
     setUploading(true)
@@ -137,6 +178,8 @@ export default function AddVehiclePage() {
         user_id: user.id,
         year: parseInt(year),
         make, model,
+        trim: trim || null,
+        vin: vin.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || null,
         nickname,
         color: color || null,
         engine: engine || null,
@@ -174,6 +217,9 @@ export default function AddVehiclePage() {
     display: 'block', fontSize: '0.8rem', fontWeight: 700,
     color: 'var(--dark-blue)', marginBottom: 6
   }
+  const engineOptions = engine && !ENGINES.includes(engine) ? [engine, ...ENGINES] : ENGINES
+  const transmissionOptions = transmission && !TRANSMISSIONS.includes(transmission) ? [transmission, ...TRANSMISSIONS] : TRANSMISSIONS
+  const drivetrainOptions = drivetrain && !DRIVETRAINS.includes(drivetrain) ? [drivetrain, ...DRIVETRAINS] : DRIVETRAINS
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
@@ -207,6 +253,25 @@ export default function AddVehiclePage() {
           <div style={{ background: 'white', borderRadius: 14, padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 16 }}>
             <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 14 }}>Identity</p>
 
+            {/* VIN */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>VIN <span style={{ color: 'var(--secondary-text)', fontWeight: 500 }}>(optional)</span></label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input type="text" placeholder="17-character VIN" value={vin} onChange={e => setVin(e.target.value.toUpperCase())}
+                  maxLength={17} style={{ ...selectStyle, flex: 1, fontFamily: 'var(--font-nunito)' }} />
+                <button onClick={decodeVin} disabled={decodingVin || vin.replace(/[^a-zA-Z0-9]/g, '').length !== 17}
+                  style={{
+                    border: 'none', borderRadius: 12, padding: '0 12px',
+                    background: vin.replace(/[^a-zA-Z0-9]/g, '').length === 17 ? 'var(--dark-blue)' : '#d4e0eb',
+                    color: 'white', fontFamily: 'var(--font-nunito)', fontWeight: 800,
+                    cursor: vin.replace(/[^a-zA-Z0-9]/g, '').length === 17 ? 'pointer' : 'not-allowed',
+                  }}>
+                  {decodingVin ? '...' : 'Decode'}
+                </button>
+              </div>
+              <p style={{ fontSize: '0.68rem', color: 'var(--secondary-text)', marginTop: 6 }}>VIN helps Walt identify trim, engine, drivetrain, and fuel data when available.</p>
+            </div>
+
             {/* Year */}
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>Year <span style={{ color: 'var(--orange)' }}>*</span></label>
@@ -232,6 +297,13 @@ export default function AddVehiclePage() {
                 <option value="">{loadingModels ? 'Loading...' : make ? 'Select model...' : 'Select make first'}</option>
                 {models.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
+            </div>
+
+            {/* Trim */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>Trim <span style={{ color: 'var(--secondary-text)', fontWeight: 500 }}>(optional)</span></label>
+              <input type="text" placeholder="e.g. XLT, Lariat, Raptor" value={trim} onChange={e => setTrim(e.target.value)}
+                style={{ ...selectStyle, fontFamily: 'var(--font-nunito)' }} />
             </div>
 
             {/* Color */}
@@ -295,7 +367,7 @@ export default function AddVehiclePage() {
               <label style={labelStyle}>Engine</label>
               <select value={engine} onChange={e => setEngine(e.target.value)} style={selectStyle}>
                 <option value="">Select engine...</option>
-                {ENGINES.map(e => <option key={e} value={e}>{e}</option>)}
+                {engineOptions.map(e => <option key={e} value={e}>{e}</option>)}
               </select>
               {engine === 'Other / Custom' && (
                 <input type="text" placeholder="Describe your engine..." style={{ ...selectStyle, marginTop: 8 }}
@@ -307,7 +379,7 @@ export default function AddVehiclePage() {
               <label style={labelStyle}>Transmission</label>
               <select value={transmission} onChange={e => setTransmission(e.target.value)} style={selectStyle}>
                 <option value="">Select transmission...</option>
-                {TRANSMISSIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                {transmissionOptions.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
               {transmission === 'Other / Custom' && (
                 <input type="text" placeholder="Describe your transmission..." style={{ ...selectStyle, marginTop: 8 }}
@@ -319,7 +391,7 @@ export default function AddVehiclePage() {
               <label style={labelStyle}>Drivetrain</label>
               <select value={drivetrain} onChange={e => setDrivetrain(e.target.value)} style={selectStyle}>
                 <option value="">Select drivetrain...</option>
-                {DRIVETRAINS.map(d => <option key={d} value={d}>{d}</option>)}
+                {drivetrainOptions.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
             </div>
           </div>

@@ -14,6 +14,7 @@ create table if not exists vehicles (
   make text not null,
   model text not null,
   trim text,
+  vin text,
   nickname text,
   type text not null default 'garage' check (type in ('build', 'garage')),
   cover_photo_url text,

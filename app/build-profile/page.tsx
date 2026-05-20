@@ -23,12 +23,14 @@ const toolOptions = [
 
 type VehicleEntry = {
   year: string; make: string; model: string; nickname: string; color: string
+  trim: string; vin: string
   engine: string; transmission: string; drivetrain: string; fuel_type: string
   mileage: string; condition: string; title_status: string; notes: string
 }
 
 const emptyVehicle = (): VehicleEntry => ({
   year: '', make: '', model: '', nickname: '', color: '',
+  trim: '', vin: '',
   engine: '', transmission: '', drivetrain: '', fuel_type: '',
   mileage: '', condition: '', title_status: '', notes: ''
 })
@@ -141,6 +143,8 @@ export default function BuildProfilePage() {
           user_id: user.id,
           year: parseInt(v.year),
           make: v.make, model: v.model,
+          trim: v.trim || null,
+          vin: v.vin.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || null,
           nickname: v.nickname || `${v.year} ${v.make} ${v.model}`,
           color: v.color || null, engine: v.engine || null,
           transmission: v.transmission || null, drivetrain: v.drivetrain || null,
@@ -309,7 +313,7 @@ export default function BuildProfilePage() {
           {/* Vehicle form */}
           {!vehicleSaved && (
             <div style={{ background: 'white', borderRadius: 14, padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 16 }}>
-              {[['Year *', 'year', 'text', 'e.g. 1968'], ['Make *', 'make', 'text', 'e.g. Ford'], ['Model *', 'model', 'text', 'e.g. F-250'], ['Nickname', 'nickname', 'text', 'e.g. "Betty Lou"'], ['Color', 'color', 'text', 'e.g. Oxford White'], ['Engine', 'engine', 'text', 'e.g. 390 FE V8'], ['Transmission', 'transmission', 'text', 'e.g. 4-speed manual']].map(([lbl, fld, typ, ph]) => (
+              {[['Year *', 'year', 'text', 'e.g. 1968'], ['Make *', 'make', 'text', 'e.g. Ford'], ['Model *', 'model', 'text', 'e.g. F-250'], ['Trim', 'trim', 'text', 'e.g. XLT, Lariat'], ['VIN', 'vin', 'text', 'optional, 17 characters'], ['Nickname', 'nickname', 'text', 'e.g. "Betty Lou"'], ['Color', 'color', 'text', 'e.g. Oxford White'], ['Engine', 'engine', 'text', 'e.g. 390 FE V8'], ['Transmission', 'transmission', 'text', 'e.g. 4-speed manual']].map(([lbl, fld, typ, ph]) => (
                 <div key={fld} style={{ marginBottom: 14 }}>
                   <label style={labelStyle}>{lbl}</label>
                   <input type={typ} placeholder={ph} value={(newVehicle as Record<string,string>)[fld]}

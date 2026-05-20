@@ -4,10 +4,12 @@ export type VehicleSummary = {
   year: number
   make: string
   model: string
+  trim: string | null
   cover_photo_url: string | null
 }
 
 export type VehicleDetail = VehicleSummary & {
+  vin: string | null
   color: string | null
   engine: string | null
   fuel_type: string | null

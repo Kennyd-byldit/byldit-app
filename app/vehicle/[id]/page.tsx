@@ -29,6 +29,7 @@ export default function VehicleDetailPage() {
   const [editingField, setEditingField] = useState<string | null>(null)
   const [tempValue, setTempValue] = useState('')
   const [saving, setSaving] = useState(false)
+  const [decodingVin, setDecodingVin] = useState(false)
   const [savedMsg, setSavedMsg] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -37,7 +38,7 @@ export default function VehicleDetailPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.replace('/login'); return }
       const { data } = await supabase.from('vehicles')
-        .select('id, nickname, year, make, model, color, engine, fuel_type, transmission, drivetrain, mileage, condition, title_status, notes, is_primary, cover_photo_url')
+        .select('id, nickname, year, make, model, trim, vin, color, engine, fuel_type, transmission, drivetrain, mileage, condition, title_status, notes, is_primary, cover_photo_url')
         .eq('id', params.id as string).eq('user_id', user.id).single()
       if (!data) { window.location.replace('/garage'); return }
       setVehicle(data)
@@ -61,6 +62,38 @@ export default function VehicleDetailPage() {
     setSaving(false)
     setSavedMsg(true)
     setTimeout(() => setSavedMsg(false), 2000)
+  }
+
+  const decodeVehicleVin = async () => {
+    if (!vehicle?.vin) return
+    const cleanVin = vehicle.vin.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
+    if (cleanVin.length !== 17) return
+    setDecodingVin(true)
+    try {
+      const res = await fetch(`/api/vehicle-data?type=decode-vin&vin=${encodeURIComponent(cleanVin)}&year=${vehicle.year}`)
+      const data = await res.json()
+      if (!res.ok || !data.vehicle) return
+      const decoded = data.vehicle as {
+        year?: string; make?: string; model?: string; trim?: string
+        engine?: string; fuel_type?: string; transmission?: string; drivetrain?: string
+      }
+      const updates = {
+        year: decoded.year ? parseInt(decoded.year) : vehicle.year,
+        make: decoded.make || vehicle.make,
+        model: decoded.model || vehicle.model,
+        trim: decoded.trim || vehicle.trim,
+        engine: decoded.engine || vehicle.engine,
+        fuel_type: decoded.fuel_type || vehicle.fuel_type,
+        transmission: decoded.transmission || vehicle.transmission,
+        drivetrain: decoded.drivetrain || vehicle.drivetrain,
+      }
+      await supabase.from('vehicles').update(updates).eq('id', vehicle.id)
+      setVehicle(prev => prev ? { ...prev, ...updates } : prev)
+      setSavedMsg(true)
+      setTimeout(() => setSavedMsg(false), 2000)
+    } finally {
+      setDecodingVin(false)
+    }
   }
 
   const uploadPhoto = async (file: File) => {
@@ -94,9 +127,11 @@ export default function VehicleDetailPage() {
   if (!vehicle) return null
 
   const fields: { label: string; field: string; type: 'text' | 'number' | 'select' | 'textarea'; placeholder?: string; opts?: string[] }[] = [
+    { label: 'VIN', field: 'vin', type: 'text', placeholder: '17-character VIN' },
     { label: 'Year *', field: 'year', type: 'text', placeholder: 'e.g. 1968' },
     { label: 'Make *', field: 'make', type: 'text', placeholder: 'e.g. Ford' },
     { label: 'Model *', field: 'model', type: 'text', placeholder: 'e.g. F-250' },
+    { label: 'Trim', field: 'trim', type: 'text', placeholder: 'e.g. XLT, Lariat, Raptor' },
     { label: 'Nickname', field: 'nickname', type: 'text', placeholder: 'e.g. "Betty Lou"' },
     { label: 'Color', field: 'color', type: 'text', placeholder: 'e.g. Oxford White' },
     { label: 'Engine', field: 'engine', type: 'text', placeholder: 'e.g. 390 FE V8, 5.0 Coyote swap' },
@@ -194,6 +229,16 @@ export default function VehicleDetailPage() {
                 </div>
               )
             })}
+            <button onClick={decodeVehicleVin} disabled={decodingVin || !vehicle.vin || vehicle.vin.replace(/[^a-zA-Z0-9]/g, '').length !== 17}
+              style={{
+                width: '100%', marginTop: 4, padding: '12px',
+                background: vehicle.vin && vehicle.vin.replace(/[^a-zA-Z0-9]/g, '').length === 17 ? 'var(--dark-blue)' : '#d4e0eb',
+                borderRadius: 25, border: 'none', color: 'white',
+                fontSize: '0.9rem', fontWeight: 800, fontFamily: 'var(--font-nunito)',
+                cursor: vehicle.vin && vehicle.vin.replace(/[^a-zA-Z0-9]/g, '').length === 17 ? 'pointer' : 'not-allowed',
+              }}>
+              {decodingVin ? 'Decoding VIN...' : 'Decode VIN & fill vehicle details'}
+            </button>
           </div>
 
           <button onClick={() => window.location.href = '/garage'}

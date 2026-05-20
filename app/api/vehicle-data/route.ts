@@ -22,8 +22,52 @@ type NhtsaModel = {
   Model_Name?: string
 }
 
+type NhtsaDecode = Record<string, string | null | undefined>
+
 type NhtsaResponse<T> = {
   Results?: T[]
+}
+
+const cleanValue = (value: unknown) => {
+  if (typeof value !== 'string') return ''
+  const trimmed = value.trim()
+  if (!trimmed || trimmed.toLowerCase() === 'not applicable') return ''
+  return trimmed
+}
+
+const joinParts = (parts: string[]) => parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
+
+function normalizeDecode(result: NhtsaDecode) {
+  const displacement = cleanValue(result.DisplacementL)
+  const cylinders = cleanValue(result.EngineCylinders)
+  const engineModel = cleanValue(result.EngineModel)
+  const engineConfig = cleanValue(result.EngineConfiguration)
+  const trim = cleanValue(result.Trim) || cleanValue(result.Series)
+  const driveType = cleanValue(result.DriveType)
+  const drivetrain = driveType.toLowerCase().includes('4') ? '4WD'
+    : driveType.toLowerCase().includes('all') ? 'AWD'
+      : driveType.toLowerCase().includes('front') ? 'FWD'
+        : driveType.toLowerCase().includes('rear') ? 'RWD'
+          : driveType
+
+  return {
+    vin: cleanValue(result.VIN),
+    year: cleanValue(result.ModelYear),
+    make: cleanValue(result.Make),
+    model: cleanValue(result.Model),
+    trim,
+    bodyClass: cleanValue(result.BodyClass),
+    engine: joinParts([
+      displacement ? `${displacement}L` : '',
+      cylinders ? `${cylinders}-cyl` : '',
+      engineConfig,
+      engineModel,
+    ]),
+    fuel_type: cleanValue(result.FuelTypePrimary),
+    transmission: cleanValue(result.TransmissionStyle) || cleanValue(result.TransmissionSpeeds),
+    drivetrain,
+    source: 'NHTSA vPIC',
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -31,8 +75,25 @@ export async function GET(req: NextRequest) {
   const type = searchParams.get('type')
   const year = searchParams.get('year')
   const make = searchParams.get('make')
+  const vin = searchParams.get('vin')?.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
 
   try {
+    if (type === 'decode-vin' && vin) {
+      if (vin.length !== 17) {
+        return NextResponse.json({ error: 'VIN must be 17 characters.' }, { status: 400 })
+      }
+
+      const modelYear = year ? `&modelyear=${encodeURIComponent(year)}` : ''
+      const res = await fetch(`${NHTSA}/DecodeVinValues/${encodeURIComponent(vin)}?format=json${modelYear}`, {
+        next: { revalidate: 86400 },
+      })
+      const data = await res.json() as NhtsaResponse<NhtsaDecode>
+      const decoded = data.Results?.[0] ? normalizeDecode(data.Results[0]) : null
+
+      if (!decoded) return NextResponse.json({ error: 'VIN could not be decoded.' }, { status: 404 })
+      return NextResponse.json({ vehicle: decoded })
+    }
+
     if (type === 'makes' && year) {
       const res = await fetch(`${NHTSA}/GetMakesForVehicleType/Passenger%20Car?format=json`, {
         next: { revalidate: 86400 } // cache 24 hours

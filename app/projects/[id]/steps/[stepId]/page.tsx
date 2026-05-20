@@ -13,8 +13,11 @@ type Vehicle = {
   year: number
   make: string
   model: string
+  trim: string | null
+  vin: string | null
   color: string | null
   engine: string | null
+  fuel_type: string | null
   transmission: string | null
   drivetrain: string | null
   mileage: number | null
@@ -84,9 +87,11 @@ const formatMoney = (value: number | null) => {
 const formatVehicleContext = (vehicle: Vehicle | null) => {
   if (!vehicle) return 'Vehicle: not available'
   return [
-    `Vehicle: ${getVehicleName(vehicle)} (${vehicle.year} ${vehicle.make} ${vehicle.model})`,
+    `Vehicle: ${getVehicleName(vehicle)} (${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''})`,
+    vehicle.vin ? `VIN: ${vehicle.vin}` : '',
     vehicle.color ? `Color: ${vehicle.color}` : '',
     vehicle.engine ? `Engine: ${vehicle.engine}` : '',
+    vehicle.fuel_type ? `Fuel: ${vehicle.fuel_type}` : '',
     vehicle.transmission ? `Transmission: ${vehicle.transmission}` : '',
     vehicle.drivetrain ? `Drivetrain: ${vehicle.drivetrain}` : '',
     vehicle.mileage ? `Mileage: ${vehicle.mileage}` : '',
@@ -227,8 +232,11 @@ export default function StepDetailPage() {
             year,
             make,
             model,
+            trim,
+            vin,
             color,
             engine,
+            fuel_type,
             transmission,
             drivetrain,
             mileage,
@@ -395,6 +403,9 @@ export default function StepDetailPage() {
         openingLine={`Let's walk through ${step.name}.`}
         speakOpeningOnOpen
         vehicleId={project.vehicle?.id}
+        projectId={project.id}
+        phaseId={phase.id}
+        stepId={step.id}
         screen={`project-step-${step.id}`}
       />
     </div>

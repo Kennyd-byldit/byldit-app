@@ -13,9 +13,12 @@ type Vehicle = {
   year: number
   make: string
   model: string
+  trim: string | null
+  vin: string | null
   cover_photo_url: string | null
   color: string | null
   engine: string | null
+  fuel_type: string | null
   transmission: string | null
   drivetrain: string | null
   mileage: number | null
@@ -99,9 +102,11 @@ const formatMoney = (value: number | null) => {
 const formatVehicleContext = (vehicle: Vehicle | null) => {
   if (!vehicle) return 'Vehicle: not available'
   return [
-    `Vehicle: ${getVehicleName(vehicle)} (${vehicle.year} ${vehicle.make} ${vehicle.model})`,
+    `Vehicle: ${getVehicleName(vehicle)} (${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''})`,
+    vehicle.vin ? `VIN: ${vehicle.vin}` : '',
     vehicle.color ? `Color: ${vehicle.color}` : '',
     vehicle.engine ? `Engine: ${vehicle.engine}` : '',
+    vehicle.fuel_type ? `Fuel: ${vehicle.fuel_type}` : '',
     vehicle.transmission ? `Transmission: ${vehicle.transmission}` : '',
     vehicle.drivetrain ? `Drivetrain: ${vehicle.drivetrain}` : '',
     vehicle.mileage ? `Mileage: ${vehicle.mileage}` : '',
@@ -182,6 +187,7 @@ export default function ProjectPlanPage() {
   const [waltContext, setWaltContext] = useState('')
   const [waltOpeningLine, setWaltOpeningLine] = useState('Tell me where you want to start.')
   const [waltScreen, setWaltScreen] = useState(`project-plan-${projectId}`)
+  const [waltPhaseId, setWaltPhaseId] = useState<string | undefined>()
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -205,9 +211,12 @@ export default function ProjectPlanPage() {
             year,
             make,
             model,
+            trim,
+            vin,
             cover_photo_url,
             color,
             engine,
+            fuel_type,
             transmission,
             drivetrain,
             mileage,
@@ -300,6 +309,7 @@ export default function ProjectPlanPage() {
     ].join('\n'))
     setWaltOpeningLine(`Let's look at ${phase.name}. I’ll give you the shape of it before you start turning bolts.`)
     setWaltScreen(`project-phase-${phase.id}`)
+    setWaltPhaseId(phase.id)
     setWaltOpen(true)
   }
 
@@ -321,6 +331,7 @@ export default function ProjectPlanPage() {
     ].join('\n'))
     setWaltOpeningLine(`I’m here with the full plan for ${project.name}. Ask me where to start or what any phase means.`)
     setWaltScreen(`project-plan-${project.id}`)
+    setWaltPhaseId(undefined)
     setWaltOpen(true)
   }
 
@@ -457,6 +468,8 @@ export default function ProjectPlanPage() {
         openingLine={waltOpeningLine}
         speakOpeningOnOpen={waltScreen.startsWith('project-phase-')}
         vehicleId={project.vehicle?.id}
+        projectId={project.id}
+        phaseId={waltPhaseId}
         screen={waltScreen}
       />
     </div>

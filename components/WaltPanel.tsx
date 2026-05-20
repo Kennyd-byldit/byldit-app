@@ -49,6 +49,9 @@ interface WaltPanelProps {
   openingLine?: string
   speakOpeningOnOpen?: boolean
   vehicleId?: string
+  projectId?: string
+  phaseId?: string
+  stepId?: string
   screen?: string
 }
 
@@ -59,6 +62,9 @@ export default function WaltPanel({
   openingLine = 'Talk to me.',
   speakOpeningOnOpen = false,
   vehicleId,
+  projectId,
+  phaseId,
+  stepId,
   screen = 'garage',
 }: WaltPanelProps) {
   const [messages, setMessages] = useState<Message[]>([])
@@ -141,6 +147,7 @@ export default function WaltPanel({
       role: msg.role,
       content: msg.content,
       vehicle_id: vehicleId || null,
+      project_id: projectId || null,
       screen,
     })
     if (error) console.error('Save message error:', JSON.stringify(error))
@@ -191,6 +198,7 @@ export default function WaltPanel({
     setLoading(true)
 
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       // Send last 10 messages for context efficiency
       // Map 'walt' role to 'assistant' for the chat API
       const recentMessages = newMessages.slice(-10).map(m => ({
@@ -199,8 +207,11 @@ export default function WaltPanel({
       }))
       const res = await fetch('/api/walt-chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: recentMessages, context }),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ messages: recentMessages, context, vehicleId, projectId, phaseId, stepId, screen }),
       })
       const data = await res.json()
       const rawReply = data.message || "Having trouble connecting right now. Try again."

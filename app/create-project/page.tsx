@@ -68,7 +68,7 @@ export default function CreateProjectPage() {
       if (!user) { window.location.replace('/login'); return }
       const { data } = await supabase
         .from('vehicles')
-        .select('id, nickname, year, make, model, cover_photo_url, is_primary')
+        .select('id, nickname, year, make, model, trim, cover_photo_url, is_primary')
         .eq('user_id', user.id)
         .order('is_primary', { ascending: false })
       setVehicles(data || [])

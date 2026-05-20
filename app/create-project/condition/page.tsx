@@ -77,7 +77,7 @@ function ConditionContent() {
       if (!user) { window.location.replace('/login'); return }
       const { data } = await supabase
         .from('vehicles')
-        .select('id, nickname, year, make, model, cover_photo_url')
+        .select('id, nickname, year, make, model, trim, cover_photo_url')
         .eq('id', vehicleId)
         .eq('user_id', user.id)
         .single()

@@ -31,7 +31,7 @@ const WaltBar = ({ onOpenWalt }: { onOpenWalt: () => void }) => (
   </div>
 )
 
-type Vehicle = { id: string, nickname: string, year: number, make: string, model: string, is_primary: boolean, color: string|null, engine: string|null, transmission: string|null, drivetrain: string|null, fuel_type: string|null, mileage: number|null, condition: string|null, cover_photo_url: string|null }
+type Vehicle = { id: string, nickname: string, year: number, make: string, model: string, trim: string|null, is_primary: boolean, color: string|null, engine: string|null, transmission: string|null, drivetrain: string|null, fuel_type: string|null, mileage: number|null, condition: string|null, cover_photo_url: string|null }
 type Project = { id: string, vehicle_id: string, name: string, goal_type: string, status: string }
 
 const getCompletion = (v: Vehicle) => {
@@ -77,7 +77,7 @@ export default function GaragePage() {
 
       const [{ data: profile }, { data: vehicleData }, { data: projects }] = await Promise.all([
         supabase.from('profiles').select('name').eq('id', user.id).single(),
-        supabase.from('vehicles').select('id, nickname, year, make, model, is_primary, color, engine, transmission, drivetrain, fuel_type, mileage, condition, cover_photo_url').eq('user_id', user.id).order('is_primary', { ascending: false }),
+        supabase.from('vehicles').select('id, nickname, year, make, model, trim, is_primary, color, engine, transmission, drivetrain, fuel_type, mileage, condition, cover_photo_url').eq('user_id', user.id).order('is_primary', { ascending: false }),
         supabase.from('projects').select('id, vehicle_id, name, goal_type, status').eq('user_id', user.id).eq('status', 'active').order('created_at', { ascending: false }),
       ])
 
@@ -389,7 +389,15 @@ export default function GaragePage() {
       <WaltPanel
         open={waltOpen}
         onClose={() => setWaltOpen(false)}
-        context={`User: ${userName}\nVehicles: ${vehicles.map(v => v.nickname || `${v.year} ${v.make} ${v.model}`).join(', ')}\nScreen: Garage`}
+        context={`User: ${userName}\nVehicles:\n${vehicles.map(v => [
+          `- ${v.nickname || `${v.year} ${v.make} ${v.model}`}`,
+          `  Identity: ${v.year} ${v.make} ${v.model}${v.trim ? ` ${v.trim}` : ''}`,
+          v.engine ? `  Engine: ${v.engine}` : '',
+          v.transmission ? `  Transmission: ${v.transmission}` : '',
+          v.drivetrain ? `  Drivetrain: ${v.drivetrain}` : '',
+          v.fuel_type ? `  Fuel: ${v.fuel_type}` : '',
+          v.condition ? `  Status: ${v.condition}` : '',
+        ].filter(Boolean).join('\n')).join('\n') || 'none'}\nScreen: Garage`}
         openingLine={`Talk to me, ${userName}.`}
       />
     </div>
