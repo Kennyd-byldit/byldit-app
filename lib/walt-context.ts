@@ -20,7 +20,10 @@ export type WaltContextVehicle = {
 export type WaltContextProject = {
   name?: ContextValue
   goal_type?: ContextValue
+  project_mode?: ContextValue
+  plan_type?: ContextValue
   condition?: ContextValue
+  intake_summary?: ContextValue
   budget_estimate?: ContextValue
   budget_actual?: ContextValue
   status?: ContextValue
@@ -97,7 +100,10 @@ export function formatWaltContextPack(pack: WaltContextPack) {
     pack.project ? [
       line('Name', pack.project.name),
       line('Goal/type', pack.project.goal_type),
+      line('Project mode', pack.project.project_mode),
+      line('Plan type', pack.project.plan_type),
       line('Condition/intake', pack.project.condition),
+      line('Intake summary', pack.project.intake_summary),
       line('Budget estimate', pack.project.budget_estimate),
       line('Actual spend', pack.project.budget_actual),
       line('Status', pack.project.status),

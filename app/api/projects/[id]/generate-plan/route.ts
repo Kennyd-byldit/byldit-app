@@ -59,8 +59,13 @@ Schema:
 }
 
 Rules:
-- Create 3 to 6 phases.
-- Each phase should have 2 to 5 steps.
+- Match the plan shape to project.project_mode and project.plan_type when present.
+- Maintenance/checklist projects should usually be 1 to 2 compact phases with practical checklist-style steps. Do not over-structure simple jobs like oil changes into redundant phases.
+- Diagnostic projects should be framed as safety checks, symptom confirmation, tests, likely causes, and next actions. Do not pretend the repair is already known unless the intake says it is.
+- Repair projects should focus on confirming the issue, parts/tools, removal, replacement/repair, testing, and completion checks.
+- Upgrade projects should include decisions, fitment/compatibility checks, parts sourcing, install sequence, and post-install checks.
+- Restoration projects can use 3 to 6 phases and broader milestone structure.
+- Each phase should have 2 to 5 steps unless a simple maintenance checklist genuinely needs a single compact phase with more checklist steps.
 - Sequence the project in the order a mechanic would actually do it.
 - Keep step names short, practical, and garage-friendly. Avoid weak names like "Gather supplies" when "Parts, Tools, and Prep" or a more specific task name is clearer.
 - Make each step's detail rich and useful enough that it feels like a mechanic is coaching that exact step.
@@ -146,13 +151,17 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
       return NextResponse.json({ projectId, alreadyGenerated: true })
     }
 
-    const { data: project, error: projectError } = await supabase
+    const projectResult = await supabase
       .from('projects')
       .select(`
         id,
         name,
         goal_type,
+        project_mode,
+        plan_type,
         condition,
+        intake_summary,
+        intake_answers,
         budget_estimate,
         vehicle:vehicles (
           id,
@@ -175,6 +184,44 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
       .eq('id', projectId)
       .eq('user_id', user.id)
       .single()
+
+    let project = projectResult.data as Record<string, unknown> | null
+    let projectError = projectResult.error
+
+    if (projectError) {
+      const fallback = await supabase
+        .from('projects')
+        .select(`
+          id,
+          name,
+          goal_type,
+          condition,
+          budget_estimate,
+          vehicle:vehicles (
+            id,
+            nickname,
+            year,
+            make,
+            model,
+            trim,
+            vin,
+            color,
+            engine,
+            fuel_type,
+            transmission,
+            drivetrain,
+            mileage,
+            condition,
+            notes
+          )
+        `)
+        .eq('id', projectId)
+        .eq('user_id', user.id)
+        .single()
+
+      project = fallback.data as Record<string, unknown> | null
+      projectError = fallback.error
+    }
 
     if (projectError || !project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })

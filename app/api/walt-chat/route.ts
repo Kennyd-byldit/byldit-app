@@ -100,7 +100,7 @@ async function buildContextFromDatabase({
       ? supabase.from('vehicles').select('nickname, year, make, model, trim, vin, color, engine, fuel_type, transmission, drivetrain, mileage, condition, notes').eq('id', vehicleId).eq('user_id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
     projectId
-      ? supabase.from('projects').select('name, goal_type, condition, budget_estimate, budget_actual, status').eq('id', projectId).eq('user_id', user.id).maybeSingle()
+      ? supabase.from('projects').select('name, goal_type, project_mode, plan_type, condition, intake_summary, budget_estimate, budget_actual, status').eq('id', projectId).eq('user_id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
     phaseId
       ? supabase.from('phases').select('name, status, cost_estimate').eq('id', phaseId).eq('user_id', user.id).maybeSingle()

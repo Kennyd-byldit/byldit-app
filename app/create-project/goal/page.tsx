@@ -1,238 +1,160 @@
 'use client'
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { WALT_AVATAR_URL } from '@/lib/app-constants'
-const WALT = WALT_AVATAR_URL
+import {
+  CreateProjectFrame,
+  LoadingScreen,
+  Vehicle,
+  VehicleHero,
+  getVehicleName,
+  loadCreateProjectVehicle,
+} from '../CreateProjectShared'
+import {
+  PROJECT_MODE_DESCRIPTIONS,
+  PROJECT_MODE_EXAMPLES,
+  PROJECT_MODE_LABELS,
+  PROJECT_MODES,
+  ProjectMode,
+} from '@/lib/project-modes'
 
-const PROJECT_GROUPS = [
-  {
-    label: 'Restoration',
-    types: ['Full Restoration', 'Partial Restoration', 'Restomod'],
-  },
-  {
-    label: 'Performance & Mods',
-    types: ['Engine Swap', 'Suspension & Lift', 'Performance & Tuning', 'Wheels & Tires'],
-  },
-  {
-    label: 'Appearance',
-    types: ['Body & Paint', 'Interior', 'Audio & Stereo'],
-  },
-  {
-    label: 'Maintenance & Service',
-    types: ['Maintenance', 'Diagnostics', 'Electrical'],
-  },
-  {
-    label: 'Other',
-    types: ['Custom / Other'],
-  },
-]
-
-type Vehicle = {
-  id: string
-  nickname: string
-  year: number
-  make: string
-  model: string
-  cover_photo_url: string | null
+const MODE_ICONS: Record<ProjectMode, string> = {
+  maintenance: '🧰',
+  repair: '🔧',
+  upgrade: '⚙️',
+  restoration: '🏁',
+  diagnostic: '🔎',
 }
 
-const getVehiclePhoto = (v: Vehicle): string | null => {
-  if (v.cover_photo_url) return v.cover_photo_url
-  const model = v.model?.toLowerCase() || ''
-  if (model.includes('ranger')) return '/photos/ranger-2025.jpg'
-  if (model.includes('f250') || model.includes('f-250')) return '/photos/f250-hiboy-68.jpg'
-  return null
-}
-
-const NavBar = () => (
-  <nav style={{ background: 'white', borderTop: '1px solid var(--border)', padding: '6px 0 4px', flexShrink: 0 }}>
-    <div style={{ display: 'flex', maxWidth: 480, margin: '0 auto' }}>
-      {[
-        { icon: '🏠', label: 'Garage', active: false },
-        { icon: '🔧', label: 'Projects', active: true },
-        { icon: '🔩', label: 'Parts', active: false },
-        { icon: '📋', label: "Walt's Notes", active: false },
-      ].map(item => (
-        <div key={item.label} style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
-          onClick={() => { if (item.label === 'Garage') window.location.href = '/garage' }}>
-          <div style={{ fontSize: '1.1rem' }}>{item.icon}</div>
-          <div style={{ fontSize: '0.55rem', fontWeight: item.active ? 700 : 400, color: item.active ? 'var(--orange)' : 'var(--secondary-text)', fontFamily: 'var(--font-nunito)' }}>{item.label}</div>
-        </div>
-      ))}
-    </div>
-  </nav>
-)
-
-const WaltBar = () => (
-  <div style={{ background: 'white', padding: '8px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ flex: 1, background: 'var(--bg)', borderRadius: 25, padding: '10px 16px', fontSize: '0.85rem', color: '#aaa', fontFamily: 'var(--font-nunito)' }}>Ask me anything...</div>
-      <div style={{ width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--orange)', flexShrink: 0, cursor: 'pointer' }}>
-        <img src={WALT} alt="Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      </div>
-    </div>
-  </div>
-)
-
-function CreateProjectGoalContent() {
+function ModeContent() {
   const searchParams = useSearchParams()
   const vehicleId = searchParams.get('vehicle') || ''
 
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selected, setSelected] = useState<string[]>([])
+  const [selectedMode, setSelectedMode] = useState<ProjectMode | null>(null)
+  const [waltOpen, setWaltOpen] = useState(false)
 
   useEffect(() => {
     window.scrollTo(0, 0)
     async function load() {
-      if (!vehicleId) { window.location.replace('/create-project'); return }
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { window.location.replace('/login'); return }
-      const { data } = await supabase
-        .from('vehicles')
-        .select('id, nickname, year, make, model, trim, cover_photo_url')
-        .eq('id', vehicleId)
-        .eq('user_id', user.id)
-        .single()
-      if (!data) { window.location.replace('/create-project'); return }
-      setVehicle(data)
+      const result = await loadCreateProjectVehicle(vehicleId)
+      if (result.needsRedirect) { window.location.replace(result.needsRedirect); return }
+      setVehicle(result.vehicle)
       setLoading(false)
     }
     load()
   }, [vehicleId])
 
-  const toggle = (type: string) =>
-    setSelected(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])
-
-  const handleContinue = () => {
-    if (selected.length === 0) return
-    const goals = encodeURIComponent(selected.join(','))
-    window.location.href = `/create-project/condition?vehicle=${vehicleId}&goals=${goals}`
+  const continueToIntake = () => {
+    if (!selectedMode) return
+    window.location.href = `/create-project/intake?vehicle=${vehicleId}&mode=${selectedMode}`
   }
 
-  if (loading) return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-      <p style={{ color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', fontSize: '0.9rem' }}>Loading...</p>
-    </div>
-  )
-
+  if (loading) return <LoadingScreen />
   if (!vehicle) return null
 
+  const waltContext = [
+    'Screen: Create Project - Project Mode',
+    `Vehicle: ${getVehicleName(vehicle)} (${vehicle.year} ${vehicle.make} ${vehicle.model})`,
+    'The user is choosing what kind of automotive work this is before Walt collects intake details.',
+    'Walt should explain the difference between Maintenance, Repair, Upgrade, Restoration, and Diagnostic in plain language.',
+  ].join('\n')
+
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
-
-      {/* Status bar */}
-      <div style={{ background: 'var(--bg)', padding: '6px 16px 4px', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
-        <span style={{ fontSize: '0.8rem', color: 'var(--dark-blue)', fontWeight: 600 }}>10:12 AM</span>
-        <span style={{ fontSize: '0.8rem', color: 'var(--dark-blue)' }}>📶 🔋</span>
-      </div>
-
-      {/* Header */}
-      <header style={{ background: 'var(--dark-blue)', padding: '12px 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <button onClick={() => window.location.href = '/create-project'}
-          style={{ background: 'none', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-nunito)', display: 'flex', alignItems: 'center', gap: 4 }}>
-          ← Back
-        </button>
-        <span style={{ fontFamily: 'var(--font-barlow)', fontSize: '1.8rem', fontWeight: 800, fontStyle: 'italic', color: 'white' }}>
-          BYLD<span style={{ fontFamily: 'var(--font-nunito)', fontWeight: 300, fontStyle: 'normal', color: 'var(--light-blue)' }}>it</span>
-        </span>
-        <div style={{ width: 48 }} />
-      </header>
-
-      {/* Scrollable content */}
+    <CreateProjectFrame
+      backHref="/create-project"
+      waltOpen={waltOpen}
+      onOpenWalt={() => setWaltOpen(true)}
+      onCloseWalt={() => setWaltOpen(false)}
+      waltContext={waltContext}
+      waltOpeningLine="This choice sets the shape of the project. Pick the kind of work first, then I’ll help talk through the details."
+      waltPrompt="Ask Walt which mode fits..."
+      vehicleId={vehicle.id}
+      screen="create-project-mode"
+    >
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '0 0 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
+          <VehicleHero vehicle={vehicle} />
 
-          {/* Hero photo — scrolls with content */}
-          <div style={{ padding: '12px 14px 16px' }}>
-            <div style={{ height: 160, position: 'relative', overflow: 'hidden', borderRadius: 16, boxShadow: '0 6px 20px rgba(36,80,122,0.12)' }}>
-              {getVehiclePhoto(vehicle) ? (
-                <img src={getVehiclePhoto(vehicle)!} alt={vehicle.nickname || vehicle.make}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%' }} />
-              ) : (
-                <div style={{ width: '100%', height: '100%', background: 'var(--dark-blue)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                  <p style={{ color: 'white', fontWeight: 800, fontSize: '1rem', margin: 0 }}>{vehicle.year} {vehicle.make}</p>
-                  <p style={{ color: 'var(--light-blue)', fontSize: '0.85rem', margin: 0 }}>{vehicle.model}</p>
-                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', margin: 0 }}>📷 No photo yet</p>
-                </div>
-              )}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 16px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
-                <p style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
-                  {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-                </p>
-                <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.65rem', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2 }}>
-                  {vehicle.year} {vehicle.make} {vehicle.model}
-                </p>
-              </div>
-            </div>
-          </div>
           <div style={{ padding: '0 18px' }}>
+            <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>
+              What kind of project is this?
+            </p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', marginBottom: 16 }}>
+              Pick the big category. Walt will collect the details next.
+            </p>
 
-          <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>What&apos;s the goal?</p>
-          <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', marginBottom: 16 }}>Select all that apply</p>
-
-          {/* Grouped project type tiles */}
-          {PROJECT_GROUPS.map(group => (
-            <div key={group.label} style={{ marginBottom: 20 }}>
-              <p style={{ fontSize: '0.65rem', color: 'var(--secondary-text)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 8 }}>{group.label}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {group.types.map(type => {
-                  const isSelected = selected.includes(type)
-                  return (
-                    <div key={type} onClick={() => toggle(type)}
-                      style={{
-                        background: isSelected ? '#4da8da' : 'white',
-                        border: `1.5px solid ${isSelected ? '#4da8da' : 'var(--border)'}`,
-                        borderRadius: 12,
-                        padding: '14px 12px',
-                        textAlign: 'center',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        color: isSelected ? 'white' : 'var(--dark-blue)',
-                        lineHeight: 1.3,
-                      }}>
-                      {type}
-                    </div>
-                  )
-                })}
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
+              {PROJECT_MODES.map(mode => {
+                const isSelected = selectedMode === mode
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => setSelectedMode(mode)}
+                    style={{
+                      width: '100%',
+                      background: isSelected ? '#eaf6fc' : 'white',
+                      border: `1.5px solid ${isSelected ? 'var(--light-blue)' : 'var(--border)'}`,
+                      borderRadius: 14,
+                      padding: '13px 14px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 12,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-nunito)',
+                      boxShadow: isSelected ? '0 4px 14px rgba(77,168,218,0.16)' : '0 2px 8px rgba(0,0,0,0.04)',
+                    }}
+                  >
+                    <span style={{ width: 34, height: 34, borderRadius: '50%', background: isSelected ? 'var(--light-blue)' : 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1rem' }}>
+                      {MODE_ICONS[mode]}
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'block', color: 'var(--dark-blue)', fontWeight: 800, fontSize: '0.95rem', marginBottom: 3 }}>
+                        {PROJECT_MODE_LABELS[mode]}
+                      </span>
+                      <span style={{ display: 'block', color: 'var(--secondary-text)', fontSize: '0.78rem', lineHeight: 1.35, marginBottom: 5 }}>
+                        {PROJECT_MODE_DESCRIPTIONS[mode]}
+                      </span>
+                      <span style={{ display: 'block', color: 'var(--orange)', fontSize: '0.7rem', fontWeight: 800, lineHeight: 1.35 }}>
+                        {PROJECT_MODE_EXAMPLES[mode].join(' • ')}
+                      </span>
+                    </span>
+                  </button>
+                )
+              })}
             </div>
-          ))}
-          <div style={{ marginBottom: 8 }} />
 
-          {/* Continue button */}
-          <button onClick={handleContinue} disabled={selected.length === 0}
-            style={{
-              width: '100%',
-              padding: '14px',
-              background: selected.length > 0 ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb',
-              borderRadius: 25,
-              border: 'none',
-              color: 'white',
-              fontSize: '0.95rem',
-              fontWeight: 700,
-              fontFamily: 'var(--font-nunito)',
-              cursor: selected.length > 0 ? 'pointer' : 'not-allowed',
-              boxShadow: selected.length > 0 ? '0 6px 20px rgba(232,117,10,0.3)' : 'none',
-            }}>
-            Continue →
-          </button>
-
+            <button
+              onClick={continueToIntake}
+              disabled={!selectedMode}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: selectedMode ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb',
+                borderRadius: 25,
+                border: 'none',
+                color: 'white',
+                fontSize: '0.95rem',
+                fontWeight: 700,
+                fontFamily: 'var(--font-nunito)',
+                cursor: selectedMode ? 'pointer' : 'not-allowed',
+                boxShadow: selectedMode ? '0 6px 20px rgba(232,117,10,0.3)' : 'none',
+              }}
+            >
+              Talk it through with Walt →
+            </button>
           </div>
         </div>
       </main>
-
-      <WaltBar />
-      <NavBar />
-    </div>
+    </CreateProjectFrame>
   )
 }
+
 export default function CreateProjectGoalPage() {
   return (
-    <Suspense fallback={<div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}><p style={{ color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)' }}>Loading...</p></div>}>
-      <CreateProjectGoalContent />
+    <Suspense fallback={<LoadingScreen />}>
+      <ModeContent />
     </Suspense>
   )
 }

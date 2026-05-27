@@ -1,3 +1,5 @@
+import type { PlanType, ProjectMode } from './project-modes'
+
 export type VehicleSummary = {
   id: string
   nickname: string | null
@@ -27,6 +29,9 @@ export type ProjectSummary = {
   vehicle_id: string
   name: string
   goal_type: string
+  project_mode: ProjectMode | null
+  plan_type: PlanType | null
+  intake_summary: string | null
   status: string
 }
 

@@ -11,6 +11,7 @@ import {
   loadCreateProjectVehicle,
   supabase,
 } from '../CreateProjectShared'
+import { getPlanTypeForMode, inferProjectMode } from '@/lib/project-modes'
 
 function currencyLabel(value: string) {
   const number = Number(value)
@@ -50,21 +51,26 @@ function BuildPlanContent() {
     load()
   }, [vehicleId, projectName])
 
-  const goalList = goals.split(',').filter(Boolean)
-  const workList = work.split(',').filter(Boolean)
+  const goalList = useMemo(() => goals.split(',').filter(Boolean), [goals])
+  const workList = useMemo(() => work.split(',').filter(Boolean), [work])
+  const goalType = goalList.join(', ') || 'Custom / Other'
+  const projectMode = inferProjectMode(goalType)
+  const planType = getPlanTypeForMode(projectMode)
   const budgetEstimate = budgetMode === 'later' || !budget ? null : Number(budget)
   const backHref = `/create-project/budget?${new URLSearchParams({ vehicle: vehicleId, goals, condition, work, notes, name: projectName, photo: projectPhotoUrl }).toString()}`
   const reviewPhoto = projectPhotoUrl || vehicle?.cover_photo_url || ''
 
   const setupNote = useMemo(() => [
     `Create Project intake`,
+    `Project mode: ${projectMode || 'Not selected yet'}`,
+    `Plan type: ${planType}`,
     `Goals: ${goalList.join(', ') || 'Not provided'}`,
     `Condition: ${condition || 'Not provided'}`,
     `Work details: ${workList.join(', ') || 'Not provided'}`,
     `Budget: ${budgetMode === 'later' ? 'Decide later' : currencyLabel(budget)}`,
     `Project photo: ${projectPhotoUrl ? 'Custom project photo' : vehicle?.cover_photo_url ? 'Vehicle photo' : 'Add later'}`,
     notes ? `Notes: ${notes}` : '',
-  ].filter(Boolean).join('\n'), [goalList, condition, workList, budgetMode, budget, projectPhotoUrl, vehicle?.cover_photo_url, notes])
+  ].filter(Boolean).join('\n'), [projectMode, planType, goalList, condition, workList, budgetMode, budget, projectPhotoUrl, vehicle?.cover_photo_url, notes])
 
   const createProject = async () => {
     if (!vehicle || !userId || creating) return
@@ -77,8 +83,29 @@ function BuildPlanContent() {
         vehicle_id: vehicle.id,
         user_id: userId,
         name: projectName.trim(),
-        goal_type: goalList.join(', ') || 'Custom / Other',
+        goal_type: goalType,
+        project_mode: projectMode,
+        plan_type: planType,
         condition: condition || null,
+        intake_summary: [
+          `${projectName.trim()} for ${getVehicleName(vehicle)}`,
+          projectMode ? `Mode: ${projectMode}` : '',
+          goalType ? `Goal: ${goalType}` : '',
+          workList.length ? `Work: ${workList.join(', ')}` : '',
+          notes ? `Notes: ${notes}` : '',
+        ].filter(Boolean).join('. '),
+        intake_answers: {
+          source: 'legacy_create_project_flow',
+          project_mode: projectMode,
+          plan_type: planType,
+          goals: goalList,
+          condition: condition || null,
+          work: workList,
+          notes: notes || null,
+          budget_mode: budgetMode,
+          budget_estimate: budgetEstimate,
+          project_photo_url: projectPhotoUrl || null,
+        },
         budget_estimate: budgetEstimate,
         status: 'active',
         cover_photo_url: projectPhotoUrl || vehicle.cover_photo_url,
@@ -86,7 +113,30 @@ function BuildPlanContent() {
       .select('id')
       .single()
 
-    if (projectError || !data) {
+    let savedProject = data
+    let saveError = projectError
+
+    if (saveError) {
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('projects')
+        .insert({
+          vehicle_id: vehicle.id,
+          user_id: userId,
+          name: projectName.trim(),
+          goal_type: goalType,
+          condition: condition || null,
+          budget_estimate: budgetEstimate,
+          status: 'active',
+          cover_photo_url: projectPhotoUrl || vehicle.cover_photo_url,
+        })
+        .select('id')
+        .single()
+
+      savedProject = fallbackData
+      saveError = fallbackError
+    }
+
+    if (saveError || !savedProject) {
       setError('Something stopped the project from being created. Try again in a minute.')
       setCreating(false)
       return
@@ -94,14 +144,14 @@ function BuildPlanContent() {
 
     if (setupNote.trim()) {
       await supabase.from('notes').insert({
-        project_id: data.id,
+        project_id: savedProject.id,
         user_id: userId,
         content: setupNote,
         author: 'user',
       })
     }
 
-    window.location.replace(`/projects?created=${data.id}`)
+    window.location.replace(`/projects?created=${savedProject.id}`)
   }
 
   if (loading) return <LoadingScreen />
@@ -111,6 +161,8 @@ function BuildPlanContent() {
     `Screen: Create Project - Create This Project handoff`,
     `Vehicle: ${getVehicleName(vehicle)} (${vehicle.year} ${vehicle.make} ${vehicle.model})`,
     `Project name: ${projectName}`,
+    `Project mode: ${projectMode || 'not selected yet'}`,
+    `Plan type: ${planType}`,
     `Selected goals: ${goals || 'not provided'}`,
     `Condition: ${condition || 'not provided'}`,
     `Known work details: ${work || 'none selected'}`,
