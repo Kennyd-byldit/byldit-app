@@ -47,6 +47,7 @@ interface WaltPanelProps {
   onClose: () => void
   context: string
   openingLine?: string
+  onMessagesChange?: (messages: Message[]) => void
   speakOpeningOnOpen?: boolean
   vehicleId?: string
   projectId?: string
@@ -60,6 +61,7 @@ export default function WaltPanel({
   onClose,
   context,
   openingLine = 'Talk to me.',
+  onMessagesChange,
   speakOpeningOnOpen = false,
   vehicleId,
   projectId,
@@ -82,6 +84,10 @@ export default function WaltPanel({
   const lastScreenRef = useRef(screen)
   // Keep mutedRef in sync with muted state
   useEffect(() => { mutedRef.current = muted }, [muted])
+
+  useEffect(() => {
+    onMessagesChange?.(messages)
+  }, [messages, onMessagesChange])
 
   // Load conversation history when the panel opens. Phase/step coaching can opt into
   // a fresh spoken opener so tapping Walt feels intentional and consistent.
