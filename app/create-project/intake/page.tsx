@@ -1,7 +1,8 @@
 'use client'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { BottomNav, LoadingScreen, MobileAppFrame, MobileHeader, VehicleHero } from '@/components/AppChrome'
+import WaltPanel from '@/components/WaltPanel'
+import { BottomNav, LoadingScreen, MobileAppFrame, MobileHeader, VehicleHero, WaltEntryBar } from '@/components/AppChrome'
 import { WALT_AVATAR_URL } from '@/lib/app-constants'
 import { supabase } from '@/lib/supabase'
 import { getVehicleName } from '@/lib/vehicle-display'
@@ -80,6 +81,13 @@ function starterOpening(mode: ProjectMode, vehicle: Vehicle, selectedStarter?: s
   return `${PROJECT_MODE_OPENERS[mode]} ${MODE_GUIDANCE[mode]}`
 }
 
+function screenStarterKey(selectedStarter: string) {
+  return selectedStarter
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || 'open'
+}
+
 function IntakeContent() {
   const searchParams = useSearchParams()
   const vehicleId = searchParams.get('vehicle') || ''
@@ -90,8 +98,7 @@ function IntakeContent() {
   const [loading, setLoading] = useState(true)
   const [selectedStarter, setSelectedStarter] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
-  const [chatInput, setChatInput] = useState('')
-  const [sending, setSending] = useState(false)
+  const [waltOpen, setWaltOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
 
@@ -131,64 +138,24 @@ function IntakeContent() {
     () => vehicle && mode ? buildIntakeSummary(vehicle, mode, selectedStarter, messages) : '',
     [vehicle, mode, selectedStarter, messages]
   )
+  const waltOpeningLine = vehicle && mode ? starterOpening(mode, vehicle, selectedStarter) : 'Talk to me.'
+  const waltScreen = vehicle && mode ? `create-project-intake-${vehicle.id}-${mode}-${screenStarterKey(selectedStarter)}` : 'create-project-intake'
+  const waltContext = vehicle && mode ? [
+    'Screen: Create Project - Walt Intake Panel',
+    `Vehicle: ${getVehicleName(vehicle)} (${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''})`,
+    `Project mode: ${PROJECT_MODE_LABELS[mode]}`,
+    `Plan type: ${planType}`,
+    `Highlighted task: ${selectedStarter || 'none selected'}`,
+    'This is pre-project intake. Walt should talk naturally, answer questions, compare options, and help the user decide what should be saved before the project is created.',
+    'Do not claim the project already exists. Ask if the user is ready to build it when there is enough direction.',
+  ].join('\n') : ''
 
   const selectStarter = (starter: string) => {
     if (!vehicle || !mode) return
     setSelectedStarter(starter)
     setMessages([{ role: 'walt', content: starterOpening(mode, vehicle, starter) }])
-    setChatInput('')
-  }
-
-  const sendMessage = async () => {
-    const text = chatInput.trim()
-    if (!text || sending || !vehicle || !mode) return
-
-    setChatInput('')
     setError('')
-    setSending(true)
-
-    const userMessage: Message = { role: 'user', content: text }
-    const nextMessages = [...messages, userMessage]
-    setMessages(nextMessages)
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const context = [
-        'Screen: Create Project - Walt Intake Chat',
-        `Vehicle: ${getVehicleName(vehicle)} (${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''})`,
-        `Project mode: ${PROJECT_MODE_LABELS[mode]}`,
-        `Plan type: ${planType}`,
-        `Highlighted task: ${selectedStarter || 'none selected'}`,
-        'This is pre-project intake. Walt should talk naturally, answer questions, compare options, and help the user decide what should be saved before the project is created.',
-        'Do not claim the project already exists. Ask if the user is ready to build it when there is enough direction.',
-      ].join('\n')
-
-      const res = await fetch('/api/walt-chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-        },
-        body: JSON.stringify({
-          messages: nextMessages.map(message => ({
-            role: message.role === 'walt' ? 'assistant' : 'user',
-            content: message.content,
-          })),
-          context,
-          vehicleId: vehicle.id,
-          screen: 'create-project-intake',
-        }),
-      })
-
-      const data = await res.json()
-      const reply = data.message || 'I had trouble answering right then. Try me again.'
-      setMessages(current => [...current, { role: 'walt', content: reply }])
-    } catch (sendError) {
-      console.error('Create project intake chat error:', sendError)
-      setMessages(current => [...current, { role: 'walt', content: 'I had trouble connecting right then. Try me again in a second.' }])
-    } finally {
-      setSending(false)
-    }
+    setWaltOpen(true)
   }
 
   const createProject = async () => {
@@ -301,68 +268,19 @@ function IntakeContent() {
             </div>
 
             <div style={{ background: 'white', borderRadius: 14, border: '1.5px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: 14 }}>
-              <div style={{ padding: '11px 13px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 9 }}>
-                <img src={WALT} alt="Walt" style={{ width: 30, height: 30, borderRadius: '50%', border: '1.5px solid var(--orange)', flexShrink: 0 }} />
-                <div>
-                  <p style={{ color: 'var(--dark-blue)', fontSize: '0.86rem', fontWeight: 800, margin: 0 }}>Walt intake chat</p>
-                  <p style={{ color: 'var(--secondary-text)', fontSize: '0.72rem', margin: '2px 0 0' }}>
-                    {selectedStarter ? `${selectedStarter} is highlighted` : 'No starter selected yet'}
+              <div style={{ padding: '13px', display: 'flex', alignItems: 'center', gap: 11 }}>
+                <img src={WALT} alt="Walt" style={{ width: 42, height: 42, borderRadius: '50%', border: '2px solid var(--orange)', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ color: 'var(--dark-blue)', fontSize: '0.9rem', fontWeight: 800, margin: 0 }}>Walt is ready</p>
+                  <p style={{ color: 'var(--secondary-text)', fontSize: '0.74rem', lineHeight: 1.35, margin: '2px 0 0' }}>
+                    {selectedStarter ? `${selectedStarter} is highlighted. Open Walt to talk it through by text or voice.` : 'Choose a starter or open Walt and describe the project in your own words.'}
                   </p>
                 </div>
-              </div>
-
-              <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: 9, maxHeight: 300, overflowY: 'auto' }}>
-                {messages.map((message, index) => (
-                  <div
-                    key={`${message.role}-${index}`}
-                    style={{
-                      alignSelf: message.role === 'user' ? 'flex-end' : 'flex-start',
-                      maxWidth: '86%',
-                      background: message.role === 'user' ? 'var(--dark-blue)' : 'var(--bg)',
-                      color: message.role === 'user' ? 'white' : 'var(--dark-blue)',
-                      borderRadius: message.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                      padding: '9px 11px',
-                      fontSize: '0.82rem',
-                      lineHeight: 1.45,
-                      whiteSpace: 'pre-wrap',
-                    }}
-                  >
-                    {message.content}
-                  </div>
-                ))}
-                {sending && (
-                  <div style={{ alignSelf: 'flex-start', background: 'var(--bg)', color: 'var(--secondary-text)', borderRadius: '14px 14px 14px 4px', padding: '9px 11px', fontSize: '0.82rem' }}>
-                    Walt is thinking...
-                  </div>
-                )}
-              </div>
-
-              <div style={{ padding: 10, borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
-                <textarea
-                  value={chatInput}
-                  onChange={event => setChatInput(event.target.value)}
-                  placeholder="Ask Walt a question or describe what you want..."
-                  rows={2}
-                  style={{
-                    flex: 1,
-                    resize: 'none',
-                    background: 'var(--bg)',
-                    border: '1.5px solid var(--border)',
-                    borderRadius: 12,
-                    padding: '9px 10px',
-                    color: 'var(--dark-blue)',
-                    fontSize: 16,
-                    lineHeight: 1.35,
-                    fontFamily: 'var(--font-nunito)',
-                    outline: 'none',
-                  }}
-                />
                 <button
-                  onClick={sendMessage}
-                  disabled={!chatInput.trim() || sending}
-                  style={{ width: 46, borderRadius: 14, border: 'none', background: chatInput.trim() && !sending ? 'var(--orange)' : '#d4e0eb', color: 'white', fontWeight: 900, cursor: chatInput.trim() && !sending ? 'pointer' : 'not-allowed' }}
+                  onClick={() => setWaltOpen(true)}
+                  style={{ border: 'none', background: 'var(--orange)', color: 'white', borderRadius: 18, padding: '8px 11px', fontSize: '0.72rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: 'pointer', flexShrink: 0 }}
                 >
-                  →
+                  Open
                 </button>
               </div>
             </div>
@@ -395,7 +313,17 @@ function IntakeContent() {
           </div>
         </div>
       </main>
+      <WaltEntryBar onOpenWalt={() => setWaltOpen(true)} prompt={selectedStarter ? `Ask Walt about ${selectedStarter}...` : 'Talk to Walt about this project...'} />
       <BottomNav active="Projects" />
+      <WaltPanel
+        open={waltOpen}
+        onClose={() => setWaltOpen(false)}
+        context={waltContext}
+        openingLine={waltOpeningLine}
+        onMessagesChange={setMessages}
+        vehicleId={vehicle.id}
+        screen={waltScreen}
+      />
     </MobileAppFrame>
   )
 }
