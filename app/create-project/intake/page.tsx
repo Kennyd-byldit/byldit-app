@@ -155,7 +155,6 @@ function IntakeContent() {
     setSelectedStarter(starter)
     setMessages([{ role: 'walt', content: starterOpening(mode, vehicle, starter) }])
     setError('')
-    setWaltOpen(true)
   }
 
   const createProject = async () => {
