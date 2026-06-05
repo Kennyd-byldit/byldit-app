@@ -92,13 +92,12 @@ export default function WaltPanel({
   // Load conversation history when the panel opens. Phase/step coaching can opt into
   // a fresh spoken opener so tapping Walt feels intentional and consistent.
   useEffect(() => {
-    if (open && lastScreenRef.current !== screen) {
+    const screenChanged = open && lastScreenRef.current !== screen
+    if (screenChanged) {
       lastScreenRef.current = screen
-      setInitialized(false)
       setMessages([])
-      return
     }
-    if (open && !initialized) {
+    if (open && (!initialized || screenChanged)) {
       setInitialized(true)
       loadHistory()
     }

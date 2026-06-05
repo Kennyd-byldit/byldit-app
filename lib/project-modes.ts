@@ -31,7 +31,7 @@ export const PROJECT_MODE_OPENERS: Record<ProjectMode, string> = {
 }
 
 export const PROJECT_MODE_EXAMPLES: Record<ProjectMode, string[]> = {
-  maintenance: ['Oil change', 'Brake service', 'Tire rotation'],
+  maintenance: ['Oil change', 'Brake service', 'Tire rotation', 'Battery / charging issue', 'Air filter', 'Coolant service', 'Transmission service'],
   repair: ['Replace alternator', 'Fix coolant leak', 'Front brakes'],
   upgrade: ['3-inch lift', 'Wheels and tires', 'Better lighting'],
   restoration: ['Full restoration', 'Interior refresh', 'Body and paint'],

@@ -1,9 +1,7 @@
 'use client'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import WaltPanel from '@/components/WaltPanel'
-import { BottomNav, LoadingScreen, MobileAppFrame, MobileHeader, VehicleHero, WaltEntryBar } from '@/components/AppChrome'
-import { WALT_AVATAR_URL } from '@/lib/app-constants'
+import { BottomNav, LoadingScreen, MobileAppFrame, MobileHeader, VehicleHero } from '@/components/AppChrome'
 import { supabase } from '@/lib/supabase'
 import { getVehicleName } from '@/lib/vehicle-display'
 import type { VehicleSummary } from '@/lib/types'
@@ -16,17 +14,16 @@ import {
   getPlanTypeForMode,
 } from '@/lib/project-modes'
 
-type Message = { role: 'user' | 'walt'; content: string }
 type Vehicle = VehicleSummary
 
-const WALT = WALT_AVATAR_URL
+const CUSTOM_STARTER = 'Something Else'
 
 const MODE_GUIDANCE: Record<ProjectMode, string> = {
-  maintenance: 'Pick a quick starter if one fits, or just tell me what service you want to do. We can talk through parts, brands, tools, and what to verify before I build the project.',
-  repair: 'Tell me what is broken or what you think needs replacing. We can sort symptoms, parts, tools, and the safest repair path before I build it.',
-  upgrade: 'Tell me what you want to improve. We can compare options, fitment, brands, budget, and install approach before I build it.',
-  restoration: 'Tell me the big goal and the current condition. We can shape the phases, priorities, budget, and work environment before I build it.',
-  diagnostic: 'Tell me what feels wrong. I will start with safety, ask a few diagnostic questions, and help narrow it down before we turn it into a repair.',
+  maintenance: 'Walt can talk through parts, brands, tools, service intervals, and what to verify before turning it into a checklist.',
+  repair: 'Walt can sort the known issue, likely parts, tools, safety checks, and the repair path before turning it into a plan.',
+  upgrade: 'Walt can compare options, fitment, brands, budget, and install approach before turning it into a build plan.',
+  restoration: 'Walt can shape phases, priorities, budget, work environment, and milestones before turning it into a larger plan.',
+  diagnostic: 'Walt can start with safety, ask focused questions, narrow the symptom, and turn the findings into the right next project.',
 }
 
 function isProjectMode(value: string): value is ProjectMode {
@@ -48,44 +45,19 @@ function cleanTitle(input: string) {
     .join(' ')
 }
 
-function getLastUserMessage(messages: Message[]) {
-  return [...messages].reverse().find(message => message.role === 'user')?.content || ''
-}
-
-function getLastWaltMessage(messages: Message[]) {
-  return [...messages].reverse().find(message => message.role === 'walt')?.content || ''
-}
-
-function buildProjectName(vehicle: Vehicle, mode: ProjectMode, selectedStarter: string, messages: Message[]) {
-  const task = selectedStarter || getLastUserMessage(messages)
+function buildProjectName(vehicle: Vehicle, mode: ProjectMode, selectedStarter: string) {
+  const task = selectedStarter === CUSTOM_STARTER ? '' : selectedStarter
   const title = cleanTitle(task)
-  if (title === 'New Project') return `${getVehicleName(vehicle)} ${PROJECT_MODE_LABELS[mode]}`
+  if (title === 'New Project') return `${getVehicleName(vehicle)} ${PROJECT_MODE_LABELS[mode]} Draft`
   return `${getVehicleName(vehicle)} ${title}`
 }
 
-function buildIntakeSummary(vehicle: Vehicle, mode: ProjectMode, selectedStarter: string, messages: Message[]) {
-  const userDetail = getLastUserMessage(messages)
-  const waltDetail = getLastWaltMessage(messages)
-  const starter = selectedStarter ? `Highlighted task: ${selectedStarter}. ` : ''
-  const userLine = userDetail ? `User detail: ${userDetail}. ` : ''
-  const waltLine = waltDetail ? `Latest Walt guidance: ${waltDetail}` : ''
+function buildIntakeSummary(vehicle: Vehicle, mode: ProjectMode, selectedStarter: string) {
+  const starterLine = selectedStarter === CUSTOM_STARTER
+    ? 'The user chose a custom task and will describe the work to Walt.'
+    : `The user selected ${selectedStarter} as the starting task.`
 
-  return `${PROJECT_MODE_LABELS[mode]} project for ${getVehicleName(vehicle)}. ${starter}${userLine}${waltLine}`.trim()
-}
-
-function starterOpening(mode: ProjectMode, vehicle: Vehicle, selectedStarter?: string) {
-  if (selectedStarter) {
-    return `Got it, I highlighted ${selectedStarter} for ${getVehicleName(vehicle)}. What do you want to know before I build this project? We can talk parts, brands, tools, budget, or the exact checklist.`
-  }
-
-  return `${PROJECT_MODE_OPENERS[mode]} ${MODE_GUIDANCE[mode]}`
-}
-
-function screenStarterKey(selectedStarter: string) {
-  return selectedStarter
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '') || 'open'
+  return `${PROJECT_MODE_LABELS[mode]} draft project for ${getVehicleName(vehicle)}. ${starterLine}`
 }
 
 function IntakeContent() {
@@ -97,8 +69,6 @@ function IntakeContent() {
   const [userId, setUserId] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedStarter, setSelectedStarter] = useState('')
-  const [messages, setMessages] = useState<Message[]>([])
-  const [waltOpen, setWaltOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
 
@@ -123,52 +93,39 @@ function IntakeContent() {
       if (!data) { window.location.replace('/create-project'); return }
       setVehicle(data as Vehicle)
       setUserId(user.id)
-      setMessages([{ role: 'walt', content: starterOpening(mode, data as Vehicle) }])
       setLoading(false)
     }
     load()
   }, [vehicleId, mode])
 
-  const canBuild = Boolean(vehicle && mode && (selectedStarter || getLastUserMessage(messages)) && !creating)
+  const starters = useMemo(() => mode ? [...PROJECT_MODE_EXAMPLES[mode], CUSTOM_STARTER] : [], [mode])
+  const canStart = Boolean(vehicle && mode && selectedStarter && !creating)
   const projectName = useMemo(
-    () => vehicle && mode ? buildProjectName(vehicle, mode, selectedStarter, messages) : '',
-    [vehicle, mode, selectedStarter, messages]
+    () => vehicle && mode ? buildProjectName(vehicle, mode, selectedStarter) : '',
+    [vehicle, mode, selectedStarter]
   )
   const intakeSummary = useMemo(
-    () => vehicle && mode ? buildIntakeSummary(vehicle, mode, selectedStarter, messages) : '',
-    [vehicle, mode, selectedStarter, messages]
+    () => vehicle && mode ? buildIntakeSummary(vehicle, mode, selectedStarter) : '',
+    [vehicle, mode, selectedStarter]
   )
-  const waltOpeningLine = vehicle && mode ? starterOpening(mode, vehicle, selectedStarter) : 'Talk to me.'
-  const waltScreen = vehicle && mode ? `create-project-intake-${vehicle.id}-${mode}-${screenStarterKey(selectedStarter)}` : 'create-project-intake'
-  const waltContext = vehicle && mode ? [
-    'Screen: Create Project - Walt Intake Panel',
-    `Vehicle: ${getVehicleName(vehicle)} (${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''})`,
-    `Project mode: ${PROJECT_MODE_LABELS[mode]}`,
-    `Plan type: ${planType}`,
-    `Highlighted task: ${selectedStarter || 'none selected'}`,
-    'This is pre-project intake. Walt should talk naturally, answer questions, compare options, and help the user decide what should be saved before the project is created.',
-    'Do not claim the project already exists. Ask if the user is ready to build it when there is enough direction.',
-  ].join('\n') : ''
 
   const selectStarter = (starter: string) => {
-    if (!vehicle || !mode) return
     setSelectedStarter(starter)
-    setMessages([{ role: 'walt', content: starterOpening(mode, vehicle, starter) }])
     setError('')
   }
 
   const createProject = async () => {
-    if (!vehicle || !mode || !userId || !canBuild) return
+    if (!vehicle || !mode || !userId || !canStart) return
     setCreating(true)
     setError('')
 
     const intakeAnswers = {
-      source: 'walt_guided_intake_chat_v1',
+      source: 'start_with_walt_draft_v1',
       project_mode: mode,
       plan_type: planType,
-      highlighted_task: selectedStarter || null,
+      highlighted_task: selectedStarter === CUSTOM_STARTER ? null : selectedStarter,
+      custom_task_requested: selectedStarter === CUSTOM_STARTER,
       project_name: projectName,
-      transcript: messages,
     }
 
     const { data, error: projectError } = await supabase
@@ -184,7 +141,7 @@ function IntakeContent() {
         intake_summary: intakeSummary,
         intake_answers: intakeAnswers,
         budget_estimate: null,
-        status: 'active',
+        status: 'draft',
         cover_photo_url: vehicle.cover_photo_url,
       })
       .select('id')
@@ -200,24 +157,15 @@ function IntakeContent() {
       project_id: data.id,
       user_id: userId,
       content: [
-        'Walt-guided intake chat',
+        'Start with Walt draft created',
         `Mode: ${PROJECT_MODE_LABELS[mode]}`,
-        selectedStarter ? `Highlighted task: ${selectedStarter}` : '',
+        selectedStarter === CUSTOM_STARTER ? 'Starter: Something else' : `Starter: ${selectedStarter}`,
         `Summary: ${intakeSummary}`,
       ].filter(Boolean).join('\n'),
       author: 'user',
     })
 
-    await supabase.from('walt_messages').insert(messages.map(message => ({
-      user_id: userId,
-      project_id: data.id,
-      vehicle_id: vehicle.id,
-      role: message.role,
-      content: message.content,
-      screen: 'create-project-intake',
-    })))
-
-    window.location.replace(`/projects?created=${data.id}`)
+    window.location.replace(`/projects/${data.id}?walt=start`)
   }
 
   if (loading) return <LoadingScreen />
@@ -235,14 +183,14 @@ function IntakeContent() {
               {PROJECT_MODE_LABELS[mode]}
             </p>
             <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>
-              Talk it through with Walt
+              Start with Walt
             </p>
             <p style={{ fontSize: '0.75rem', color: 'var(--secondary-text)', marginBottom: 14 }}>
-              Pick a starter if it fits. Walt will use it as context, then you can ask questions before building the project.
+              Pick the closest starting point. Walt will create a draft project first, then you can talk through details, parts, tools, and decisions inside that project.
             </p>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-              {PROJECT_MODE_EXAMPLES[mode].map(example => {
+              {starters.map(example => {
                 const isSelected = selectedStarter === example
                 return (
                   <button
@@ -267,20 +215,22 @@ function IntakeContent() {
             </div>
 
             <div style={{ background: 'white', borderRadius: 14, border: '1.5px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: 14 }}>
-              <div style={{ padding: '13px', display: 'flex', alignItems: 'center', gap: 11 }}>
-                <img src={WALT} alt="Walt" style={{ width: 42, height: 42, borderRadius: '50%', border: '2px solid var(--orange)', flexShrink: 0 }} />
+              <div style={{ padding: '14px', display: 'flex', alignItems: 'flex-start', gap: 11 }}>
+                <div style={{ width: 42, height: 42, borderRadius: '50%', background: selectedStarter ? 'var(--orange)' : '#d4e0eb', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, flexShrink: 0 }}>
+                  {selectedStarter ? '✓' : '1'}
+                </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ color: 'var(--dark-blue)', fontSize: '0.9rem', fontWeight: 800, margin: 0 }}>Walt is ready</p>
+                  <p style={{ color: 'var(--dark-blue)', fontSize: '0.9rem', fontWeight: 800, margin: 0 }}>
+                    {selectedStarter ? `${selectedStarter} selected` : PROJECT_MODE_OPENERS[mode]}
+                  </p>
                   <p style={{ color: 'var(--secondary-text)', fontSize: '0.74rem', lineHeight: 1.35, margin: '2px 0 0' }}>
-                    {selectedStarter ? `${selectedStarter} is highlighted. Open Walt to talk it through by text or voice.` : 'Choose a starter or open Walt and describe the project in your own words.'}
+                    {selectedStarter === CUSTOM_STARTER
+                      ? 'Walt will ask what you are working on and shape the draft from there.'
+                      : selectedStarter
+                        ? 'Walt will use this as the starting context, then you can ask questions before confirming the plan.'
+                        : MODE_GUIDANCE[mode]}
                   </p>
                 </div>
-                <button
-                  onClick={() => setWaltOpen(true)}
-                  style={{ border: 'none', background: 'var(--orange)', color: 'white', borderRadius: 18, padding: '8px 11px', fontSize: '0.72rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: 'pointer', flexShrink: 0 }}
-                >
-                  Open
-                </button>
               </div>
             </div>
 
@@ -292,37 +242,27 @@ function IntakeContent() {
 
             <button
               onClick={createProject}
-              disabled={!canBuild}
+              disabled={!canStart}
               style={{
                 width: '100%',
                 padding: '14px',
-                background: canBuild ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb',
+                background: canStart ? 'linear-gradient(135deg, #e8750a, #f4a543)' : '#d4e0eb',
                 borderRadius: 25,
                 border: 'none',
                 color: 'white',
                 fontSize: '0.95rem',
                 fontWeight: 700,
                 fontFamily: 'var(--font-nunito)',
-                cursor: canBuild ? 'pointer' : 'not-allowed',
-                boxShadow: canBuild ? '0 6px 20px rgba(232,117,10,0.3)' : 'none',
+                cursor: canStart ? 'pointer' : 'not-allowed',
+                boxShadow: canStart ? '0 6px 20px rgba(232,117,10,0.3)' : 'none',
               }}
             >
-              {creating ? 'Building project...' : 'Build This Project →'}
+              {creating ? 'Starting draft...' : 'Start with Walt →'}
             </button>
           </div>
         </div>
       </main>
-      <WaltEntryBar onOpenWalt={() => setWaltOpen(true)} prompt={selectedStarter ? `Ask Walt about ${selectedStarter}...` : 'Talk to Walt about this project...'} />
       <BottomNav active="Projects" />
-      <WaltPanel
-        open={waltOpen}
-        onClose={() => setWaltOpen(false)}
-        context={waltContext}
-        openingLine={waltOpeningLine}
-        onMessagesChange={setMessages}
-        vehicleId={vehicle.id}
-        screen={waltScreen}
-      />
     </MobileAppFrame>
   )
 }

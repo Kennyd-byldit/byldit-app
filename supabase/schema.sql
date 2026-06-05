@@ -50,7 +50,7 @@ create table if not exists projects (
   intake_answers jsonb default '{}'::jsonb,
   budget_estimate numeric(10,2),
   budget_actual numeric(10,2) default 0,
-  status text not null default 'active' check (status in ('active', 'paused', 'complete')),
+  status text not null default 'active' check (status in ('draft', 'active', 'paused', 'complete')),
   cover_photo_url text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()

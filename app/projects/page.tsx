@@ -21,6 +21,7 @@ type Project = {
   vehicle_id: string
   name: string
   goal_type: string
+  status: string
   condition: string | null
   budget_estimate: number | null
   cover_photo_url: string | null
@@ -107,6 +108,7 @@ function ProjectsContent() {
           vehicle_id,
           name,
           goal_type,
+          status,
           condition,
           budget_estimate,
           cover_photo_url,
@@ -121,7 +123,7 @@ function ProjectsContent() {
           )
         `)
         .eq('user_id', user.id)
-        .eq('status', 'active')
+        .in('status', ['draft', 'active', 'paused'])
         .order('created_at', { ascending: false })
 
       const projectRows = (data || []) as unknown as Omit<Project, 'hasPlan'>[]
@@ -141,6 +143,11 @@ function ProjectsContent() {
   }, [])
 
   const handleProjectAction = async (project: Project) => {
+    if (project.status === 'draft') {
+      window.location.assign(`/projects/${project.id}?walt=start`)
+      return
+    }
+
     if (project.hasPlan) {
       window.location.assign(`/projects/${project.id}`)
       return
@@ -222,14 +229,14 @@ function ProjectsContent() {
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
           <p style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>Projects</p>
           <p style={{ fontSize: '0.82rem', color: 'var(--secondary-text)', marginBottom: 14 }}>
-            Active projects live here. Garage stays focused on your vehicles.
+            Drafts and active projects live here. Garage stays focused on your vehicles.
           </p>
 
           {searchParams.get('created') && (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12, background: 'var(--dark-blue)', borderRadius: 14, padding: '12px 14px' }}>
               <img src={WALT} alt="Walt" style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid var(--orange)', flexShrink: 0 }} />
               <p style={{ fontSize: '0.85rem', color: 'white', margin: 0, lineHeight: 1.5 }}>
-                Project created. I saved the intake notes so the next workspace pass has something real to build from.
+                Project created. I saved the intake notes so Walt has something real to build from.
               </p>
             </div>
           )}
@@ -247,7 +254,7 @@ function ProjectsContent() {
 
           {projects.length === 0 ? (
             <div style={{ background: 'white', borderRadius: 14, padding: '20px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', textAlign: 'center' }}>
-              <p style={{ color: 'var(--dark-blue)', fontWeight: 800, fontSize: '1rem', marginBottom: 4 }}>No active projects yet</p>
+              <p style={{ color: 'var(--dark-blue)', fontWeight: 800, fontSize: '1rem', marginBottom: 4 }}>No projects yet</p>
               <p style={{ color: 'var(--secondary-text)', fontSize: '0.82rem', lineHeight: 1.45 }}>Start from a vehicle in your garage and BYLDit.ai will save the project here.</p>
             </div>
           ) : (
@@ -258,6 +265,7 @@ function ProjectsContent() {
                 const isHighlighted = highlightedProjectId === project.id
                 const isConfirmingDelete = confirmDeleteProjectId === project.id
                 const isDeleting = deletingProjectId === project.id
+                const isDraft = project.status === 'draft'
 
                 return (
                   <div key={project.id}
@@ -289,30 +297,37 @@ function ProjectsContent() {
                         <p style={{ fontSize: '0.86rem', color: 'var(--dark-blue)', fontWeight: 700, marginTop: 8, lineHeight: 1.25 }}>
                           {project.name}
                         </p>
-                        <p style={{ fontSize: '0.72rem', color: 'var(--orange)', fontWeight: 800, marginTop: 2 }}>
-                          {project.goal_type}
-                        </p>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
+                          <p style={{ fontSize: '0.72rem', color: 'var(--orange)', fontWeight: 800, margin: 0 }}>
+                            {project.goal_type}
+                          </p>
+                          {isDraft && (
+                            <span style={{ background: '#fff1e6', color: 'var(--orange)', borderRadius: 12, padding: '3px 7px', fontSize: '0.62rem', fontWeight: 900 }}>
+                              Draft
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div style={{ borderTop: '1px solid var(--border)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7 }}>Status</p>
                         <p style={{ fontSize: '0.82rem', color: 'var(--dark-blue)', fontWeight: 800 }}>
-                          {project.hasPlan ? 'Plan Ready' : 'Needs Project Plan'}
+                          {isDraft ? 'Draft with Walt' : project.hasPlan ? 'Plan Ready' : 'Needs Project Plan'}
                         </p>
                       </div>
                       <button onClick={() => handleProjectAction(project)} disabled={generatingProjectId === project.id}
                         style={{ minHeight: 40, padding: '0 16px', borderRadius: 20, border: 'none', background: generatingProjectId === project.id ? '#d4e0eb' : 'var(--dark-blue)', color: 'white', fontSize: '0.82rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: generatingProjectId === project.id ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
                         {generatingProjectId === project.id
                           ? 'Creating...'
-                          : project.hasPlan ? 'Open Project' : 'Create Project Plan'}
+                          : isDraft ? 'Open Draft' : project.hasPlan ? 'Open Project' : 'Create Project Plan'}
                       </button>
                     </div>
                     {isConfirmingDelete ? (
                       <div style={{ borderTop: '1px solid var(--border)', background: '#fff7f2', padding: '11px 14px 12px' }}>
-                        <p style={{ color: 'var(--dark-blue)', fontSize: '0.82rem', fontWeight: 800, marginBottom: 3 }}>Delete this project?</p>
+                        <p style={{ color: 'var(--dark-blue)', fontSize: '0.82rem', fontWeight: 800, marginBottom: 3 }}>Delete this {isDraft ? 'draft' : 'project'}?</p>
                         <p style={{ color: 'var(--secondary-text)', fontSize: '0.76rem', lineHeight: 1.4, marginBottom: 10 }}>
-                          This removes its build plan, steps, notes, parts, expenses, and photos.
+                          This removes its {isDraft ? 'Walt conversation, notes, and saved draft details' : 'build plan, steps, notes, parts, expenses, and photos'}.
                         </p>
                         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                           <button
@@ -320,14 +335,14 @@ function ProjectsContent() {
                             disabled={isDeleting}
                             style={{ minHeight: 36, padding: '0 14px', borderRadius: 18, border: '1.5px solid var(--border)', background: 'white', color: 'var(--dark-blue)', fontSize: '0.78rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: isDeleting ? 'not-allowed' : 'pointer' }}
                           >
-                            Keep Project
+                            Keep {isDraft ? 'Draft' : 'Project'}
                           </button>
                           <button
                             onClick={() => handleDeleteProject(project)}
                             disabled={isDeleting}
                             style={{ minHeight: 36, padding: '0 14px', borderRadius: 18, border: 'none', background: isDeleting ? '#d4e0eb' : '#b42318', color: 'white', fontSize: '0.78rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: isDeleting ? 'not-allowed' : 'pointer' }}
                           >
-                            {isDeleting ? 'Deleting...' : 'Delete Project'}
+                            {isDeleting ? 'Deleting...' : isDraft ? 'Delete Draft' : 'Delete Project'}
                           </button>
                         </div>
                       </div>
@@ -338,7 +353,7 @@ function ProjectsContent() {
                           disabled={Boolean(deletingProjectId)}
                           style={{ background: 'none', border: 'none', color: '#b42318', fontSize: '0.76rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: deletingProjectId ? 'not-allowed' : 'pointer', padding: '4px 0' }}
                         >
-                          Delete project
+                          Delete {isDraft ? 'draft' : 'project'}
                         </button>
                       </div>
                     )}
@@ -357,8 +372,8 @@ function ProjectsContent() {
         onClose={() => setWaltOpen(false)}
         context={[
           'Screen: Projects list',
-          `Active projects: ${projects.map(project => `${project.name} for ${getVehicleName(project.vehicle)} (${project.goal_type}, ${project.hasPlan ? 'plan ready' : 'needs project plan'})`).join('; ') || 'none'}`,
-          'Walt should help the user understand which projects have plans, which need project plan generation, and what to open or create next.',
+          `Projects: ${projects.map(project => `${project.name} for ${getVehicleName(project.vehicle)} (${project.goal_type}, ${project.status === 'draft' ? 'draft' : project.hasPlan ? 'plan ready' : 'needs project plan'})`).join('; ') || 'none'}`,
+          'Walt should help the user understand which projects are drafts, which have plans, which need project plan generation, and what to open or create next.',
         ].join('\n')}
         openingLine="I’m here with your Projects list. Tell me what you’re trying to sort out."
         screen="projects"

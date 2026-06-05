@@ -148,6 +148,13 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
       .limit(1)
 
     if ((existingPhases?.length ?? 0) > 0) {
+      await supabase
+        .from('projects')
+        .update({ status: 'active' })
+        .eq('id', projectId)
+        .eq('user_id', user.id)
+        .eq('status', 'draft')
+
       return NextResponse.json({ projectId, alreadyGenerated: true })
     }
 
@@ -335,6 +342,13 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
       author: 'walt',
       content: 'Generated the first project plan with phases and steps.',
     })
+
+    await supabase
+      .from('projects')
+      .update({ status: 'active' })
+      .eq('id', projectId)
+      .eq('user_id', user.id)
+      .eq('status', 'draft')
 
     return NextResponse.json({ projectId, generated: true })
   } catch (error) {

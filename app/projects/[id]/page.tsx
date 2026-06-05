@@ -1,6 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
 import WaltPanel from '@/components/WaltPanel'
 import { supabase } from '@/lib/supabase'
 import { WALT_AVATAR_URL } from '@/lib/app-constants'
@@ -30,7 +30,12 @@ type Project = {
   id: string
   name: string
   goal_type: string
+  status: string
+  project_mode: string | null
+  plan_type: string | null
   condition: string | null
+  intake_summary: string | null
+  intake_answers: Record<string, unknown> | null
   budget_estimate: number | null
   budget_actual: number | null
   cover_photo_url: string | null
@@ -175,6 +180,7 @@ function WaltBar({ onOpenWalt }: { onOpenWalt: () => void }) {
 
 export default function ProjectPlanPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const projectId = params.id as string
   const [project, setProject] = useState<Project | null>(null)
   const [phases, setPhases] = useState<Phase[]>([])
@@ -188,6 +194,10 @@ export default function ProjectPlanPage() {
   const [waltOpeningLine, setWaltOpeningLine] = useState('Tell me where you want to start.')
   const [waltScreen, setWaltScreen] = useState(`project-plan-${projectId}`)
   const [waltPhaseId, setWaltPhaseId] = useState<string | undefined>()
+  const [generatingPlan, setGeneratingPlan] = useState(false)
+  const [deletingDraft, setDeletingDraft] = useState(false)
+  const [projectError, setProjectError] = useState('')
+  const autoOpenedDraftRef = useRef(false)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -201,7 +211,12 @@ export default function ProjectPlanPage() {
           id,
           name,
           goal_type,
+          status,
+          project_mode,
+          plan_type,
           condition,
+          intake_summary,
+          intake_answers,
           budget_estimate,
           budget_actual,
           cover_photo_url,
@@ -264,6 +279,42 @@ export default function ProjectPlanPage() {
     loadProject()
   }, [projectId])
 
+  useEffect(() => {
+    if (loading || !project || autoOpenedDraftRef.current || searchParams.get('walt') !== 'start') return
+    if (project.status !== 'draft' || phases.length > 0) return
+
+    autoOpenedDraftRef.current = true
+    const vehicleName = getVehicleName(project.vehicle)
+    const starter = typeof project.intake_answers?.highlighted_task === 'string'
+      ? project.intake_answers.highlighted_task
+      : ''
+
+    const timer = window.setTimeout(() => {
+      setWaltContext([
+        'Screen: Start with Walt draft project',
+        `Project: ${project.name}`,
+        `Draft status: ${project.status}`,
+        formatVehicleContext(project.vehicle),
+        `Project type: ${project.goal_type}`,
+        project.project_mode ? `Project mode: ${project.project_mode}` : '',
+        project.plan_type ? `Plan type: ${project.plan_type}` : '',
+        starter ? `Selected starter: ${starter}` : 'Selected starter: custom task',
+        project.intake_summary ? `Intake summary: ${project.intake_summary}` : '',
+        `Saved notes: ${notes.join('\n---\n') || 'none yet'}`,
+        'This is now a real draft project. Walt may save useful parts, notes, choices, and decisions to this project. Ask practical questions, compare options, and help the user decide when they are ready to generate the plan.',
+      ].filter(Boolean).join('\n'))
+      setWaltOpeningLine(starter
+        ? `I started a draft for ${starter} on ${vehicleName}. Tell me what you want to figure out first, and I’ll save the useful stuff here as we go.`
+        : `I started a draft for ${vehicleName}. Tell me exactly what you’re working on, and I’ll help shape it into a project.`
+      )
+      setWaltScreen(`project-draft-${project.id}`)
+      setWaltPhaseId(undefined)
+      setWaltOpen(true)
+    }, 0)
+
+    return () => window.clearTimeout(timer)
+  }, [loading, notes, phases.length, project, searchParams])
+
   if (loading) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
       <p style={{ color: 'var(--secondary-text)', fontFamily: 'var(--font-nunito)', fontSize: '0.9rem' }}>Loading project plan...</p>
@@ -282,6 +333,92 @@ export default function ProjectPlanPage() {
     return phaseSteps.length > 0 && phaseSteps.every(step => step.status === 'complete')
   }).length
   const upNext = steps.find(step => step.status !== 'complete')
+  const isDraft = project.status === 'draft' && phases.length === 0
+
+  const buildDraftContext = () => {
+    const starter = typeof project.intake_answers?.highlighted_task === 'string'
+      ? project.intake_answers.highlighted_task
+      : ''
+
+    return [
+      'Screen: Start with Walt draft project',
+      `Project: ${project.name}`,
+      `Draft status: ${project.status}`,
+      formatVehicleContext(project.vehicle),
+      `Project type: ${project.goal_type}`,
+      project.project_mode ? `Project mode: ${project.project_mode}` : '',
+      project.plan_type ? `Plan type: ${project.plan_type}` : '',
+      starter ? `Selected starter: ${starter}` : 'Selected starter: custom task',
+      project.intake_summary ? `Intake summary: ${project.intake_summary}` : '',
+      `Saved notes: ${notes.join('\n---\n') || 'none yet'}`,
+      'This is now a real draft project. Walt may save useful parts, notes, choices, and decisions to this project. Ask practical questions, compare options, and help the user decide when they are ready to generate the plan.',
+    ].filter(Boolean).join('\n')
+  }
+
+  const openDraftWalt = () => {
+    const starter = typeof project.intake_answers?.highlighted_task === 'string'
+      ? project.intake_answers.highlighted_task
+      : ''
+    const vehicleName = getVehicleName(project.vehicle)
+
+    setWaltContext(buildDraftContext())
+    setWaltOpeningLine(starter
+      ? `I started a draft for ${starter} on ${vehicleName}. Tell me what you want to figure out first, and I’ll save the useful stuff here as we go.`
+      : `I started a draft for ${vehicleName}. Tell me exactly what you’re working on, and I’ll help shape it into a project.`
+    )
+    setWaltScreen(`project-draft-${project.id}`)
+    setWaltPhaseId(undefined)
+    setWaltOpen(true)
+  }
+
+  const generateProjectPlan = async () => {
+    setProjectError('')
+    setGeneratingPlan(true)
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`/api/projects/${project.id}/generate-plan`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session?.access_token || ''}`,
+      },
+    })
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setProjectError(data.error || 'Walt could not generate the project plan right now.')
+      setGeneratingPlan(false)
+      return
+    }
+
+    window.location.assign(`/projects/${project.id}`)
+  }
+
+  const deleteDraft = async () => {
+    if (!window.confirm('Delete this draft project?')) return
+    setProjectError('')
+    setDeletingDraft(true)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      window.location.replace('/login')
+      return
+    }
+
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', project.id)
+      .eq('user_id', user.id)
+      .eq('status', 'draft')
+
+    if (error) {
+      setProjectError('Could not delete that draft yet. Please try again.')
+      setDeletingDraft(false)
+      return
+    }
+
+    window.location.assign('/projects')
+  }
 
   const openPhaseWalt = (phase: Phase) => {
     const phaseSteps = stepsByPhase[phase.id] || []
@@ -314,6 +451,11 @@ export default function ProjectPlanPage() {
   }
 
   const openProjectWalt = () => {
+    if (isDraft) {
+      openDraftWalt()
+      return
+    }
+
     setWaltContext([
       `Screen: Project plan coach`,
       `Project: ${project.name}`,
@@ -368,9 +510,17 @@ export default function ProjectPlanPage() {
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '42px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
               <p style={{ color: 'white', fontWeight: 900, fontSize: '1.08rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.15 }}>{getVehicleName(project.vehicle)}</p>
               <p style={{ color: 'rgba(255,255,255,0.88)', fontSize: '0.72rem', fontWeight: 800, marginTop: 3 }}>{project.name}</p>
-              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.62rem', letterSpacing: 1.2, textTransform: 'uppercase', marginTop: 2 }}>{project.goal_type}</p>
+              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.62rem', letterSpacing: 1.2, textTransform: 'uppercase', marginTop: 2 }}>
+                {project.goal_type}{isDraft ? ' • Draft' : ''}
+              </p>
             </div>
           </div>
+
+          {projectError && (
+            <div style={{ background: '#fff1e6', border: '1.5px solid var(--orange)', borderRadius: 12, padding: '10px 12px', marginBottom: 12 }}>
+              <p style={{ color: 'var(--dark-blue)', fontSize: '0.84rem', fontWeight: 700 }}>{projectError}</p>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
             {[
@@ -400,10 +550,38 @@ export default function ProjectPlanPage() {
 
           <p style={{ fontSize: '1.05rem', color: 'var(--dark-blue)', fontWeight: 900, marginBottom: 8 }}>Phases</p>
 
-          {phases.length === 0 ? (
+          {isDraft ? (
+            <div style={{ background: 'white', borderRadius: 14, padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <img src={WALT} alt="Walt" style={{ width: 38, height: 38, borderRadius: '50%', border: '2px solid var(--orange)', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ color: 'var(--dark-blue)', fontWeight: 900, fontSize: '0.98rem', margin: 0 }}>Draft project with Walt</p>
+                  <p style={{ color: 'var(--secondary-text)', fontSize: '0.76rem', lineHeight: 1.4, margin: '2px 0 0' }}>
+                    Talk through details first. Walt can save notes, parts, and decisions here before generating the final plan.
+                  </p>
+                </div>
+              </div>
+              <button onClick={openDraftWalt}
+                style={{ width: '100%', minHeight: 42, borderRadius: 22, border: 'none', background: 'var(--orange)', color: 'white', fontSize: '0.88rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: 'pointer', marginBottom: 8 }}>
+                Talk with Walt
+              </button>
+              <button onClick={generateProjectPlan} disabled={generatingPlan}
+                style={{ width: '100%', minHeight: 42, borderRadius: 22, border: 'none', background: generatingPlan ? '#d4e0eb' : 'var(--dark-blue)', color: 'white', fontSize: '0.88rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: generatingPlan ? 'not-allowed' : 'pointer', marginBottom: 8 }}>
+                {generatingPlan ? 'Generating plan...' : 'Generate Plan'}
+              </button>
+              <button onClick={deleteDraft} disabled={deletingDraft}
+                style={{ width: '100%', minHeight: 38, borderRadius: 19, border: '1.5px solid #f0c8c2', background: 'white', color: '#b42318', fontSize: '0.8rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: deletingDraft ? 'not-allowed' : 'pointer' }}>
+                {deletingDraft ? 'Deleting...' : 'Delete Draft'}
+              </button>
+            </div>
+          ) : phases.length === 0 ? (
             <div style={{ background: 'white', borderRadius: 14, padding: '18px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', textAlign: 'center' }}>
               <p style={{ color: 'var(--dark-blue)', fontWeight: 800, marginBottom: 4 }}>No plan saved yet</p>
-              <p style={{ color: 'var(--secondary-text)', fontSize: '0.82rem', lineHeight: 1.45 }}>Go back to Projects and ask Walt to create the project plan.</p>
+              <p style={{ color: 'var(--secondary-text)', fontSize: '0.82rem', lineHeight: 1.45 }}>Ask Walt to generate the project plan when the intake is ready.</p>
+              <button onClick={generateProjectPlan} disabled={generatingPlan}
+                style={{ marginTop: 12, minHeight: 40, padding: '0 16px', borderRadius: 20, border: 'none', background: generatingPlan ? '#d4e0eb' : 'var(--dark-blue)', color: 'white', fontSize: '0.82rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: generatingPlan ? 'not-allowed' : 'pointer' }}>
+                {generatingPlan ? 'Generating...' : 'Generate Plan'}
+              </button>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
