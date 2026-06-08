@@ -161,13 +161,13 @@ const NavBar = () => (
   </nav>
 )
 
-function WaltBar({ onOpenWalt }: { onOpenWalt: () => void }) {
+function WaltBar({ onOpenWalt, prompt }: { onOpenWalt: () => void, prompt: string }) {
   return (
     <div style={{ background: 'white', padding: '8px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 480, margin: '0 auto' }}>
         <div onClick={onOpenWalt}
           style={{ flex: 1, background: 'var(--bg)', borderRadius: 25, padding: '10px 16px', fontSize: '0.85rem', color: '#8395a7', cursor: 'pointer' }}>
-          Ask Walt about this project...
+          {prompt}
         </div>
         <button onClick={onOpenWalt}
           style={{ width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--orange)', padding: 0, background: 'white', flexShrink: 0, cursor: 'pointer' }}>
@@ -182,6 +182,7 @@ export default function ProjectPlanPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const projectId = params.id as string
+  const planJustGenerated = searchParams.get('plan') === 'generated'
   const [project, setProject] = useState<Project | null>(null)
   const [phases, setPhases] = useState<Phase[]>([])
   const [steps, setSteps] = useState<Step[]>([])
@@ -196,6 +197,10 @@ export default function ProjectPlanPage() {
   const [waltPhaseId, setWaltPhaseId] = useState<string | undefined>()
   const [generatingPlan, setGeneratingPlan] = useState(false)
   const [deletingDraft, setDeletingDraft] = useState(false)
+  const [confirmGenerate, setConfirmGenerate] = useState(false)
+  const [renamingDraft, setRenamingDraft] = useState(false)
+  const [draftName, setDraftName] = useState('')
+  const [savingDraftName, setSavingDraftName] = useState(false)
   const [projectError, setProjectError] = useState('')
   const autoOpenedDraftRef = useRef(false)
 
@@ -270,6 +275,7 @@ export default function ProjectPlanPage() {
         .order('created_at', { ascending: true })
 
       setProject(projectData as unknown as Project)
+      setDraftName((projectData as unknown as Project).name)
       setPhases((phaseData || []) as Phase[])
       setSteps((stepData || []) as Step[])
       setNotes((noteData || []).map(note => note.content as string).filter(Boolean))
@@ -334,6 +340,9 @@ export default function ProjectPlanPage() {
   }).length
   const upNext = steps.find(step => step.status !== 'complete')
   const isDraft = project.status === 'draft' && phases.length === 0
+  const waltBarPrompt = isDraft
+    ? `Continue with Walt about ${project.name}...`
+    : `Ask Walt about ${project.name}...`
 
   const buildDraftContext = () => {
     const starter = typeof project.intake_answers?.highlighted_task === 'string'
@@ -390,7 +399,41 @@ export default function ProjectPlanPage() {
       return
     }
 
-    window.location.assign(`/projects/${project.id}`)
+    window.location.assign(`/projects/${project.id}?plan=generated`)
+  }
+
+  const saveDraftName = async () => {
+    if (!project || !isDraft) return
+    const nextName = draftName.trim()
+    if (!nextName) {
+      setProjectError('Give this draft a name before saving.')
+      return
+    }
+
+    setProjectError('')
+    setSavingDraftName(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      window.location.replace('/login')
+      return
+    }
+
+    const { error } = await supabase
+      .from('projects')
+      .update({ name: nextName })
+      .eq('id', project.id)
+      .eq('user_id', user.id)
+      .eq('status', 'draft')
+
+    if (error) {
+      setProjectError('Could not rename that draft yet. Please try again.')
+      setSavingDraftName(false)
+      return
+    }
+
+    setProject({ ...project, name: nextName })
+    setRenamingDraft(false)
+    setSavingDraftName(false)
   }
 
   const deleteDraft = async () => {
@@ -503,10 +546,12 @@ export default function ProjectPlanPage() {
             ) : (
               <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--light-blue)', fontSize: '2rem' }}>🔧</div>
             )}
-            <button onClick={() => window.location.href = `/projects?project=${project.id}`}
-              style={{ position: 'absolute', top: 10, right: 10, background: 'white', border: '1.5px solid var(--light-blue)', color: 'var(--light-blue)', borderRadius: 20, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>
-              Edit Project
-            </button>
+            {!isDraft && (
+              <button onClick={() => window.location.href = `/projects?project=${project.id}`}
+                style={{ position: 'absolute', top: 10, right: 10, background: 'white', border: '1.5px solid var(--light-blue)', color: 'var(--light-blue)', borderRadius: 20, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>
+                Edit Project
+              </button>
+            )}
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '42px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
               <p style={{ color: 'white', fontWeight: 900, fontSize: '1.08rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.15 }}>{getVehicleName(project.vehicle)}</p>
               <p style={{ color: 'rgba(255,255,255,0.88)', fontSize: '0.72rem', fontWeight: 800, marginTop: 3 }}>{project.name}</p>
@@ -522,19 +567,33 @@ export default function ProjectPlanPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-            {[
-              { label: 'My Plan', value: `${completedPhases}/${phases.length}` },
-              { label: "Walt's Notes", value: String(notesCount) },
-              { label: 'Budget', value: `${formatMoney(project.budget_actual || 0)} / ${formatMoney(project.budget_estimate)}` },
-              { label: 'Up Next', value: upNext ? '1' : '0' },
-            ].map(stat => (
-              <div key={stat.label} style={{ flex: 1, background: 'white', borderRadius: 12, padding: '8px 4px', textAlign: 'center', border: '1.5px solid var(--border)', minWidth: 0 }}>
-                <p style={{ fontSize: stat.label === 'Budget' ? '0.68rem' : '0.95rem', fontWeight: 900, color: 'var(--dark-blue)', lineHeight: 1.1 }}>{stat.value}</p>
-                <p style={{ fontSize: '0.5rem', color: 'var(--secondary-text)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.35, marginTop: 3 }}>{stat.label}</p>
+          {planJustGenerated && !isDraft && (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: 'var(--dark-blue)', borderRadius: 14, padding: '12px 14px', marginBottom: 12 }}>
+              <img src={WALT} alt="Walt" style={{ width: 30, height: 30, borderRadius: '50%', border: '1.5px solid var(--orange)', flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <p style={{ color: 'white', fontSize: '0.9rem', fontWeight: 900, margin: 0 }}>Plan generated</p>
+                <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: '0.78rem', lineHeight: 1.45, margin: '2px 0 0' }}>
+                  Walt turned your draft into phases and steps. Review the plan below, then open Walt when you want help working through it.
+                </p>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {!isDraft && (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+              {[
+                { label: 'My Plan', value: `${completedPhases}/${phases.length}` },
+                { label: "Walt's Notes", value: String(notesCount) },
+                { label: 'Budget', value: `${formatMoney(project.budget_actual || 0)} / ${formatMoney(project.budget_estimate)}` },
+                { label: 'Up Next', value: upNext ? '1' : '0' },
+              ].map(stat => (
+                <div key={stat.label} style={{ flex: 1, background: 'white', borderRadius: 12, padding: '8px 4px', textAlign: 'center', border: '1.5px solid var(--border)', minWidth: 0 }}>
+                  <p style={{ fontSize: stat.label === 'Budget' ? '0.68rem' : '0.95rem', fontWeight: 900, color: 'var(--dark-blue)', lineHeight: 1.1 }}>{stat.value}</p>
+                  <p style={{ fontSize: '0.5rem', color: 'var(--secondary-text)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.35, marginTop: 3 }}>{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
 
           {upNext && (
             <div onClick={() => window.location.href = `/projects/${project.id}/steps/${upNext.id}`}
@@ -548,28 +607,65 @@ export default function ProjectPlanPage() {
             </div>
           )}
 
-          <p style={{ fontSize: '1.05rem', color: 'var(--dark-blue)', fontWeight: 900, marginBottom: 8 }}>Phases</p>
-
           {isDraft ? (
             <div style={{ background: 'white', borderRadius: 14, padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <div style={{ background: '#fff1e6', border: '1.5px solid #f4c08b', borderRadius: 12, padding: '12px', marginBottom: 12 }}>
+                <p style={{ color: 'var(--orange)', fontSize: '0.68rem', fontWeight: 900, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 4 }}>Draft in Progress</p>
+                <p style={{ color: 'var(--dark-blue)', fontSize: '0.88rem', fontWeight: 800, lineHeight: 1.35, margin: 0 }}>
+                  Walt is still helping shape this into a project plan. Use the Walt bar below to continue the conversation, or generate the plan when you are ready.
+                </p>
+              </div>
+              <div style={{ border: '1.5px solid var(--border)', borderRadius: 12, padding: '11px 12px', marginBottom: 12 }}>
+                <p style={{ color: 'var(--secondary-text)', fontSize: '0.65rem', fontWeight: 900, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>Draft Name</p>
+                {renamingDraft ? (
+                  <div>
+                    <input
+                      value={draftName}
+                      onChange={event => setDraftName(event.target.value)}
+                      maxLength={80}
+                      style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid var(--border)', borderRadius: 10, padding: '10px 11px', fontSize: 16, fontFamily: 'var(--font-nunito)', color: 'var(--dark-blue)', outline: 'none', marginBottom: 8 }}
+                    />
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                      <button onClick={() => { setDraftName(project.name); setRenamingDraft(false); setProjectError('') }} disabled={savingDraftName}
+                        style={{ minHeight: 34, padding: '0 12px', borderRadius: 17, border: '1.5px solid var(--border)', background: 'white', color: 'var(--dark-blue)', fontSize: '0.76rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: savingDraftName ? 'not-allowed' : 'pointer' }}>
+                        Cancel
+                      </button>
+                      <button onClick={saveDraftName} disabled={savingDraftName}
+                        style={{ minHeight: 34, padding: '0 12px', borderRadius: 17, border: 'none', background: savingDraftName ? '#d4e0eb' : 'var(--orange)', color: 'white', fontSize: '0.76rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: savingDraftName ? 'not-allowed' : 'pointer' }}>
+                        {savingDraftName ? 'Saving...' : 'Save Name'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <p style={{ flex: 1, color: 'var(--dark-blue)', fontSize: '0.98rem', fontWeight: 900, lineHeight: 1.25, margin: 0 }}>{project.name}</p>
+                    <button onClick={() => { setDraftName(project.name); setRenamingDraft(true) }}
+                      style={{ border: '1.5px solid var(--orange)', color: 'var(--orange)', background: 'white', borderRadius: 16, padding: '6px 10px', fontSize: '0.72rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: 'pointer', flexShrink: 0 }}>
+                      Rename
+                    </button>
+                  </div>
+                )}
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <img src={WALT} alt="Walt" style={{ width: 38, height: 38, borderRadius: '50%', border: '2px solid var(--orange)', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
-                  <p style={{ color: 'var(--dark-blue)', fontWeight: 900, fontSize: '0.98rem', margin: 0 }}>Draft project with Walt</p>
+                  <p style={{ color: 'var(--dark-blue)', fontWeight: 900, fontSize: '0.98rem', margin: 0 }}>Draft Actions</p>
                   <p style={{ color: 'var(--secondary-text)', fontSize: '0.76rem', lineHeight: 1.4, margin: '2px 0 0' }}>
-                    Talk through details first. Walt can save notes, parts, and decisions here before generating the final plan.
+                    Generate the plan when this draft is ready, or delete it if you no longer need it.
                   </p>
                 </div>
               </div>
-              <button onClick={openDraftWalt}
-                style={{ width: '100%', minHeight: 42, borderRadius: 22, border: 'none', background: 'var(--orange)', color: 'white', fontSize: '0.88rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: 'pointer', marginBottom: 8 }}>
-                Talk with Walt
-              </button>
-              <button onClick={generateProjectPlan} disabled={generatingPlan}
+              <button onClick={() => setConfirmGenerate(true)} disabled={generatingPlan || deletingDraft || savingDraftName}
                 style={{ width: '100%', minHeight: 42, borderRadius: 22, border: 'none', background: generatingPlan ? '#d4e0eb' : 'var(--dark-blue)', color: 'white', fontSize: '0.88rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: generatingPlan ? 'not-allowed' : 'pointer', marginBottom: 8 }}>
                 {generatingPlan ? 'Generating plan...' : 'Generate Plan'}
               </button>
-              <button onClick={deleteDraft} disabled={deletingDraft}
+              {generatingPlan && (
+                <div style={{ background: '#eaf4fb', border: '1.5px solid #c6dff0', borderRadius: 12, padding: '10px 12px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #c6dff0', borderTopColor: 'var(--dark-blue)', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+                  <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                  <p style={{ color: 'var(--dark-blue)', fontSize: '0.78rem', fontWeight: 800, margin: 0 }}>Walt is building your plan...</p>
+                </div>
+              )}
+              <button onClick={deleteDraft} disabled={deletingDraft || generatingPlan || savingDraftName}
                 style={{ width: '100%', minHeight: 38, borderRadius: 19, border: '1.5px solid #f0c8c2', background: 'white', color: '#b42318', fontSize: '0.8rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: deletingDraft ? 'not-allowed' : 'pointer' }}>
                 {deletingDraft ? 'Deleting...' : 'Delete Draft'}
               </button>
@@ -584,14 +680,16 @@ export default function ProjectPlanPage() {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {phases.map((phase, phaseIndex) => {
-                const phaseSteps = stepsByPhase[phase.id] || []
-                const completeCount = phaseSteps.filter(step => step.status === 'complete').length
-                const isExpanded = expandedPhaseIds.includes(phase.id)
+            <>
+              <p style={{ fontSize: '1.05rem', color: 'var(--dark-blue)', fontWeight: 900, marginBottom: 8 }}>Phases</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {phases.map((phase, phaseIndex) => {
+                  const phaseSteps = stepsByPhase[phase.id] || []
+                  const completeCount = phaseSteps.filter(step => step.status === 'complete').length
+                  const isExpanded = expandedPhaseIds.includes(phase.id)
 
-                return (
-                  <div key={phase.id} style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                  return (
+                    <div key={phase.id} style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                     <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                       <button onClick={() => setExpandedPhaseIds(prev => prev.includes(phase.id) ? prev.filter(id => id !== phase.id) : [...prev, phase.id])}
                         style={{ width: 34, height: 34, borderRadius: '50%', border: 'none', background: phase.status === 'in_progress' ? 'var(--orange)' : 'var(--dark-blue)', color: 'white', fontWeight: 900, fontSize: '0.82rem', flexShrink: 0, cursor: 'pointer' }}>
@@ -629,16 +727,37 @@ export default function ProjectPlanPage() {
                         ))}
                       </div>
                     )}
-                  </div>
-                )
-              })}
-            </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </div>
       </main>
 
-      <WaltBar onOpenWalt={openProjectWalt} />
+      <WaltBar onOpenWalt={openProjectWalt} prompt={waltBarPrompt} />
       <NavBar />
+      {confirmGenerate && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18 }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: '18px 16px', maxWidth: 360, width: '100%', boxShadow: '0 10px 40px rgba(0,0,0,0.22)' }}>
+            <p style={{ color: 'var(--dark-blue)', fontSize: '1rem', fontWeight: 900, marginBottom: 5 }}>Generate this plan now?</p>
+            <p style={{ color: 'var(--secondary-text)', fontSize: '0.82rem', lineHeight: 1.45, marginBottom: 14 }}>
+              Walt will turn this draft into a project plan with phases and steps. You can still ask Walt questions after the plan is created.
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setConfirmGenerate(false)} disabled={generatingPlan}
+                style={{ minHeight: 38, padding: '0 14px', borderRadius: 19, border: '1.5px solid var(--border)', background: 'white', color: 'var(--dark-blue)', fontSize: '0.8rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: generatingPlan ? 'not-allowed' : 'pointer' }}>
+                Cancel
+              </button>
+              <button onClick={() => { setConfirmGenerate(false); generateProjectPlan() }} disabled={generatingPlan}
+                style={{ minHeight: 38, padding: '0 14px', borderRadius: 19, border: 'none', background: generatingPlan ? '#d4e0eb' : 'var(--dark-blue)', color: 'white', fontSize: '0.8rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: generatingPlan ? 'not-allowed' : 'pointer' }}>
+                Generate Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <WaltPanel
         open={waltOpen}
         onClose={() => setWaltOpen(false)}

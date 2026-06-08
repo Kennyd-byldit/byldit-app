@@ -56,7 +56,7 @@ export default function GaragePage() {
   const [userName, setUserName] = useState('')
   const [userId, setUserId] = useState('')
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [activeProjects, setActiveProjects] = useState<Project[]>([])
+  const [vehicleProjects, setVehicleProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [waltOpen, setWaltOpen] = useState(false)
@@ -78,12 +78,12 @@ export default function GaragePage() {
       const [{ data: profile }, { data: vehicleData }, { data: projects }] = await Promise.all([
         supabase.from('profiles').select('name').eq('id', user.id).single(),
         supabase.from('vehicles').select('id, nickname, year, make, model, trim, is_primary, color, engine, transmission, drivetrain, fuel_type, mileage, condition, cover_photo_url').eq('user_id', user.id).order('is_primary', { ascending: false }),
-        supabase.from('projects').select('id, vehicle_id, name, goal_type, status').eq('user_id', user.id).eq('status', 'active').order('created_at', { ascending: false }),
+        supabase.from('projects').select('id, vehicle_id, name, goal_type, status').eq('user_id', user.id).in('status', ['draft', 'active', 'paused']).order('created_at', { ascending: false }),
       ])
 
       setUserName(profile?.name || user.email?.split('@')[0] || 'there')
       setVehicles(vehicleData || [])
-      setActiveProjects(projects || [])
+      setVehicleProjects(projects || [])
       setLoading(false)
     }
     loadUser()
@@ -120,8 +120,25 @@ export default function GaragePage() {
   )
 
   const primaryVehicle = vehicles.find(v => v.is_primary) || vehicles[0]
-  const hasActiveProject = activeProjects.length > 0
-  const getVehicleProject = (vehicleId: string) => activeProjects.find(project => project.vehicle_id === vehicleId)
+  const activeProjects = vehicleProjects.filter(project => project.status !== 'draft')
+  const draftProjects = vehicleProjects.filter(project => project.status === 'draft')
+  const hasVehicleActivity = vehicleProjects.length > 0
+  const getVehicleActiveProjects = (vehicleId: string) => activeProjects.filter(project => project.vehicle_id === vehicleId)
+  const getVehicleDrafts = (vehicleId: string) => draftProjects.filter(project => project.vehicle_id === vehicleId)
+  const getVehicleActiveProject = (vehicleId: string) => getVehicleActiveProjects(vehicleId)[0]
+  const getVehicleDraft = (vehicleId: string) => getVehicleDrafts(vehicleId)[0]
+  const openVehicleActivity = (vehicleId: string, status: 'draft' | 'active', projects: Project[]) => {
+    if (projects.length === 1) {
+      window.location.assign(`/projects/${projects[0].id}`)
+      return
+    }
+
+    window.location.assign(`/projects?vehicle=${vehicleId}&status=${status}`)
+  }
+  const activityLabel = (project: Project, suffix: string) => {
+    const cleanName = project.name.replace(/\s+(draft|project)$/i, '').trim()
+    return `${cleanName || project.goal_type} ${suffix}`
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
@@ -181,8 +198,15 @@ export default function GaragePage() {
               {/* 1. Hero Photo Card */}
               <div style={{ height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)', background: 'var(--border)' }}>
                 <img src={primaryVehicle && getVehiclePhoto(primaryVehicle) ? getVehiclePhoto(primaryVehicle)! : "/photos/f250-hiboy-68.jpg"} alt={primaryVehicle?.nickname || "My Vehicle"} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 35%" }} />
-                {primaryVehicle && getVehicleProject(primaryVehicle.id) && (
-                  <div style={{ position: 'absolute', top: 8, right: 10, background: 'var(--orange)', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>ACTIVE PROJECT</div>
+                {primaryVehicle && (getVehicleActiveProject(primaryVehicle.id) || getVehicleDraft(primaryVehicle.id)) && (
+                  <div style={{ position: 'absolute', top: 8, right: 10, display: 'flex', gap: 5 }}>
+                    {getVehicleActiveProject(primaryVehicle.id) && (
+                      <div style={{ background: 'var(--dark-blue)', color: 'white', fontSize: '0.6rem', fontWeight: 800, padding: '3px 8px', borderRadius: 20 }}>ACTIVE</div>
+                    )}
+                    {getVehicleDraft(primaryVehicle.id) && (
+                      <div style={{ background: 'var(--orange)', color: 'white', fontSize: '0.6rem', fontWeight: 800, padding: '3px 8px', borderRadius: 20 }}>DRAFT</div>
+                    )}
+                  </div>
                 )}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
                   <p style={{ color: 'white', fontWeight: 800, fontSize: '1.2rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>
@@ -211,11 +235,13 @@ export default function GaragePage() {
                   <p style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem' }}>Create a New Project →</p>
                   <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.66rem', marginTop: 2 }}>Start from a vehicle</p>
                 </div>
-                {hasActiveProject && (
+                {hasVehicleActivity && (
                   <div onClick={() => window.location.href = '/projects'}
                     style={{ flex: 1, background: 'white', border: '1.5px solid var(--light-blue)', borderRadius: 25, padding: '12px 10px', textAlign: 'center', cursor: 'pointer', minHeight: 58, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <p style={{ color: 'var(--light-blue)', fontWeight: 800, fontSize: '0.9rem' }}>See Active Projects</p>
-                    <p style={{ color: 'var(--secondary-text)', fontSize: '0.66rem', marginTop: 2 }}>{activeProjects.length} active</p>
+                    <p style={{ color: 'var(--light-blue)', fontWeight: 800, fontSize: '0.9rem' }}>See Projects</p>
+                    <p style={{ color: 'var(--secondary-text)', fontSize: '0.66rem', marginTop: 2 }}>
+                      {activeProjects.length} active{draftProjects.length ? `, ${draftProjects.length} draft${draftProjects.length === 1 ? '' : 's'}` : ''}
+                    </p>
                   </div>
                 )}
               </div>
@@ -223,7 +249,16 @@ export default function GaragePage() {
               {/* 6. All vehicle cards */}
               <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10 }}>
                 {vehicles.map(v => {
-                  const activeProject = getVehicleProject(v.id)
+                  const vehicleActiveProjects = getVehicleActiveProjects(v.id)
+                  const vehicleDrafts = getVehicleDrafts(v.id)
+                  const activeProject = vehicleActiveProjects[0]
+                  const draftProject = vehicleDrafts[0]
+                  const activeLabel = vehicleActiveProjects.length === 1 && activeProject
+                    ? activityLabel(activeProject, 'Project')
+                    : vehicleActiveProjects.length > 1 ? `${vehicleActiveProjects.length} Active Projects` : ''
+                  const draftLabel = vehicleDrafts.length === 1 && draftProject
+                    ? activityLabel(draftProject, 'Draft')
+                    : vehicleDrafts.length > 1 ? `${vehicleDrafts.length} Open Drafts` : ''
                   return (
                   <div
                     key={v.id}
@@ -289,11 +324,21 @@ export default function GaragePage() {
                           <span style={{ fontSize: "0.72rem", color: "var(--secondary-text)", fontStyle: "italic" }}>&quot;The more I know, the more I can help.&quot;</span>
                         </div>
                       )}
-                      {activeProject && (
-                        <button onClick={(e) => { e.stopPropagation(); window.location.href = `/projects?project=${activeProject.id}` }}
-                          style={{ width: '100%', marginTop: 8, minHeight: 38, borderRadius: 20, border: 'none', background: 'var(--dark-blue)', color: 'white', fontFamily: 'var(--font-nunito)', fontSize: '0.82rem', fontWeight: 800, cursor: 'pointer' }}>
-                          Active Project: {activeProject.name} →
-                        </button>
+                      {(activeProject || draftProject) && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          {activeProject && (
+                            <button onClick={(e) => { e.stopPropagation(); openVehicleActivity(v.id, 'active', vehicleActiveProjects) }}
+                              style={{ flex: 1, minHeight: 38, borderRadius: 20, border: 'none', background: 'var(--dark-blue)', color: 'white', fontFamily: 'var(--font-nunito)', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', minWidth: 0, padding: '0 8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {activeLabel} →
+                            </button>
+                          )}
+                          {draftProject && (
+                            <button onClick={(e) => { e.stopPropagation(); openVehicleActivity(v.id, 'draft', vehicleDrafts) }}
+                              style={{ flex: 1, minHeight: 38, borderRadius: 20, border: 'none', background: 'var(--orange)', color: 'white', fontFamily: 'var(--font-nunito)', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', minWidth: 0, padding: '0 8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {draftLabel} →
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

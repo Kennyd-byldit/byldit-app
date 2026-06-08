@@ -86,8 +86,12 @@ function WaltBar({ onOpenWalt }: { onOpenWalt: () => void }) {
 function ProjectsContent() {
   const searchParams = useSearchParams()
   const highlightedProjectId = searchParams.get('created') || searchParams.get('project') || ''
+  const vehicleFilter = searchParams.get('vehicle') || ''
+  const statusFilterParam = searchParams.get('status') || ''
+  const statusFilter = statusFilterParam === 'draft' || statusFilterParam === 'active' ? statusFilterParam : ''
 
   const [projects, setProjects] = useState<Project[]>([])
+  const [filterVehicleName, setFilterVehicleName] = useState('')
   const [loading, setLoading] = useState(true)
   const [generatingProjectId, setGeneratingProjectId] = useState('')
   const [deletingProjectId, setDeletingProjectId] = useState('')
@@ -101,7 +105,7 @@ function ProjectsContent() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.replace('/login'); return }
 
-      const { data } = await supabase
+      let query = supabase
         .from('projects')
         .select(`
           id,
@@ -123,8 +127,14 @@ function ProjectsContent() {
           )
         `)
         .eq('user_id', user.id)
-        .in('status', ['draft', 'active', 'paused'])
         .order('created_at', { ascending: false })
+
+      if (vehicleFilter) query = query.eq('vehicle_id', vehicleFilter)
+      if (statusFilter === 'draft') query = query.eq('status', 'draft')
+      else if (statusFilter === 'active') query = query.in('status', ['active', 'paused'])
+      else query = query.in('status', ['draft', 'active', 'paused'])
+
+      const { data } = await query
 
       const projectRows = (data || []) as unknown as Omit<Project, 'hasPlan'>[]
       const projectIds = projectRows.map(project => project.id)
@@ -137,14 +147,15 @@ function ProjectsContent() {
         ...project,
         hasPlan: plannedProjectIds.has(project.id),
       })))
+      setFilterVehicleName(getVehicleName(projectRows[0]?.vehicle || null))
       setLoading(false)
     }
     loadProjects()
-  }, [])
+  }, [vehicleFilter, statusFilter])
 
   const handleProjectAction = async (project: Project) => {
     if (project.status === 'draft') {
-      window.location.assign(`/projects/${project.id}?walt=start`)
+      window.location.assign(`/projects/${project.id}`)
       return
     }
 
@@ -207,6 +218,20 @@ function ProjectsContent() {
     </div>
   )
 
+  const isFiltered = Boolean(vehicleFilter || statusFilter)
+  const heading = vehicleFilter && statusFilter === 'draft'
+    ? `${filterVehicleName} Drafts`
+    : vehicleFilter && statusFilter === 'active'
+      ? `${filterVehicleName} Active Projects`
+      : statusFilter === 'draft'
+        ? 'Open Drafts'
+        : statusFilter === 'active'
+          ? 'Active Projects'
+          : 'Projects'
+  const subheading = isFiltered
+    ? 'Filtered from your garage. Back out to see every vehicle project.'
+    : 'Drafts and active projects live here. Garage stays focused on your vehicles.'
+
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'var(--font-nunito)' }}>
       <div style={{ background: 'var(--bg)', padding: '6px 16px 4px', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
@@ -227,10 +252,16 @@ function ProjectsContent() {
 
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '18px 14px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
-          <p style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>Projects</p>
+          <p style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--dark-blue)', marginBottom: 4 }}>{heading}</p>
           <p style={{ fontSize: '0.82rem', color: 'var(--secondary-text)', marginBottom: 14 }}>
-            Drafts and active projects live here. Garage stays focused on your vehicles.
+            {subheading}
           </p>
+          {isFiltered && (
+            <button onClick={() => window.location.href = '/projects'}
+              style={{ border: '1.5px solid var(--border)', background: 'white', color: 'var(--dark-blue)', borderRadius: 18, padding: '7px 11px', fontSize: '0.76rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: 'pointer', marginBottom: 12 }}>
+              Show All Projects
+            </button>
+          )}
 
           {searchParams.get('created') && (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12, background: 'var(--dark-blue)', borderRadius: 14, padding: '12px 14px' }}>
@@ -266,6 +297,8 @@ function ProjectsContent() {
                 const isConfirmingDelete = confirmDeleteProjectId === project.id
                 const isDeleting = deletingProjectId === project.id
                 const isDraft = project.status === 'draft'
+                const accentColor = isDraft ? 'var(--orange)' : 'var(--dark-blue)'
+                const accentBg = isDraft ? '#fff1e6' : '#eaf4fb'
 
                 return (
                   <div key={project.id}
@@ -274,7 +307,7 @@ function ProjectsContent() {
                       borderRadius: 14,
                       boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                       overflow: 'hidden',
-                      border: isHighlighted ? '2px solid var(--orange)' : '1.5px solid transparent',
+                      border: isHighlighted ? `2px solid ${accentColor}` : `1.5px solid ${isDraft ? '#f4c08b' : '#d9e8f4'}`,
                     }}>
                     <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center' }}>
                       <div style={{ width: 110, height: 72, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: 'var(--dark-blue)' }}>
@@ -299,13 +332,11 @@ function ProjectsContent() {
                         </p>
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
                           <p style={{ fontSize: '0.72rem', color: 'var(--orange)', fontWeight: 800, margin: 0 }}>
-                            {project.goal_type}
+                          {project.goal_type}
                           </p>
-                          {isDraft && (
-                            <span style={{ background: '#fff1e6', color: 'var(--orange)', borderRadius: 12, padding: '3px 7px', fontSize: '0.62rem', fontWeight: 900 }}>
-                              Draft
-                            </span>
-                          )}
+                          <span style={{ background: accentBg, color: accentColor, borderRadius: 12, padding: '3px 7px', fontSize: '0.62rem', fontWeight: 900 }}>
+                            {isDraft ? 'Draft' : project.hasPlan ? 'Active' : 'Plan needed'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -313,11 +344,11 @@ function ProjectsContent() {
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7 }}>Status</p>
                         <p style={{ fontSize: '0.82rem', color: 'var(--dark-blue)', fontWeight: 800 }}>
-                          {isDraft ? 'Draft with Walt' : project.hasPlan ? 'Plan Ready' : 'Needs Project Plan'}
+                          {isDraft ? 'Draft with Walt' : project.hasPlan ? 'Active Project' : 'Needs Project Plan'}
                         </p>
                       </div>
                       <button onClick={() => handleProjectAction(project)} disabled={generatingProjectId === project.id}
-                        style={{ minHeight: 40, padding: '0 16px', borderRadius: 20, border: 'none', background: generatingProjectId === project.id ? '#d4e0eb' : 'var(--dark-blue)', color: 'white', fontSize: '0.82rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: generatingProjectId === project.id ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
+                        style={{ minHeight: 40, padding: '0 16px', borderRadius: 20, border: 'none', background: generatingProjectId === project.id ? '#d4e0eb' : accentColor, color: 'white', fontSize: '0.82rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: generatingProjectId === project.id ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
                         {generatingProjectId === project.id
                           ? 'Creating...'
                           : isDraft ? 'Open Draft' : project.hasPlan ? 'Open Project' : 'Create Project Plan'}
