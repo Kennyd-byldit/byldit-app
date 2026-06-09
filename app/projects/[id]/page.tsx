@@ -195,13 +195,22 @@ export default function ProjectPlanPage() {
   const [waltOpeningLine, setWaltOpeningLine] = useState('Tell me where you want to start.')
   const [waltScreen, setWaltScreen] = useState(`project-plan-${projectId}`)
   const [waltPhaseId, setWaltPhaseId] = useState<string | undefined>()
+  const [waltStepId, setWaltStepId] = useState<string | undefined>()
   const [generatingPlan, setGeneratingPlan] = useState(false)
   const [deletingDraft, setDeletingDraft] = useState(false)
   const [confirmGenerate, setConfirmGenerate] = useState(false)
   const [renamingDraft, setRenamingDraft] = useState(false)
+  const [renamingProjectName, setRenamingProjectName] = useState(false)
   const [draftName, setDraftName] = useState('')
   const [savingDraftName, setSavingDraftName] = useState(false)
+  const [projectNameDraft, setProjectNameDraft] = useState('')
+  const [savingProjectName, setSavingProjectName] = useState(false)
   const [projectError, setProjectError] = useState('')
+  const [expandedStepIds, setExpandedStepIds] = useState<string[]>([])
+  const [activeStepId, setActiveStepId] = useState<string | null>(null)
+  const [completingStepIds, setCompletingStepIds] = useState<string[]>([])
+  const [confirmProjectComplete, setConfirmProjectComplete] = useState(false)
+  const [completingProject, setCompletingProject] = useState(false)
   const autoOpenedDraftRef = useRef(false)
 
   useEffect(() => {
@@ -276,6 +285,7 @@ export default function ProjectPlanPage() {
 
       setProject(projectData as unknown as Project)
       setDraftName((projectData as unknown as Project).name)
+      setProjectNameDraft((projectData as unknown as Project).name)
       setPhases((phaseData || []) as Phase[])
       setSteps((stepData || []) as Step[])
       setNotes((noteData || []).map(note => note.content as string).filter(Boolean))
@@ -315,6 +325,7 @@ export default function ProjectPlanPage() {
       )
       setWaltScreen(`project-draft-${project.id}`)
       setWaltPhaseId(undefined)
+      setWaltStepId(undefined)
       setWaltOpen(true)
     }, 0)
 
@@ -340,9 +351,17 @@ export default function ProjectPlanPage() {
   }).length
   const upNext = steps.find(step => step.status !== 'complete')
   const isDraft = project.status === 'draft' && phases.length === 0
+  const activeStep = activeStepId ? steps.find(step => step.id === activeStepId) || null : null
+  const activePhase = activeStep ? phases.find(phase => phase.id === activeStep.phase_id) || null : null
+  const isCompleteProject = project.status === 'complete'
+  const allStepsComplete = steps.length > 0 && steps.every(step => step.status === 'complete')
   const waltBarPrompt = isDraft
     ? `Continue with Walt about ${project.name}...`
-    : `Ask Walt about ${project.name}...`
+    : isCompleteProject
+      ? `Ask Walt about completed ${project.name}...`
+    : activeStep
+      ? `Ask Walt about ${activeStep.name}...`
+      : `Ask Walt about ${project.name}...`
 
   const buildDraftContext = () => {
     const starter = typeof project.intake_answers?.highlighted_task === 'string'
@@ -377,6 +396,7 @@ export default function ProjectPlanPage() {
     )
     setWaltScreen(`project-draft-${project.id}`)
     setWaltPhaseId(undefined)
+    setWaltStepId(undefined)
     setWaltOpen(true)
   }
 
@@ -436,6 +456,40 @@ export default function ProjectPlanPage() {
     setSavingDraftName(false)
   }
 
+  const saveProjectName = async () => {
+    if (!project || isDraft) return
+    const nextName = projectNameDraft.trim()
+    if (!nextName) {
+      setProjectError('Give this project a name before saving.')
+      return
+    }
+
+    setProjectError('')
+    setSavingProjectName(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      window.location.replace('/login')
+      return
+    }
+
+    const { error } = await supabase
+      .from('projects')
+      .update({ name: nextName })
+      .eq('id', project.id)
+      .eq('user_id', user.id)
+
+    if (error) {
+      setProjectError('Could not rename that project yet. Please try again.')
+      setSavingProjectName(false)
+      return
+    }
+
+    setProject({ ...project, name: nextName })
+    setProjectNameDraft(nextName)
+    setRenamingProjectName(false)
+    setSavingProjectName(false)
+  }
+
   const deleteDraft = async () => {
     if (!window.confirm('Delete this draft project?')) return
     setProjectError('')
@@ -463,41 +517,13 @@ export default function ProjectPlanPage() {
     window.location.assign('/projects')
   }
 
-  const openPhaseWalt = (phase: Phase) => {
-    const phaseSteps = stepsByPhase[phase.id] || []
-    setWaltContext([
-      `Screen: Project phase coach`,
-      `Project: ${project.name}`,
-      formatVehicleContext(project.vehicle),
-      `Project type: ${project.goal_type}`,
-      `Project condition/intake: ${project.condition || 'not specified'}`,
-      `Budget estimate: ${formatMoney(project.budget_estimate)}`,
-      `Project notes and intake details: ${notes.join('\n---\n') || 'none saved'}`,
-      `Phase: ${phase.name}`,
-      `Phase status: ${phase.status}`,
-      `Phase steps and saved detail: ${phaseSteps.map(step => {
-        const detail = parseStepDetail(step.instructions)
-        return [
-          `${step.name} (${step.status})`,
-          detail.overview ? `overview: ${detail.overview}` : '',
-          detail.parts_materials.length ? `parts/materials: ${detail.parts_materials.join(', ')}` : '',
-          detail.tools.length ? `tools: ${detail.tools.join(', ')}` : '',
-          detail.warnings.length ? `warnings: ${detail.warnings.join(', ')}` : '',
-        ].filter(Boolean).join(' | ')
-      }).join('\n') || 'none'}`,
-      'Walt should act like a real phase coach for this exact vehicle and project. Explain what this phase is about, why it matters, how the steps fit together, what to prepare, likely tools/parts, safety cautions, sequencing tips, and how the user will know they are ready to move on. Use vehicle engine/transmission/drivetrain/notes when relevant. Do not give a shallow one-line summary unless the user asks for that.',
-    ].join('\n'))
-    setWaltOpeningLine(`Let's look at ${phase.name}. I’ll give you the shape of it before you start turning bolts.`)
-    setWaltScreen(`project-phase-${phase.id}`)
-    setWaltPhaseId(phase.id)
-    setWaltOpen(true)
-  }
-
   const openProjectWalt = () => {
     if (isDraft) {
       openDraftWalt()
       return
     }
+
+    const activeStepDetail = activeStep ? parseStepDetail(activeStep.instructions) : null
 
     setWaltContext([
       `Screen: Project plan coach`,
@@ -512,12 +538,99 @@ export default function ProjectPlanPage() {
         return `${phase.name} (${phase.status}, ${phaseSteps.length} steps)`
       }).join('; ') || 'none'}`,
       `Up next: ${upNext?.name || 'none'}`,
-      'Walt should help the user understand the whole project plan, choose where to start, and explain the practical order of work with useful mechanical context.',
-    ].join('\n'))
-    setWaltOpeningLine(`I’m here with the full plan for ${project.name}. Ask me where to start or what any phase means.`)
-    setWaltScreen(`project-plan-${project.id}`)
-    setWaltPhaseId(undefined)
+      activePhase ? `Current phase: ${activePhase.name}` : '',
+      activeStep ? `Current step: ${activeStep.name} (${activeStep.status})` : '',
+      activeStepDetail?.overview ? `Current step overview: ${activeStepDetail.overview}` : '',
+      activeStepDetail?.instructions ? `Current step instructions: ${activeStepDetail.instructions}` : '',
+      activeStepDetail?.parts_materials.length ? `Current step parts/materials: ${activeStepDetail.parts_materials.join(', ')}` : '',
+      activeStepDetail?.tools.length ? `Current step tools: ${activeStepDetail.tools.join(', ')}` : '',
+      activeStepDetail?.warnings.length ? `Current step warnings: ${activeStepDetail.warnings.join(', ')}` : '',
+      activeStep
+        ? 'Walt should focus on the current expanded step while still using the full vehicle and project context. Give practical, specific help for this exact step.'
+        : 'Walt should help the user understand the whole project plan, choose where to start, and explain the practical order of work with useful mechanical context.',
+    ].filter(Boolean).join('\n'))
+    setWaltOpeningLine(activeStep
+      ? `I’m with you on ${activeStep.name}. Ask me what to do, what to watch for, or what parts and tools you need.`
+      : `I’m here with the full plan for ${project.name}. Ask me where to start or what any phase means.`
+    )
+    setWaltScreen(activeStep ? `project-step-${activeStep.id}` : `project-plan-${project.id}`)
+    setWaltPhaseId(activePhase?.id)
+    setWaltStepId(activeStep?.id)
     setWaltOpen(true)
+  }
+
+  const toggleStep = (step: Step) => {
+    setExpandedStepIds(prev => prev.includes(step.id) ? prev.filter(id => id !== step.id) : [...prev, step.id])
+    setActiveStepId(step.id)
+  }
+
+  const completeStep = async (step: Step) => {
+    if (step.status === 'complete' || completingStepIds.includes(step.id)) return
+    setProjectError('')
+    setCompletingStepIds(prev => [...prev, step.id])
+
+    const { error } = await supabase
+      .from('steps')
+      .update({ status: 'complete' })
+      .eq('id', step.id)
+
+    if (error) {
+      setProjectError('Could not mark that step complete yet. Please try again.')
+      setCompletingStepIds(prev => prev.filter(id => id !== step.id))
+      return
+    }
+
+    setSteps(prev => prev.map(item => item.id === step.id ? { ...item, status: 'complete' } : item))
+    setExpandedStepIds(prev => prev.filter(id => id !== step.id))
+    setActiveStepId(prev => prev === step.id ? null : prev)
+    setCompletingStepIds(prev => prev.filter(id => id !== step.id))
+
+    const remainingIncompleteSteps = steps.filter(item => item.id !== step.id && item.status !== 'complete')
+    if (remainingIncompleteSteps.length === 0 && project.status !== 'complete') {
+      setConfirmProjectComplete(true)
+    }
+  }
+
+  const completeProject = async () => {
+    setProjectError('')
+    setCompletingProject(true)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      window.location.replace('/login')
+      return
+    }
+
+    const { error: projectUpdateError } = await supabase
+      .from('projects')
+      .update({ status: 'complete' })
+      .eq('id', project.id)
+      .eq('user_id', user.id)
+
+    if (projectUpdateError) {
+      setProjectError('Could not complete that project yet. Please try again.')
+      setCompletingProject(false)
+      return
+    }
+
+    await supabase
+      .from('phases')
+      .update({ status: 'complete' })
+      .eq('project_id', project.id)
+      .eq('user_id', user.id)
+
+    await supabase.from('notes').insert({
+      project_id: project.id,
+      user_id: user.id,
+      content: `Completed ${project.name} for ${getVehicleName(project.vehicle)}.`,
+      author: 'walt',
+    })
+
+    setProject({ ...project, status: 'complete' })
+    setPhases(prev => prev.map(phase => ({ ...phase, status: 'complete' })))
+    setNotesCount(prev => prev + 1)
+    setConfirmProjectComplete(false)
+    setCompletingProject(false)
   }
 
   return (
@@ -546,20 +659,46 @@ export default function ProjectPlanPage() {
             ) : (
               <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--light-blue)', fontSize: '2rem' }}>🔧</div>
             )}
-            {!isDraft && (
-              <button onClick={() => window.location.href = `/projects?project=${project.id}`}
-                style={{ position: 'absolute', top: 10, right: 10, background: 'white', border: '1.5px solid var(--light-blue)', color: 'var(--light-blue)', borderRadius: 20, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: 'pointer' }}>
-                Edit Project
-              </button>
-            )}
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '42px 14px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.65))' }}>
-              <p style={{ color: 'white', fontWeight: 900, fontSize: '1.08rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)', lineHeight: 1.15 }}>{getVehicleName(project.vehicle)}</p>
-              <p style={{ color: 'rgba(255,255,255,0.88)', fontSize: '0.72rem', fontWeight: 800, marginTop: 3 }}>{project.name}</p>
-              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.62rem', letterSpacing: 1.2, textTransform: 'uppercase', marginTop: 2 }}>
-                {project.goal_type}{isDraft ? ' • Draft' : ''}
-              </p>
-            </div>
           </div>
+
+          {!isDraft && (
+            <div style={{ background: 'var(--dark-blue)', color: 'white', borderRadius: 14, padding: '13px 14px', marginBottom: 12, display: 'flex', alignItems: renamingProjectName ? 'stretch' : 'center', gap: 12, boxShadow: '0 3px 12px rgba(36,80,122,0.14)' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: '0.78rem', fontWeight: 800, marginBottom: 3, lineHeight: 1.25 }}>{getVehicleName(project.vehicle)}</p>
+                {renamingProjectName ? (
+                  <input
+                    value={projectNameDraft}
+                    onChange={event => setProjectNameDraft(event.target.value)}
+                    maxLength={80}
+                    style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid rgba(255,255,255,0.55)', borderRadius: 10, padding: '9px 10px', fontSize: 16, fontFamily: 'var(--font-nunito)', color: 'white', background: 'rgba(255,255,255,0.12)', outline: 'none', fontWeight: 900 }}
+                  />
+                ) : (
+                  <p style={{ fontSize: '1rem', fontWeight: 900, lineHeight: 1.18, margin: 0 }}>
+                    {project.name}
+                    <span style={{ color: 'rgba(255,255,255,0.65)', fontWeight: 800 }}> - </span>
+                    <span style={{ color: 'var(--orange)' }}>{project.goal_type}</span>
+                  </p>
+                )}
+              </div>
+              {renamingProjectName ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                  <button onClick={saveProjectName} disabled={savingProjectName}
+                    style={{ minHeight: 32, padding: '0 12px', borderRadius: 16, border: 'none', background: savingProjectName ? '#d4e0eb' : 'var(--orange)', color: 'white', fontSize: '0.72rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: savingProjectName ? 'not-allowed' : 'pointer' }}>
+                    {savingProjectName ? 'Saving...' : 'Save'}
+                  </button>
+                  <button onClick={() => { setProjectNameDraft(project.name); setRenamingProjectName(false); setProjectError('') }} disabled={savingProjectName}
+                    style={{ minHeight: 32, padding: '0 12px', borderRadius: 16, border: '1.5px solid rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.12)', color: 'white', fontSize: '0.72rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: savingProjectName ? 'not-allowed' : 'pointer' }}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => { setProjectNameDraft(project.name); setRenamingProjectName(true); setProjectError('') }}
+                  style={{ minHeight: 34, padding: '0 12px', borderRadius: 17, border: '1.5px solid rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.12)', color: 'white', fontSize: '0.74rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: 'pointer', flexShrink: 0 }}>
+                  Edit Name
+                </button>
+              )}
+            </div>
+          )}
 
           {projectError && (
             <div style={{ background: '#fff1e6', border: '1.5px solid var(--orange)', borderRadius: 12, padding: '10px 12px', marginBottom: 12 }}>
@@ -579,31 +718,43 @@ export default function ProjectPlanPage() {
             </div>
           )}
 
+          {isCompleteProject && (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#edf8f2', border: '1.5px solid #b8e4c8', borderRadius: 14, padding: '12px 14px', marginBottom: 12 }}>
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#2f9e62', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 900, flexShrink: 0 }}>✓</div>
+              <div style={{ flex: 1 }}>
+                <p style={{ color: 'var(--dark-blue)', fontSize: '0.9rem', fontWeight: 900, margin: 0 }}>Project complete</p>
+                <p style={{ color: 'var(--secondary-text)', fontSize: '0.78rem', lineHeight: 1.45, margin: '2px 0 0' }}>
+                  This project is saved to {getVehicleName(project.vehicle)} history. You can still review the plan and ask Walt about what was done.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {allStepsComplete && !isCompleteProject && !isDraft && (
+            <div style={{ background: '#fff1e6', border: '1.5px solid #f4c08b', borderRadius: 14, padding: '12px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ color: 'var(--dark-blue)', fontSize: '0.9rem', fontWeight: 900, margin: 0 }}>All steps are checked off</p>
+                <p style={{ color: 'var(--secondary-text)', fontSize: '0.76rem', lineHeight: 1.4, margin: '2px 0 0' }}>Complete the project when you are ready to save it to vehicle history.</p>
+              </div>
+              <button onClick={() => setConfirmProjectComplete(true)}
+                style={{ minHeight: 36, padding: '0 12px', borderRadius: 18, border: 'none', background: 'var(--orange)', color: 'white', fontSize: '0.76rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: 'pointer', flexShrink: 0 }}>
+                Complete
+              </button>
+            </div>
+          )}
+
           {!isDraft && (
             <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-              {[
-                { label: 'My Plan', value: `${completedPhases}/${phases.length}` },
-                { label: "Walt's Notes", value: String(notesCount) },
-                { label: 'Budget', value: `${formatMoney(project.budget_actual || 0)} / ${formatMoney(project.budget_estimate)}` },
-                { label: 'Up Next', value: upNext ? '1' : '0' },
-              ].map(stat => (
+                {[
+                  { label: 'My Plan', value: `${completedPhases}/${phases.length}` },
+                  { label: "Walt's Notes", value: String(notesCount) },
+                  { label: 'Budget', value: `${formatMoney(project.budget_actual || 0)} / ${formatMoney(project.budget_estimate)}` },
+                ].map(stat => (
                 <div key={stat.label} style={{ flex: 1, background: 'white', borderRadius: 12, padding: '8px 4px', textAlign: 'center', border: '1.5px solid var(--border)', minWidth: 0 }}>
                   <p style={{ fontSize: stat.label === 'Budget' ? '0.68rem' : '0.95rem', fontWeight: 900, color: 'var(--dark-blue)', lineHeight: 1.1 }}>{stat.value}</p>
                   <p style={{ fontSize: '0.5rem', color: 'var(--secondary-text)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.35, marginTop: 3 }}>{stat.label}</p>
                 </div>
               ))}
-            </div>
-          )}
-
-          {upNext && (
-            <div onClick={() => window.location.href = `/projects/${project.id}/steps/${upNext.id}`}
-              style={{ background: 'var(--dark-blue)', color: 'white', borderRadius: 14, padding: '12px 14px', marginBottom: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <img src={WALT} alt="Walt" style={{ width: 30, height: 30, borderRadius: '50%', border: '1.5px solid var(--orange)', flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.72)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 800 }}>Up Next</p>
-                <p style={{ fontSize: '0.88rem', fontWeight: 800, lineHeight: 1.25 }}>{upNext.name}</p>
-              </div>
-              <span style={{ fontSize: '1.1rem', color: 'var(--light-blue)' }}>›</span>
             </div>
           )}
 
@@ -681,7 +832,7 @@ export default function ProjectPlanPage() {
             </div>
           ) : (
             <>
-              <p style={{ fontSize: '1.05rem', color: 'var(--dark-blue)', fontWeight: 900, marginBottom: 8 }}>Phases</p>
+              <p style={{ fontSize: '1.05rem', color: 'var(--dark-blue)', fontWeight: 900, marginBottom: 8 }}>Project Plan</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {phases.map((phase, phaseIndex) => {
                   const phaseSteps = stepsByPhase[phase.id] || []
@@ -702,29 +853,75 @@ export default function ProjectPlanPage() {
                           {phase.status === 'in_progress' ? 'Ready to start' : 'Upcoming'} • {completeCount}/{phaseSteps.length} steps • {formatMoney(phase.cost_estimate)}
                         </p>
                       </div>
-                      <button onClick={() => openPhaseWalt(phase)}
-                        style={{ width: 34, height: 34, borderRadius: '50%', border: '2px solid var(--orange)', overflow: 'hidden', padding: 0, background: 'white', cursor: 'pointer', flexShrink: 0 }}>
-                        <img src={WALT} alt="Ask Walt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </button>
                     </div>
 
                     {isExpanded && (
                       <div style={{ padding: '0 14px 12px', borderTop: '1px solid var(--border)' }}>
-                        {phaseSteps.map((step, stepIndex) => (
-                          <div key={step.id} onClick={() => window.location.href = `/projects/${project.id}/steps/${step.id}`}
-                            style={{ padding: '12px 0', borderBottom: stepIndex === phaseSteps.length - 1 ? 'none' : '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
-                            <div style={{ width: 24, height: 24, borderRadius: '50%', border: '1.5px solid var(--border)', color: step.status === 'complete' ? 'var(--light-blue)' : 'var(--secondary-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 900, flexShrink: 0 }}>
-                              {step.status === 'complete' ? '✓' : stepIndex + 1}
+                        {phaseSteps.map((step, stepIndex) => {
+                          const stepDetail = parseStepDetail(step.instructions)
+                          const isStepExpanded = expandedStepIds.includes(step.id)
+                          const isNextStep = upNext?.id === step.id
+                          const isCompleting = completingStepIds.includes(step.id)
+                          const detailSections = [
+                            { label: 'Description', content: [stepDetail.overview, stepDetail.instructions].filter(Boolean) },
+                            { label: 'Parts & Materials', content: stepDetail.parts_materials },
+                            { label: 'Tools', content: stepDetail.tools },
+                            { label: 'Tips & Warnings', content: [...stepDetail.tips, ...stepDetail.warnings] },
+                            { label: 'References', content: stepDetail.reference_notes },
+                            { label: 'Notes', content: stepDetail.notes },
+                          ].filter(section => section.content.length > 0)
+
+                          return (
+                            <div key={step.id} style={{ padding: '10px 0', borderBottom: stepIndex === phaseSteps.length - 1 ? 'none' : '1px solid var(--border)' }}>
+                              <button onClick={() => toggleStep(step)}
+                                style={{ width: '100%', border: isNextStep ? '1.5px solid var(--orange)' : '1.5px solid transparent', background: isStepExpanded ? '#f8fbfd' : 'white', borderRadius: 12, padding: '10px', display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontFamily: 'var(--font-nunito)', textAlign: 'left' }}>
+                                <div style={{ width: 26, height: 26, borderRadius: '50%', border: step.status === 'complete' ? 'none' : '1.5px solid var(--border)', background: step.status === 'complete' ? 'var(--light-blue)' : 'white', color: step.status === 'complete' ? 'white' : 'var(--secondary-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 900, flexShrink: 0 }}>
+                                  {step.status === 'complete' ? '✓' : stepIndex + 1}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                    <p style={{ color: 'var(--dark-blue)', fontWeight: 900, fontSize: '0.88rem', lineHeight: 1.3, margin: 0 }}>{step.name}</p>
+                                    {isNextStep && (
+                                      <span style={{ background: '#fff1e6', color: 'var(--orange)', borderRadius: 12, padding: '2px 7px', fontSize: '0.58rem', fontWeight: 900, letterSpacing: 0.6, textTransform: 'uppercase' }}>Next Up</span>
+                                    )}
+                                  </div>
+                                  {step.status === 'complete' && (
+                                    <p style={{ color: 'var(--light-blue)', fontSize: '0.68rem', fontWeight: 900, marginTop: 3 }}>Complete</p>
+                                  )}
+                                </div>
+                                <span style={{ color: 'var(--light-blue)', fontSize: '1rem', paddingTop: 2 }}>{isStepExpanded ? '−' : '+'}</span>
+                              </button>
+
+                              {isStepExpanded && (
+                                <div style={{ padding: '10px 10px 2px 46px' }}>
+                                  {detailSections.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                      {detailSections.map(section => (
+                                        <details key={section.label} open={section.label === 'Description'} style={{ border: '1.5px solid var(--border)', borderRadius: 10, background: 'white', padding: '0' }}>
+                                          <summary style={{ color: 'var(--dark-blue)', fontSize: '0.76rem', fontWeight: 900, cursor: 'pointer', listStyle: 'none', display: 'block', padding: '9px 10px', textAlign: 'left' }}>
+                                            <span>{section.label}</span>
+                                          </summary>
+                                          <div style={{ padding: '0 10px 10px', color: 'var(--secondary-text)', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                                            {section.content.map((item, itemIndex) => (
+                                              <p key={`${section.label}-${itemIndex}`} style={{ margin: itemIndex === 0 ? 0 : '6px 0 0' }}>{item}</p>
+                                            ))}
+                                          </div>
+                                        </details>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p style={{ color: 'var(--secondary-text)', fontSize: '0.78rem', lineHeight: 1.45, margin: 0 }}>Walt has not saved detailed instructions for this step yet.</p>
+                                  )}
+
+                                  <button onClick={() => completeStep(step)} disabled={step.status === 'complete' || isCompleting || isCompleteProject}
+                                    style={{ width: '100%', minHeight: 38, borderRadius: 19, border: 'none', background: step.status === 'complete' ? '#d8edf8' : 'var(--orange)', color: step.status === 'complete' ? 'var(--light-blue)' : 'white', fontSize: '0.8rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: step.status === 'complete' || isCompleting || isCompleteProject ? 'not-allowed' : 'pointer', marginTop: 10 }}>
+                                    {step.status === 'complete' ? 'Step Complete' : isCompleting ? 'Marking complete...' : 'Mark Step Complete'}
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                            <div style={{ flex: 1 }}>
-                              <p style={{ color: 'var(--dark-blue)', fontWeight: 800, fontSize: '0.88rem', lineHeight: 1.3 }}>{step.name}</p>
-                              <p style={{ color: 'var(--secondary-text)', fontSize: '0.68rem', marginTop: 3 }}>
-                                {step.difficulty || 'Moderate'} • {step.diy_or_shop || 'Either'}{step.estimated_hours ? ` • ${step.estimated_hours}h` : ''}
-                              </p>
-                            </div>
-                            <span style={{ color: 'var(--light-blue)', fontSize: '1rem', paddingTop: 2 }}>›</span>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     )}
                     </div>
@@ -758,15 +955,36 @@ export default function ProjectPlanPage() {
           </div>
         </div>
       )}
+      {confirmProjectComplete && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18 }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: '18px 16px', maxWidth: 360, width: '100%', boxShadow: '0 10px 40px rgba(0,0,0,0.22)' }}>
+            <p style={{ color: 'var(--dark-blue)', fontSize: '1rem', fontWeight: 900, marginBottom: 5 }}>All steps are complete.</p>
+            <p style={{ color: 'var(--secondary-text)', fontSize: '0.82rem', lineHeight: 1.45, marginBottom: 14 }}>
+              Mark {project.name} complete and save it to {getVehicleName(project.vehicle)} history?
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setConfirmProjectComplete(false)} disabled={completingProject}
+                style={{ minHeight: 38, padding: '0 14px', borderRadius: 19, border: '1.5px solid var(--border)', background: 'white', color: 'var(--dark-blue)', fontSize: '0.8rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: completingProject ? 'not-allowed' : 'pointer' }}>
+                Not Yet
+              </button>
+              <button onClick={completeProject} disabled={completingProject}
+                style={{ minHeight: 38, padding: '0 14px', borderRadius: 19, border: 'none', background: completingProject ? '#d4e0eb' : 'var(--orange)', color: 'white', fontSize: '0.8rem', fontWeight: 900, fontFamily: 'var(--font-nunito)', cursor: completingProject ? 'not-allowed' : 'pointer' }}>
+                {completingProject ? 'Saving...' : "Yes, It's Complete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <WaltPanel
         open={waltOpen}
         onClose={() => setWaltOpen(false)}
         context={waltContext}
         openingLine={waltOpeningLine}
-        speakOpeningOnOpen={waltScreen.startsWith('project-phase-')}
+        speakOpeningOnOpen={waltScreen.startsWith('project-step-')}
         vehicleId={project.vehicle?.id}
         projectId={project.id}
         phaseId={waltPhaseId}
+        stepId={waltStepId}
         screen={waltScreen}
       />
     </div>

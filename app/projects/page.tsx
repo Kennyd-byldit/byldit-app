@@ -88,7 +88,7 @@ function ProjectsContent() {
   const highlightedProjectId = searchParams.get('created') || searchParams.get('project') || ''
   const vehicleFilter = searchParams.get('vehicle') || ''
   const statusFilterParam = searchParams.get('status') || ''
-  const statusFilter = statusFilterParam === 'draft' || statusFilterParam === 'active' ? statusFilterParam : ''
+  const statusFilter = statusFilterParam === 'draft' || statusFilterParam === 'active' || statusFilterParam === 'complete' ? statusFilterParam : ''
 
   const [projects, setProjects] = useState<Project[]>([])
   const [filterVehicleName, setFilterVehicleName] = useState('')
@@ -132,7 +132,8 @@ function ProjectsContent() {
       if (vehicleFilter) query = query.eq('vehicle_id', vehicleFilter)
       if (statusFilter === 'draft') query = query.eq('status', 'draft')
       else if (statusFilter === 'active') query = query.in('status', ['active', 'paused'])
-      else query = query.in('status', ['draft', 'active', 'paused'])
+      else if (statusFilter === 'complete') query = query.eq('status', 'complete')
+      else query = query.in('status', ['draft', 'active', 'paused', 'complete'])
 
       const { data } = await query
 
@@ -155,6 +156,11 @@ function ProjectsContent() {
 
   const handleProjectAction = async (project: Project) => {
     if (project.status === 'draft') {
+      window.location.assign(`/projects/${project.id}`)
+      return
+    }
+
+    if (project.status === 'complete') {
       window.location.assign(`/projects/${project.id}`)
       return
     }
@@ -223,11 +229,15 @@ function ProjectsContent() {
     ? `${filterVehicleName} Drafts`
     : vehicleFilter && statusFilter === 'active'
       ? `${filterVehicleName} Active Projects`
-      : statusFilter === 'draft'
-        ? 'Open Drafts'
-        : statusFilter === 'active'
-          ? 'Active Projects'
-          : 'Projects'
+      : vehicleFilter && statusFilter === 'complete'
+        ? `${filterVehicleName} Completed Work`
+        : statusFilter === 'draft'
+          ? 'Open Drafts'
+          : statusFilter === 'active'
+            ? 'Active Projects'
+            : statusFilter === 'complete'
+              ? 'Completed Work'
+              : 'Projects'
   const subheading = isFiltered
     ? 'Filtered from your garage. Back out to see every vehicle project.'
     : 'Drafts and active projects live here. Garage stays focused on your vehicles.'
@@ -297,8 +307,9 @@ function ProjectsContent() {
                 const isConfirmingDelete = confirmDeleteProjectId === project.id
                 const isDeleting = deletingProjectId === project.id
                 const isDraft = project.status === 'draft'
-                const accentColor = isDraft ? 'var(--orange)' : 'var(--dark-blue)'
-                const accentBg = isDraft ? '#fff1e6' : '#eaf4fb'
+                const isComplete = project.status === 'complete'
+                const accentColor = isDraft ? 'var(--orange)' : isComplete ? '#2f9e62' : 'var(--dark-blue)'
+                const accentBg = isDraft ? '#fff1e6' : isComplete ? '#edf8f2' : '#eaf4fb'
 
                 return (
                   <div key={project.id}
@@ -335,7 +346,7 @@ function ProjectsContent() {
                           {project.goal_type}
                           </p>
                           <span style={{ background: accentBg, color: accentColor, borderRadius: 12, padding: '3px 7px', fontSize: '0.62rem', fontWeight: 900 }}>
-                            {isDraft ? 'Draft' : project.hasPlan ? 'Active' : 'Plan needed'}
+                            {isDraft ? 'Draft' : isComplete ? 'Complete' : project.hasPlan ? 'Active' : 'Plan needed'}
                           </span>
                         </div>
                       </div>
@@ -344,14 +355,14 @@ function ProjectsContent() {
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '0.7rem', color: 'var(--secondary-text)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7 }}>Status</p>
                         <p style={{ fontSize: '0.82rem', color: 'var(--dark-blue)', fontWeight: 800 }}>
-                          {isDraft ? 'Draft with Walt' : project.hasPlan ? 'Active Project' : 'Needs Project Plan'}
+                          {isDraft ? 'Draft with Walt' : isComplete ? 'Completed Project' : project.hasPlan ? 'Active Project' : 'Needs Project Plan'}
                         </p>
                       </div>
                       <button onClick={() => handleProjectAction(project)} disabled={generatingProjectId === project.id}
                         style={{ minHeight: 40, padding: '0 16px', borderRadius: 20, border: 'none', background: generatingProjectId === project.id ? '#d4e0eb' : accentColor, color: 'white', fontSize: '0.82rem', fontWeight: 800, fontFamily: 'var(--font-nunito)', cursor: generatingProjectId === project.id ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
                         {generatingProjectId === project.id
                           ? 'Creating...'
-                          : isDraft ? 'Open Draft' : project.hasPlan ? 'Open Project' : 'Create Project Plan'}
+                          : isDraft ? 'Open Draft' : isComplete ? 'View Project' : project.hasPlan ? 'Open Project' : 'Create Project Plan'}
                       </button>
                     </div>
                     {isConfirmingDelete ? (
@@ -403,8 +414,8 @@ function ProjectsContent() {
         onClose={() => setWaltOpen(false)}
         context={[
           'Screen: Projects list',
-          `Projects: ${projects.map(project => `${project.name} for ${getVehicleName(project.vehicle)} (${project.goal_type}, ${project.status === 'draft' ? 'draft' : project.hasPlan ? 'plan ready' : 'needs project plan'})`).join('; ') || 'none'}`,
-          'Walt should help the user understand which projects are drafts, which have plans, which need project plan generation, and what to open or create next.',
+          `Projects: ${projects.map(project => `${project.name} for ${getVehicleName(project.vehicle)} (${project.goal_type}, ${project.status === 'draft' ? 'draft' : project.status === 'complete' ? 'complete' : project.hasPlan ? 'plan ready' : 'needs project plan'})`).join('; ') || 'none'}`,
+          'Walt should help the user understand which projects are drafts, active, completed, which need project plan generation, and what to open or create next.',
         ].join('\n')}
         openingLine="I’m here with your Projects list. Tell me what you’re trying to sort out."
         screen="projects"

@@ -78,7 +78,7 @@ export default function GaragePage() {
       const [{ data: profile }, { data: vehicleData }, { data: projects }] = await Promise.all([
         supabase.from('profiles').select('name').eq('id', user.id).single(),
         supabase.from('vehicles').select('id, nickname, year, make, model, trim, is_primary, color, engine, transmission, drivetrain, fuel_type, mileage, condition, cover_photo_url').eq('user_id', user.id).order('is_primary', { ascending: false }),
-        supabase.from('projects').select('id, vehicle_id, name, goal_type, status').eq('user_id', user.id).in('status', ['draft', 'active', 'paused']).order('created_at', { ascending: false }),
+        supabase.from('projects').select('id, vehicle_id, name, goal_type, status').eq('user_id', user.id).in('status', ['draft', 'active', 'paused', 'complete']).order('created_at', { ascending: false }),
       ])
 
       setUserName(profile?.name || user.email?.split('@')[0] || 'there')
@@ -120,24 +120,21 @@ export default function GaragePage() {
   )
 
   const primaryVehicle = vehicles.find(v => v.is_primary) || vehicles[0]
-  const activeProjects = vehicleProjects.filter(project => project.status !== 'draft')
+  const activeProjects = vehicleProjects.filter(project => project.status !== 'draft' && project.status !== 'complete')
   const draftProjects = vehicleProjects.filter(project => project.status === 'draft')
+  const completedProjects = vehicleProjects.filter(project => project.status === 'complete')
   const hasVehicleActivity = vehicleProjects.length > 0
   const getVehicleActiveProjects = (vehicleId: string) => activeProjects.filter(project => project.vehicle_id === vehicleId)
   const getVehicleDrafts = (vehicleId: string) => draftProjects.filter(project => project.vehicle_id === vehicleId)
+  const getVehicleCompletedProjects = (vehicleId: string) => completedProjects.filter(project => project.vehicle_id === vehicleId)
   const getVehicleActiveProject = (vehicleId: string) => getVehicleActiveProjects(vehicleId)[0]
   const getVehicleDraft = (vehicleId: string) => getVehicleDrafts(vehicleId)[0]
-  const openVehicleActivity = (vehicleId: string, status: 'draft' | 'active', projects: Project[]) => {
-    if (projects.length === 1) {
-      window.location.assign(`/projects/${projects[0].id}`)
-      return
-    }
-
+  const getVehicleCompletedProject = (vehicleId: string) => getVehicleCompletedProjects(vehicleId)[0]
+  const openVehicleActivity = (vehicleId: string, status: 'draft' | 'active' | 'complete') => {
     window.location.assign(`/projects?vehicle=${vehicleId}&status=${status}`)
   }
-  const activityLabel = (project: Project, suffix: string) => {
-    const cleanName = project.name.replace(/\s+(draft|project)$/i, '').trim()
-    return `${cleanName || project.goal_type} ${suffix}`
+  const activityCountLabel = (count: number, singular: string, plural: string) => {
+    return `${count} ${count === 1 ? singular : plural}`
   }
 
   return (
@@ -198,13 +195,16 @@ export default function GaragePage() {
               {/* 1. Hero Photo Card */}
               <div style={{ height: 160, marginBottom: 8, borderRadius: 16, overflow: 'hidden', position: 'relative', boxShadow: '0 6px 20px rgba(36,80,122,0.12)', background: 'var(--border)' }}>
                 <img src={primaryVehicle && getVehiclePhoto(primaryVehicle) ? getVehiclePhoto(primaryVehicle)! : "/photos/f250-hiboy-68.jpg"} alt={primaryVehicle?.nickname || "My Vehicle"} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 35%" }} />
-                {primaryVehicle && (getVehicleActiveProject(primaryVehicle.id) || getVehicleDraft(primaryVehicle.id)) && (
+                {primaryVehicle && (getVehicleActiveProject(primaryVehicle.id) || getVehicleDraft(primaryVehicle.id) || getVehicleCompletedProject(primaryVehicle.id)) && (
                   <div style={{ position: 'absolute', top: 8, right: 10, display: 'flex', gap: 5 }}>
                     {getVehicleActiveProject(primaryVehicle.id) && (
                       <div style={{ background: 'var(--dark-blue)', color: 'white', fontSize: '0.6rem', fontWeight: 800, padding: '3px 8px', borderRadius: 20 }}>ACTIVE</div>
                     )}
                     {getVehicleDraft(primaryVehicle.id) && (
                       <div style={{ background: 'var(--orange)', color: 'white', fontSize: '0.6rem', fontWeight: 800, padding: '3px 8px', borderRadius: 20 }}>DRAFT</div>
+                    )}
+                    {getVehicleCompletedProject(primaryVehicle.id) && (
+                      <div style={{ background: '#2f9e62', color: 'white', fontSize: '0.6rem', fontWeight: 800, padding: '3px 8px', borderRadius: 20 }}>DONE</div>
                     )}
                   </div>
                 )}
@@ -240,7 +240,7 @@ export default function GaragePage() {
                     style={{ flex: 1, background: 'white', border: '1.5px solid var(--light-blue)', borderRadius: 25, padding: '12px 10px', textAlign: 'center', cursor: 'pointer', minHeight: 58, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <p style={{ color: 'var(--light-blue)', fontWeight: 800, fontSize: '0.9rem' }}>See Projects</p>
                     <p style={{ color: 'var(--secondary-text)', fontSize: '0.66rem', marginTop: 2 }}>
-                      {activeProjects.length} active{draftProjects.length ? `, ${draftProjects.length} draft${draftProjects.length === 1 ? '' : 's'}` : ''}
+                      {activeProjects.length} active{draftProjects.length ? `, ${draftProjects.length} draft${draftProjects.length === 1 ? '' : 's'}` : ''}{completedProjects.length ? `, ${completedProjects.length} complete` : ''}
                     </p>
                   </div>
                 )}
@@ -251,14 +251,13 @@ export default function GaragePage() {
                 {vehicles.map(v => {
                   const vehicleActiveProjects = getVehicleActiveProjects(v.id)
                   const vehicleDrafts = getVehicleDrafts(v.id)
+                  const vehicleCompletedProjects = getVehicleCompletedProjects(v.id)
                   const activeProject = vehicleActiveProjects[0]
                   const draftProject = vehicleDrafts[0]
-                  const activeLabel = vehicleActiveProjects.length === 1 && activeProject
-                    ? activityLabel(activeProject, 'Project')
-                    : vehicleActiveProjects.length > 1 ? `${vehicleActiveProjects.length} Active Projects` : ''
-                  const draftLabel = vehicleDrafts.length === 1 && draftProject
-                    ? activityLabel(draftProject, 'Draft')
-                    : vehicleDrafts.length > 1 ? `${vehicleDrafts.length} Open Drafts` : ''
+                  const completedProject = vehicleCompletedProjects[0]
+                  const activeLabel = activityCountLabel(vehicleActiveProjects.length, 'Open Project', 'Open Projects')
+                  const draftLabel = activityCountLabel(vehicleDrafts.length, 'Draft Project', 'Draft Projects')
+                  const completedLabel = activityCountLabel(vehicleCompletedProjects.length, 'Completed Project', 'Completed Projects')
                   return (
                   <div
                     key={v.id}
@@ -324,18 +323,24 @@ export default function GaragePage() {
                           <span style={{ fontSize: "0.72rem", color: "var(--secondary-text)", fontStyle: "italic" }}>&quot;The more I know, the more I can help.&quot;</span>
                         </div>
                       )}
-                      {(activeProject || draftProject) && (
-                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      {(activeProject || draftProject || completedProject) && (
+                        <div style={{ display: 'flex', gap: 7, marginTop: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                           {activeProject && (
-                            <button onClick={(e) => { e.stopPropagation(); openVehicleActivity(v.id, 'active', vehicleActiveProjects) }}
-                              style={{ flex: 1, minHeight: 38, borderRadius: 20, border: 'none', background: 'var(--dark-blue)', color: 'white', fontFamily: 'var(--font-nunito)', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', minWidth: 0, padding: '0 8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {activeLabel} →
+                            <button onClick={(e) => { e.stopPropagation(); openVehicleActivity(v.id, 'active') }}
+                              style={{ minWidth: 132, minHeight: 32, borderRadius: 16, border: 'none', background: 'var(--dark-blue)', color: 'white', fontFamily: 'var(--font-nunito)', fontSize: '0.72rem', fontWeight: 900, cursor: 'pointer', padding: '0 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {activeLabel}
                             </button>
                           )}
                           {draftProject && (
-                            <button onClick={(e) => { e.stopPropagation(); openVehicleActivity(v.id, 'draft', vehicleDrafts) }}
-                              style={{ flex: 1, minHeight: 38, borderRadius: 20, border: 'none', background: 'var(--orange)', color: 'white', fontFamily: 'var(--font-nunito)', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', minWidth: 0, padding: '0 8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {draftLabel} →
+                            <button onClick={(e) => { e.stopPropagation(); openVehicleActivity(v.id, 'draft') }}
+                              style={{ minWidth: 132, minHeight: 32, borderRadius: 16, border: 'none', background: 'var(--orange)', color: 'white', fontFamily: 'var(--font-nunito)', fontSize: '0.72rem', fontWeight: 900, cursor: 'pointer', padding: '0 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {draftLabel}
+                            </button>
+                          )}
+                          {completedProject && (
+                            <button onClick={(e) => { e.stopPropagation(); openVehicleActivity(v.id, 'complete') }}
+                              style={{ minWidth: 132, minHeight: 32, borderRadius: 16, border: 'none', background: '#2f9e62', color: 'white', fontFamily: 'var(--font-nunito)', fontSize: '0.72rem', fontWeight: 900, cursor: 'pointer', padding: '0 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {completedLabel}
                             </button>
                           )}
                         </div>
