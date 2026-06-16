@@ -1,0 +1,563 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Montserrat:wght@400;500;600;700;800;900&display=swap');
+
+.mobilePrototypePage {
+  --mp-blue: #24507a;
+  --mp-blue-dark: #173b5d;
+  --mp-blue-pale: #edf5fb;
+  --mp-orange: #e8750a;
+  --mp-orange-soft: #fff1e2;
+  --mp-line: #d7e5ef;
+  --mp-muted: #668ca8;
+  --mp-text: #163653;
+  align-items: center;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(77, 168, 218, 0.18), transparent 26%),
+    linear-gradient(135deg, #eaf2f8 0%, #f7fbfe 48%, #e2edf5 100%);
+  color: var(--mp-text);
+  display: grid;
+  font-family: 'Montserrat', sans-serif;
+  gap: 34px;
+  grid-template-columns: auto minmax(280px, 420px);
+  justify-content: center;
+  min-height: 100vh;
+  padding: 34px;
+}
+
+.mobilePrototypePage *,
+.mobilePrototypePage *::before,
+.mobilePrototypePage *::after {
+  box-sizing: border-box;
+}
+
+.mobilePrototypePage button,
+.mobilePrototypePage input {
+  font-family: inherit;
+}
+
+.mobilePrototypePage button {
+  cursor: pointer;
+}
+
+.phoneShell {
+  background: var(--mp-blue-dark);
+  border: 8px solid var(--mp-blue-dark);
+  border-radius: 42px;
+  box-shadow: 0 30px 80px rgba(22, 54, 83, 0.28);
+  display: flex;
+  flex-direction: column;
+  height: 812px;
+  overflow: hidden;
+  width: 390px;
+}
+
+.phoneStatusBar {
+  align-items: center;
+  background: white;
+  color: var(--mp-blue);
+  display: flex;
+  font-size: 0.7rem;
+  font-weight: 900;
+  justify-content: space-between;
+  padding: 10px 22px 7px;
+}
+
+.mobileTopBar {
+  align-items: center;
+  background: white;
+  border-bottom: 1px solid var(--mp-line);
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+}
+
+.mobileLogo {
+  align-items: baseline;
+  background: rgba(255, 255, 255, 0.82);
+  border: 2px solid #4da8da;
+  border-radius: 8px;
+  display: inline-flex;
+  padding: 6px 12px 5px;
+}
+
+.mobileLogo span {
+  color: var(--mp-blue);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  line-height: 1;
+}
+
+.mobileLogo strong {
+  color: #4da8da;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+  margin-left: 1px;
+}
+
+.mobileTopBar .mobileProfileButton {
+  align-items: center;
+  background: var(--mp-blue);
+  border: 0;
+  border-radius: 50%;
+  color: white;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 900;
+  height: 36px;
+  justify-content: center;
+  padding: 0;
+  width: 36px;
+}
+
+.mobileContextCard {
+  align-items: center;
+  background: white;
+  border-bottom: 1px solid var(--mp-line);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.mobileContextCard p,
+.mobileSectionHeader p,
+.mobileWorkbenchCard p {
+  color: var(--mp-orange);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 1.6px;
+  margin: 0 0 5px;
+  text-transform: uppercase;
+}
+
+.mobileContextCard h1 {
+  color: var(--mp-blue);
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.15;
+  margin: 0 0 4px;
+}
+
+.mobileContextCard span {
+  color: var(--mp-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.mobileContextCard img {
+  border: 3px solid var(--mp-orange);
+  border-radius: 50%;
+  height: 54px;
+  object-fit: cover;
+  width: 54px;
+}
+
+.mobileScreen {
+  background: #f7fbfe;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mobileViewPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.mobileSectionHeader h2 {
+  color: var(--mp-blue);
+  font-size: 1.24rem;
+  font-weight: 900;
+  margin: 0;
+}
+
+.mobileVehicleStack {
+  display: grid;
+  gap: 12px;
+}
+
+.mobileVehicleCard {
+  background: white;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(36, 80, 122, 0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+.mobileVehicleCard.selected {
+  border-color: rgba(232, 117, 10, 0.7);
+}
+
+.mobileVehicleButton {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: block;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.mobileVehicleButton img {
+  display: block;
+  height: 112px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.mobileVehicleBody {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 11px 12px;
+}
+
+.mobileVehicleInfo {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.mobileVehicleInfo span {
+  display: block;
+}
+
+.mobileVehicleEdit {
+  background: white;
+  border: 1px solid var(--mp-line);
+  border-radius: 999px;
+  color: var(--mp-blue);
+  font-size: 0.58rem;
+  font-weight: 900;
+  min-height: 25px;
+  padding: 0 10px;
+}
+
+.mobileVehicleEdit:hover,
+.mobileVehicleEdit:focus-visible {
+  background: var(--mp-orange);
+  border-color: var(--mp-orange);
+  color: white;
+}
+
+.mobileVehicleCard h3 {
+  color: var(--mp-blue);
+  font-size: 0.9rem;
+  font-weight: 900;
+  margin: 0 0 3px;
+}
+
+.mobileVehicleCard p {
+  color: var(--mp-muted);
+  display: block;
+  font-size: 0.64rem;
+  font-weight: 750;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.mobileBucketGrid {
+  border-top: 1px solid var(--mp-line);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 10px;
+}
+
+.mobileAddVehicleButton {
+  background: white;
+  border: 2px solid var(--mp-line);
+  border-radius: 14px;
+  color: var(--mp-blue);
+  font-size: 0.74rem;
+  font-weight: 900;
+  min-height: 42px;
+}
+
+.mobileBucketGrid button,
+.mobileWorkbenchTabs button,
+.mobilePromptChips button {
+  background: var(--mp-blue-pale);
+  border: 1px solid var(--mp-line);
+  border-radius: 10px;
+  color: var(--mp-blue);
+  font-size: 0.68rem;
+  font-weight: 900;
+  min-height: 34px;
+}
+
+.mobileBucketGrid button:nth-child(2) {
+  background: var(--mp-orange);
+  border-color: var(--mp-orange);
+  color: white;
+}
+
+.mobileWaltView {
+  background:
+    linear-gradient(rgba(247, 251, 254, 0.94), rgba(247, 251, 254, 0.94)),
+    url('/line-art/camaro-side.svg') center 70% / 130% auto no-repeat;
+}
+
+.mobileChatBubble {
+  align-items: flex-start;
+  display: grid;
+  gap: 9px;
+  max-width: 88%;
+}
+
+.mobileChatBubble.walt {
+  grid-template-columns: 34px minmax(0, 1fr);
+}
+
+.mobileChatBubble.user {
+  align-self: flex-end;
+}
+
+.mobileChatBubble img {
+  border: 2px solid var(--mp-orange);
+  border-radius: 50%;
+  height: 34px;
+  object-fit: cover;
+  width: 34px;
+}
+
+.mobileChatBubble p {
+  background: white;
+  border: 1px solid rgba(232, 117, 10, 0.25);
+  border-radius: 14px;
+  color: var(--mp-text);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.55;
+  margin: 0;
+  padding: 11px 12px;
+}
+
+.mobileChatBubble.user p {
+  background: var(--mp-blue);
+  color: white;
+}
+
+.mobilePromptChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.mobilePromptChips button {
+  min-height: 32px;
+  padding: 0 11px;
+}
+
+.mobileComposer {
+  align-items: center;
+  background: white;
+  border: 1px solid var(--mp-line);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 64px;
+  padding: 9px;
+}
+
+.mobileComposer span {
+  color: var(--mp-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding-left: 5px;
+}
+
+.mobileComposer button {
+  background: var(--mp-orange);
+  border: 0;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 900;
+  min-height: 34px;
+}
+
+.mobileWorkbenchTabs {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mobileWorkbenchTabs button.active {
+  background: var(--mp-blue);
+  color: white;
+}
+
+.mobileWorkbenchCard {
+  background: white;
+  border: 1px solid var(--mp-line);
+  border-radius: 16px;
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+}
+
+.mobileWorkbenchCard h3 {
+  color: var(--mp-blue);
+  font-size: 0.95rem;
+  font-weight: 900;
+  margin: 0;
+}
+
+.mobileStep {
+  background: var(--mp-blue-pale);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.mobileStep.upNext {
+  background: var(--mp-orange-soft);
+  border-color: rgba(232, 117, 10, 0.35);
+}
+
+.mobileStep h4 {
+  color: var(--mp-blue);
+  font-size: 0.78rem;
+  font-weight: 900;
+  margin: 0 0 4px;
+}
+
+.mobileStep span {
+  color: var(--mp-muted);
+  font-size: 0.64rem;
+  font-weight: 850;
+}
+
+.mobilePartRow {
+  align-items: center;
+  border-top: 1px solid var(--mp-line);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 58px;
+  padding-top: 10px;
+}
+
+.mobilePartRow span {
+  color: var(--mp-blue);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.mobilePartRow button {
+  background: white;
+  border: 1px solid var(--mp-line);
+  border-radius: 9px;
+  color: var(--mp-blue);
+  font-size: 0.68rem;
+  font-weight: 900;
+  min-height: 30px;
+}
+
+.mobileBottomNav {
+  background: white;
+  border-top: 1px solid var(--mp-line);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 8px 10px 12px;
+}
+
+.mobileBottomNav button {
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: var(--mp-muted);
+  display: grid;
+  font-size: 0.62rem;
+  font-weight: 900;
+  gap: 3px;
+  min-height: 48px;
+  place-items: center;
+}
+
+.mobileBottomNav button.active {
+  background: var(--mp-orange-soft);
+  color: var(--mp-orange);
+}
+
+.mobileBottomNav span {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.mobileBottomNav img {
+  border: 2px solid var(--mp-orange);
+  border-radius: 50%;
+  height: 25px;
+  object-fit: cover;
+  width: 25px;
+}
+
+.mobileSketchNotes {
+  max-width: 410px;
+}
+
+.mobileSketchNotes .eyebrow {
+  color: var(--mp-orange);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.mobileSketchNotes h2 {
+  color: var(--mp-blue);
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 900;
+  line-height: 1;
+  margin: 0 0 16px;
+}
+
+.mobileSketchNotes p:not(.eyebrow) {
+  color: var(--mp-muted);
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.75;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .mobilePrototypePage {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .mobileSketchNotes {
+    text-align: center;
+  }
+}
+
+@media (max-width: 460px) {
+  .mobilePrototypePage {
+    padding: 0;
+  }
+
+  .phoneShell {
+    border: 0;
+    border-radius: 0;
+    height: 100vh;
+    width: 100%;
+  }
+
+  .mobileSketchNotes {
+    display: none;
+  }
+}
