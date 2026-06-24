@@ -1,0 +1,742 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600;1,700;1,800&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,900;1,400;1,700;1,900&display=swap');
+
+.profilePrototype {
+  --byld-dark: #24507a;
+  --byld-light: #4da8da;
+  --byld-bg: #eaf2f8;
+  --byld-panel: #f7fbfd;
+  --byld-white: #ffffff;
+  --byld-muted: #5f87a7;
+  --byld-border: #d7e5ef;
+  --byld-accent: #e8750a;
+  --byld-accent-soft: #fff3e8;
+  --byld-shadow: 0 18px 45px rgba(36, 80, 122, 0.14);
+  background:
+    radial-gradient(circle at 20% 15%, rgba(77, 168, 218, 0.14), transparent 30%),
+    linear-gradient(180deg, #edf6fb 0%, #eaf2f8 50%, #f7fbfd 100%);
+  color: var(--byld-dark);
+  font-family: 'Montserrat', sans-serif;
+  min-height: 100vh;
+}
+
+.profilePrototype *,
+.profilePrototype *::before,
+.profilePrototype *::after {
+  box-sizing: border-box;
+}
+
+.profilePrototype button,
+.profilePrototype input,
+.profilePrototype textarea,
+.profilePrototype select {
+  font: inherit;
+}
+
+.profilePrototype button {
+  cursor: pointer;
+}
+
+.profileNav {
+  align-items: center;
+  background: rgba(234, 242, 248, 0.94);
+  border-bottom: 1px solid var(--byld-border);
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 40px;
+}
+
+.profileLogo {
+  align-items: baseline;
+  border: 2px solid var(--byld-light);
+  border-radius: 8px;
+  display: inline-flex;
+  padding: 6px 16px 5px;
+  text-decoration: none;
+}
+
+.profileLogoByld {
+  color: var(--byld-dark);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.profileLogoIt {
+  color: var(--byld-light);
+  font-size: 19px;
+  font-weight: 300;
+  line-height: 1;
+  margin-left: 1px;
+}
+
+.profileBrandWord {
+  align-items: baseline;
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.profileBrandWordByld {
+  color: var(--byld-dark);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 0.92;
+}
+
+.profileBrandWordIt {
+  color: var(--byld-light);
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 300;
+  line-height: 0.92;
+  margin-left: 1px;
+}
+
+.profileNavMeta {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+}
+
+.profileNavMeta span {
+  color: var(--byld-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profileNavMeta a {
+  background: var(--byld-dark);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 10px 20px;
+  text-decoration: none;
+}
+
+.profileShell {
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 42px 40px 56px;
+}
+
+.profileIntro {
+  align-items: end;
+  display: grid;
+  gap: 32px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  margin-bottom: 28px;
+}
+
+.profileEyebrow {
+  color: var(--byld-accent);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+}
+
+.profileIntro h1 {
+  color: var(--byld-dark);
+  font-size: clamp(42px, 5vw, 70px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 0.96;
+  margin: 0 0 18px;
+  max-width: 760px;
+}
+
+.profileIntro p {
+  color: var(--byld-muted);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 700px;
+}
+
+.waltIntroCard {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(232, 117, 10, 0.34);
+  border-radius: 18px;
+  box-shadow: var(--byld-shadow);
+  display: flex;
+  gap: 18px;
+  padding: 20px;
+}
+
+.waltIntroCard img {
+  border: 4px solid var(--byld-accent);
+  border-radius: 50%;
+  height: 88px;
+  object-fit: cover;
+  width: 88px;
+}
+
+.waltIntroCard strong {
+  color: var(--byld-accent);
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.waltIntroCard p {
+  color: var(--byld-dark);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.profileLayout {
+  align-items: start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+
+.profileStepper,
+.profileFormCard {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--byld-border);
+  border-radius: 20px;
+  box-shadow: var(--byld-shadow);
+}
+
+.profileStepper {
+  overflow: hidden;
+  position: sticky;
+  top: 24px;
+}
+
+.stepButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--byld-border);
+  color: var(--byld-dark);
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  text-align: left;
+  width: 100%;
+}
+
+.stepButton:last-child {
+  border-bottom: 0;
+}
+
+.stepButton.active {
+  background: var(--byld-dark);
+  color: white;
+}
+
+.stepNumber {
+  align-items: center;
+  background: var(--byld-accent-soft);
+  border-radius: 999px;
+  color: var(--byld-accent);
+  display: flex;
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 900;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.stepButton.active .stepNumber {
+  background: var(--byld-accent);
+  color: white;
+}
+
+.stepButton span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.stepTitle {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.stepHint {
+  color: var(--byld-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.stepButton.active .stepHint {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.profileFormCard {
+  overflow: hidden;
+}
+
+.formHeader {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.78)),
+    url('/line-art/camaro-front-transparent.png') center 36% / 520px auto no-repeat;
+  border-bottom: 1px solid var(--byld-border);
+  min-height: 150px;
+  padding: 30px 32px;
+}
+
+.formHeader p {
+  color: var(--byld-accent);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.formHeader h2 {
+  color: var(--byld-dark);
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.formHeader span {
+  color: var(--byld-muted);
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.6;
+  margin-top: 10px;
+  max-width: 620px;
+}
+
+.profileForm {
+  padding: 30px 32px 32px;
+}
+
+.formGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.formGrid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+  grid-auto-rows: max-content;
+}
+
+.field.full {
+  grid-column: 1 / -1;
+}
+
+.field label,
+.multiSelectLabel {
+  color: var(--byld-dark);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.required {
+  color: var(--byld-accent);
+}
+
+.fieldNote {
+  color: var(--byld-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.field input,
+.field select,
+.field textarea,
+.multiSelectButton {
+  background: var(--byld-panel);
+  border: 1.5px solid var(--byld-border);
+  border-radius: 10px;
+  color: var(--byld-dark);
+  font-size: 15px;
+  font-weight: 700;
+  min-height: 50px;
+  outline: none;
+  padding: 12px 14px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  width: 100%;
+}
+
+.field input,
+.field select,
+.multiSelectButton {
+  height: 50px;
+}
+
+.field select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--byld-dark) 50%),
+    linear-gradient(135deg, var(--byld-dark) 50%, transparent 50%);
+  background-position:
+    calc(100% - 20px) 21px,
+    calc(100% - 15px) 21px;
+  background-repeat: no-repeat;
+  background-size: 5px 5px, 5px 5px;
+  line-height: 1.35;
+  padding-right: 42px;
+}
+
+.field textarea {
+  line-height: 1.55;
+  min-height: 112px;
+  resize: vertical;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.multiSelectButton:focus {
+  background: white;
+  border-color: var(--byld-light);
+  box-shadow: 0 0 0 4px rgba(77, 168, 218, 0.14);
+}
+
+.fieldHelp {
+  color: var(--byld-muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.visibilityBox {
+  align-items: center;
+  background: var(--byld-panel);
+  border: 1.5px solid var(--byld-border);
+  border-radius: 14px;
+  display: flex;
+  justify-content: space-between;
+  min-height: 74px;
+  padding: 14px 16px;
+}
+
+.visibilityBox strong {
+  color: var(--byld-dark);
+  display: block;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.visibilityBox span {
+  color: var(--byld-muted);
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.toggle {
+  align-items: center;
+  background: var(--byld-dark);
+  border: 0;
+  border-radius: 999px;
+  display: flex;
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 3px;
+  width: 58px;
+}
+
+.toggleKnob {
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 5px 12px rgba(36, 80, 122, 0.28);
+  height: 26px;
+  transition: transform 0.18s ease;
+  width: 26px;
+}
+
+.multiSelect {
+  display: grid;
+  gap: 7px;
+  position: relative;
+}
+
+.multiSelectButton {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding-right: 42px;
+  position: relative;
+  text-align: left;
+}
+
+.multiSelectButton span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.multiSelectChevron {
+  height: 10px;
+  pointer-events: none;
+  position: absolute;
+  right: 17px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+}
+
+.multiSelectChevron::before,
+.multiSelectChevron::after {
+  background: var(--byld-dark);
+  content: '';
+  height: 6px;
+  position: absolute;
+  top: 2px;
+  width: 2px;
+}
+
+.multiSelectChevron::before {
+  left: 3px;
+  transform: rotate(-45deg);
+}
+
+.multiSelectChevron::after {
+  right: 1px;
+  transform: rotate(45deg);
+}
+
+.multiSelectMenu {
+  background: white;
+  border: 1.5px solid var(--byld-border);
+  border-radius: 10px;
+  box-shadow: 0 14px 32px rgba(36, 80, 122, 0.16);
+  display: grid;
+  gap: 2px 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  left: 0;
+  max-height: 190px;
+  overflow: auto;
+  padding: 6px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+}
+
+.multiSelectOption {
+  align-items: center;
+  border-radius: 8px;
+  color: var(--byld-dark);
+  display: flex;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 8px;
+  min-height: 28px;
+  padding: 4px 7px;
+}
+
+.multiSelectOption:hover {
+  background: var(--byld-panel);
+}
+
+.multiSelectOption input {
+  accent-color: var(--byld-accent);
+  flex: 0 0 auto;
+  height: 13px;
+  width: 13px;
+}
+
+.selectedChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.selectedChip {
+  background: var(--byld-accent-soft);
+  border: 1px solid rgba(232, 117, 10, 0.28);
+  border-radius: 999px;
+  color: var(--byld-accent);
+  font-size: 12px;
+  font-weight: 900;
+  padding: 6px 10px;
+}
+
+.formActions {
+  align-items: center;
+  border-top: 1px solid var(--byld-border);
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  margin-top: 30px;
+  padding-top: 24px;
+}
+
+.secondaryButton,
+.primaryButton {
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 900;
+  min-height: 50px;
+  padding: 0 24px;
+}
+
+.secondaryButton {
+  background: white;
+  border: 1.5px solid var(--byld-border);
+  color: var(--byld-dark);
+}
+
+.primaryButton {
+  background: var(--byld-accent);
+  border: 0;
+  color: white;
+  min-width: 170px;
+}
+
+.primaryButton:hover {
+  background: #f18718;
+}
+
+.completionPanel {
+  background: var(--byld-dark);
+  border-radius: 18px;
+  color: white;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-top: 24px;
+  padding: 22px;
+}
+
+.completionPanel img {
+  border: 3px solid var(--byld-accent);
+  border-radius: 50%;
+  height: 72px;
+  object-fit: cover;
+  width: 72px;
+}
+
+.completionPanel strong {
+  color: var(--byld-accent);
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.completionPanel p {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 980px) {
+  .profileIntro,
+  .profileLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .profileStepper {
+    position: static;
+  }
+
+  .profileStepper {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .stepButton {
+    border-bottom: 0;
+    border-right: 1px solid var(--byld-border);
+  }
+
+  .stepButton:last-child {
+    border-right: 0;
+  }
+
+}
+
+@media (max-width: 720px) {
+  .profileNav {
+    padding: 14px 18px;
+  }
+
+  .profileNavMeta span {
+    display: none;
+  }
+
+  .profileShell {
+    padding: 28px 16px 42px;
+  }
+
+  .waltIntroCard {
+    align-items: flex-start;
+  }
+
+  .waltIntroCard img {
+    height: 62px;
+    width: 62px;
+  }
+
+  .profileStepper {
+    grid-template-columns: 1fr;
+  }
+
+  .stepButton {
+    border-bottom: 1px solid var(--byld-border);
+    border-right: 0;
+  }
+
+  .formHeader,
+  .profileForm {
+    padding: 22px 18px;
+  }
+
+  .formGrid,
+  .formGrid.three {
+    grid-template-columns: 1fr;
+  }
+
+  .profileIntro h1 {
+    font-size: 40px;
+  }
+
+  .profileIntro p {
+    font-size: 15px;
+  }
+
+  .formHeader h2 {
+    font-size: 28px;
+  }
+
+  .formActions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+  }
+}

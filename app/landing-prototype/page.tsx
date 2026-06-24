@@ -8,6 +8,8 @@ const projectTypes = [
   'Restorations',
 ]
 
+const getStartedHref = '/login?mode=signup'
+
 const problemCards = [
   {
     title: 'Research gets scattered',
@@ -191,7 +193,7 @@ export default function LandingPrototype() {
   return (
     <main className="landingPage">
       <nav className="nav">
-        <a href="#top">
+        <a href="/demo">
           <BYLDitLogo />
         </a>
         <ul className="navLinks">
@@ -207,7 +209,12 @@ export default function LandingPrototype() {
             </a>
           </li>
           <li>
-            <a href="/login" className="navCta">
+            <a href="/login?mode=signin" className="navSignIn">
+              Sign In
+            </a>
+          </li>
+          <li>
+            <a href={getStartedHref} className="navCta">
               Get Started
             </a>
           </li>
@@ -251,13 +258,16 @@ export default function LandingPrototype() {
               ))}
             </div>
             <div className="heroButtons">
-              <a href="/login" className="btnPrimary">
-                Start Your Garage
+              <a href={getStartedHref} className="btnPrimary">
+                Get Started
               </a>
               <a href="#how-it-works" className="btnSecondary">
                 See How It Works
               </a>
             </div>
+            <p className="heroSignIn">
+              Already have an account? <a href="/login?mode=signin">Sign in</a>
+            </p>
           </div>
 
           <div className="heroVisual">
@@ -576,8 +586,8 @@ export default function LandingPrototype() {
           Start with one vehicle, one conversation, and one project.{' '}
           <BYLDitWord /> keeps the work organized from there.
         </p>
-        <a href="/login" className="btnPrimary">
-          Start Your Garage
+        <a href={getStartedHref} className="btnPrimary">
+          Get Started
         </a>
       </section>
 

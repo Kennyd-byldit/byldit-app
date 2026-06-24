@@ -1,17 +1,27 @@
 'use client'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 async function getRedirectPath(userId: string): Promise<string> {
-  const { data } = await supabase
-    .from('profiles')
-    .select('onboarded')
-    .eq('id', userId)
-    .single()
-  return data?.onboarded ? '/garage' : '/meet-walt'
+  const [{ data: profile }, { count: vehicleCount }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('profile_completed, onboarded')
+      .eq('id', userId)
+      .maybeSingle(),
+    supabase
+      .from('vehicles')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId),
+  ])
+
+  if (!profile?.profile_completed) return '/profile-setup'
+  if (!vehicleCount) return '/garage-setup'
+  return '/garage'
 }
 
-type View = 'landing' | 'signup' | 'signin'
+type View = 'landing' | 'signup' | 'signin' | 'forgot'
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -70,17 +80,23 @@ const BackLink = ({ onBack }: { onBack: () => void }) => (
   </p>
 )
 
-export default function LoginPage() {
-  const [view, setView] = useState<View>('landing')
+function LoginContent() {
+  const searchParams = useSearchParams()
+  const requestedMode = searchParams.get('mode')
+  const [view, setView] = useState<View>(
+    requestedMode === 'signup' ? 'signup' : requestedMode === 'signin' ? 'signin' : 'landing'
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
 
   const reset = (nextView: View) => {
     setEmail('')
     setPassword('')
     setError('')
+    setNotice('')
     setView(nextView)
   }
 
@@ -104,8 +120,7 @@ export default function LoginPage() {
     if (error) {
       setError(error.message)
     } else if (data.session) {
-      const path = await getRedirectPath(data.session.user.id)
-      window.location.href = path
+      window.location.href = '/profile-setup'
     } else {
       setError('Check your email to confirm your account!')
     }
@@ -122,6 +137,22 @@ export default function LoginPage() {
     } else if (data.user) {
       const path = await getRedirectPath(data.user.id)
       window.location.href = path
+    }
+    setLoading(false)
+  }
+
+  const handleForgotPassword = async () => {
+    if (!email) return
+    setLoading(true)
+    setError('')
+    setNotice('')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    if (error) {
+      setError(error.message)
+    } else {
+      setNotice('Password reset email sent. Check your inbox for the reset link.')
     }
     setLoading(false)
   }
@@ -211,6 +242,12 @@ export default function LoginPage() {
                 style={{ width: '100%', padding: '14px', background: 'var(--dark-blue)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(36,80,122,0.3)', cursor: 'pointer', marginBottom: 20 }}>
                 {loading ? 'Loading...' : 'Sign In \u2192'}
               </button>
+              <p style={{ textAlign: 'center', margin: '-6px 0 18px' }}>
+                <span onClick={() => { setError(''); setNotice(''); setView('forgot') }}
+                  style={{ color: 'var(--light-blue)', cursor: 'pointer', fontSize: '0.84rem', fontWeight: 800 }}>
+                  Forgot password?
+                </span>
+              </p>
               <SimpleDivider />
               <GoogleButton loading={loading} onClick={handleGoogle} />
               <p style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--secondary-text)', marginBottom: 8 }}>
@@ -223,8 +260,46 @@ export default function LoginPage() {
             </>
           )}
 
+          {/* FORGOT PASSWORD VIEW */}
+          {view === 'forgot' && (
+            <>
+              <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                <p style={{ fontFamily: 'var(--font-script)', fontSize: '2.2rem', color: 'var(--dark-blue)', lineHeight: 1, marginBottom: 8 }}>Reset Password</p>
+                <p style={{ fontSize: '0.9rem', color: 'var(--secondary-text)' }}>Enter your email and we&apos;ll send a reset link.</p>
+              </div>
+              <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleForgotPassword() }}
+                style={{ ...inputStyle, marginBottom: 18 }} />
+              {error && (
+                <p style={{ color: '#e74c3c', fontSize: '0.8rem', marginBottom: 12, textAlign: 'center' }}>{error}</p>
+              )}
+              {notice && (
+                <p style={{ color: 'var(--light-blue)', fontSize: '0.82rem', lineHeight: 1.5, marginBottom: 12, textAlign: 'center' }}>{notice}</p>
+              )}
+              <button onClick={handleForgotPassword} disabled={loading || !email}
+                style={{ width: '100%', padding: '14px', background: 'var(--dark-blue)', borderRadius: 25, border: 'none', color: 'white', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-nunito)', boxShadow: '0 6px 20px rgba(36,80,122,0.3)', cursor: email ? 'pointer' : 'not-allowed', marginBottom: 18, opacity: email ? 1 : 0.55 }}>
+                {loading ? 'Sending...' : 'Send Reset Email'}
+              </button>
+              <p style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--secondary-text)', marginBottom: 8 }}>
+                Remembered it?{' '}
+                <span onClick={() => reset('signin')} style={{ color: 'var(--light-blue)', fontWeight: 700, cursor: 'pointer' }}>
+                  Back to sign in
+                </span>
+              </p>
+              <BackLink onBack={() => reset('landing')} />
+            </>
+          )}
+
         </div>
       </main>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   )
 }

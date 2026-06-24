@@ -1,0 +1,574 @@
+.ccRealShell {
+  background: #eaf2f8;
+  color: #24507a;
+  display: grid;
+  font-family: var(--font-nunito), system-ui, sans-serif;
+  gap: 14px;
+  grid-template-columns: 320px minmax(420px, 0.95fr) minmax(420px, 1.15fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100vh;
+  overflow: hidden;
+  padding: 14px;
+}
+
+.ccRealShell * {
+  box-sizing: border-box;
+}
+
+.ccRealLoading,
+.ccRealEmpty {
+  align-items: center;
+  background: #eaf2f8;
+  color: #24507a;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-nunito), system-ui, sans-serif;
+  gap: 14px;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 28px;
+  text-align: center;
+}
+
+.ccRealLoading img {
+  border: 3px solid #e8750a;
+  border-radius: 50%;
+  height: 72px;
+  object-fit: cover;
+  width: 72px;
+}
+
+.ccRealEmpty h1 {
+  font-size: clamp(34px, 6vw, 64px);
+  line-height: 0.95;
+  margin: 10px 0 0;
+  max-width: 720px;
+}
+
+.ccRealEmpty p {
+  color: #5f87a7;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 620px;
+}
+
+.ccRealEmpty a,
+.ccRealAddVehicle {
+  align-items: center;
+  background: #e8750a;
+  border-radius: 10px;
+  color: white;
+  display: flex;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+  text-decoration: none;
+}
+
+.ccRealGarage,
+.ccRealWalt,
+.ccRealWorkbench,
+.ccRealHeader {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #d7e5ef;
+  border-radius: 18px;
+  box-shadow: 0 18px 42px rgba(36, 80, 122, 0.11);
+}
+
+.ccRealGarage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  grid-row: 1 / span 2;
+  min-height: 0;
+  overflow: hidden;
+  padding: 18px;
+}
+
+.ccRealLogo {
+  align-items: baseline;
+  border: 2px solid #4da8da;
+  border-radius: 8px;
+  display: inline-flex;
+  padding: 7px 17px 5px;
+  width: max-content;
+}
+
+.ccRealLogoByld {
+  color: #24507a;
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 25px;
+  font-style: italic;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ccRealLogoIt {
+  color: #4da8da;
+  font-size: 21px;
+  font-weight: 300;
+  line-height: 1;
+  margin-left: 1px;
+}
+
+.ccRealGarageTitle {
+  border-bottom: 1px solid #d7e5ef;
+  padding-bottom: 16px;
+}
+
+.ccRealGarageTitle span,
+.ccRealHeader span,
+.ccRealWalt header span,
+.ccRealWorkbench header span {
+  color: #e8750a;
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.ccRealGarageTitle h1 {
+  color: #e8750a;
+  font-size: 24px;
+  line-height: 1.1;
+  margin: 8px 0 0;
+}
+
+.ccRealVehicleList {
+  display: grid;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.ccRealVehicle {
+  background: #f7fbfd;
+  border: 1.5px solid #d7e5ef;
+  border-radius: 14px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ccRealVehicle.active {
+  border-color: #e8750a;
+  box-shadow: 0 10px 24px rgba(232, 117, 10, 0.14);
+}
+
+.ccRealVehicle img {
+  background: #dfeaf2;
+  display: block;
+  height: 120px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.ccRealVehicleInfo {
+  padding: 12px 12px 4px;
+}
+
+.ccRealVehicleInfo strong {
+  color: #24507a;
+  display: block;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.ccRealVehicleInfo span {
+  color: #5f87a7;
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 3px;
+}
+
+.ccRealVehicle button {
+  background: #fff3e8;
+  border: 1px solid rgba(232, 117, 10, 0.26);
+  border-radius: 999px;
+  color: #e8750a;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  margin: 8px 12px 12px;
+  min-height: 30px;
+  padding: 0 12px;
+}
+
+.ccRealAddVehicle {
+  flex: 0 0 auto;
+}
+
+.ccRealProfileCard {
+  align-items: center;
+  background: #f7fbfd;
+  border: 1px solid #d7e5ef;
+  border-radius: 14px;
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding: 10px;
+}
+
+.ccRealInitial {
+  align-items: center;
+  background: #24507a;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  flex: 0 0 auto;
+  font-weight: 900;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.ccRealProfileCard div:nth-child(2) {
+  min-width: 0;
+}
+
+.ccRealProfileCard strong,
+.ccRealProfileCard span {
+  display: block;
+}
+
+.ccRealProfileCard strong {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.ccRealProfileCard span {
+  color: #5f87a7;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ccRealProfileCard button {
+  background: white;
+  border: 1px solid #d7e5ef;
+  border-radius: 9px;
+  color: #24507a;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+  margin-left: auto;
+  min-height: 34px;
+  padding: 0 9px;
+}
+
+.ccRealHeader {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  grid-column: 2 / span 2;
+  justify-content: space-between;
+  padding: 16px 18px;
+}
+
+.ccRealHeader h2,
+.ccRealWalt h2,
+.ccRealWorkbench h2 {
+  color: #24507a;
+  font-size: 24px;
+  line-height: 1.05;
+  margin: 4px 0 0;
+}
+
+.ccRealHeader nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ccRealHeader button {
+  background: #f7fbfd;
+  border: 1.5px solid #d7e5ef;
+  border-radius: 999px;
+  color: #24507a;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 900;
+  min-height: 38px;
+  padding: 0 16px;
+}
+
+.ccRealHeader button.active {
+  background: #e8750a;
+  border-color: #e8750a;
+  color: white;
+}
+
+.ccRealWalt,
+.ccRealWorkbench {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ccRealWalt {
+  display: flex;
+  flex-direction: column;
+}
+
+.ccRealWalt header,
+.ccRealWorkbench header {
+  border-bottom: 1px solid #d7e5ef;
+  padding: 18px;
+}
+
+.ccRealWalt header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ccRealWalt header img {
+  border: 3px solid #e8750a;
+  border-radius: 50%;
+  height: 54px;
+  object-fit: cover;
+  width: 54px;
+}
+
+.ccRealWaltCallout {
+  align-items: center;
+  background: #24507a;
+  border-radius: 16px;
+  color: white;
+  display: flex;
+  gap: 16px;
+  margin: 18px;
+  padding: 18px;
+}
+
+.ccRealWaltCallout img {
+  border: 3px solid #e8750a;
+  border-radius: 50%;
+  height: 64px;
+  object-fit: cover;
+  width: 64px;
+}
+
+.ccRealWaltCallout p {
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.ccRealMessages {
+  display: grid;
+  gap: 18px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 18px 18px;
+}
+
+.ccRealMessages article {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+}
+
+.ccRealMessages img,
+.ccRealMessages article.user span {
+  border-radius: 50%;
+  flex: 0 0 auto;
+  height: 38px;
+  width: 38px;
+}
+
+.ccRealMessages img {
+  border: 2px solid #e8750a;
+  object-fit: cover;
+}
+
+.ccRealMessages article.user {
+  justify-content: flex-end;
+}
+
+.ccRealMessages article.user span {
+  align-items: center;
+  background: #eaf2f8;
+  color: #24507a;
+  display: flex;
+  font-weight: 900;
+  justify-content: center;
+  order: -1;
+}
+
+.ccRealMessages p {
+  border-radius: 15px;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 82%;
+  padding: 14px 16px;
+}
+
+.ccRealMessages .walt p {
+  background: white;
+  border: 1px solid rgba(232, 117, 10, 0.26);
+}
+
+.ccRealMessages .user p {
+  background: #24507a;
+  color: white;
+}
+
+.ccRealMessageBox {
+  align-items: center;
+  border-top: 1px solid #d7e5ef;
+  display: flex;
+  gap: 12px;
+  margin-top: auto;
+  padding: 14px 18px;
+}
+
+.ccRealMessageBox span {
+  background: #f7fbfd;
+  border: 1.5px solid #d7e5ef;
+  border-radius: 10px;
+  color: #8aa6bc;
+  flex: 1;
+  font-weight: 800;
+  min-height: 48px;
+  overflow: hidden;
+  padding: 13px 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ccRealMessageBox button {
+  background: #e8750a;
+  border: 0;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  font-weight: 900;
+  min-height: 48px;
+  padding: 0 22px;
+}
+
+.ccRealWorkbench {
+  overflow-y: auto;
+}
+
+.ccRealWorkbench header p {
+  color: #5f87a7;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.55;
+  margin: 10px 0 0;
+}
+
+.ccRealSnapshot,
+.ccRealList {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.ccRealSnapshot {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ccRealSnapshot article,
+.ccRealList a,
+.ccRealEmptyList {
+  background: #f7fbfd;
+  border: 1px solid #d7e5ef;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.ccRealSnapshot span,
+.ccRealList span {
+  color: #5f87a7;
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ccRealSnapshot strong,
+.ccRealList strong {
+  color: #24507a;
+  display: block;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.25;
+  margin-top: 4px;
+}
+
+.ccRealList a {
+  align-items: center;
+  color: inherit;
+  display: flex;
+  justify-content: space-between;
+  text-decoration: none;
+}
+
+.ccRealList a > span {
+  background: white;
+  border: 1px solid #d7e5ef;
+  border-radius: 999px;
+  color: #e8750a;
+  padding: 7px 10px;
+}
+
+.ccRealEmptyList {
+  color: #5f87a7;
+  font-weight: 800;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 1180px) {
+  .ccRealShell {
+    grid-template-columns: 280px minmax(360px, 1fr);
+    grid-template-rows: auto minmax(520px, 1fr) minmax(420px, auto);
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .ccRealHeader {
+    grid-column: 2;
+  }
+
+  .ccRealGarage {
+    grid-row: 1 / span 3;
+  }
+}
+
+@media (max-width: 840px) {
+  .ccRealShell {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+
+  .ccRealGarage,
+  .ccRealHeader {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .ccRealHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ccRealHeader nav {
+    justify-content: flex-start;
+  }
+
+  .ccRealSnapshot {
+    grid-template-columns: 1fr;
+  }
+}

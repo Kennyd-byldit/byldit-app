@@ -1,5 +1,1 @@
-import { redirect } from 'next/navigation'
-
-export default function Home() {
-  redirect('/garage')
-}
+export { default } from './landing-prototype/page'

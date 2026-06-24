@@ -1,0 +1,16 @@
+alter table profiles add column if not exists first_name text;
+alter table profiles add column if not exists last_name text;
+alter table profiles add column if not exists handle text;
+alter table profiles add column if not exists state text;
+alter table profiles add column if not exists city text;
+alter table profiles add column if not exists visibility text not null default 'private' check (visibility in ('private', 'public'));
+alter table profiles add column if not exists bio text;
+alter table profiles add column if not exists work_style text;
+alter table profiles add column if not exists guidance_style text;
+alter table profiles add column if not exists workspace text[] not null default '{}'::text[];
+alter table profiles add column if not exists tools text[] not null default '{}'::text[];
+alter table profiles add column if not exists project_interests text[] not null default '{}'::text[];
+alter table profiles add column if not exists vehicle_interests text[] not null default '{}'::text[];
+alter table profiles add column if not exists walt_notes text;
+alter table profiles add column if not exists profile_photo_url text;
+alter table profiles add column if not exists profile_completed boolean not null default false;

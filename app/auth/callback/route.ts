@@ -15,10 +15,20 @@ export async function GET(request: NextRequest) {
     if (data.user) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('onboarded')
+        .select('profile_completed')
         .eq('id', data.user.id)
-        .single()
-      const path = profile?.onboarded ? '/garage' : '/meet-walt'
+        .maybeSingle()
+      let path = '/profile-setup'
+
+      if (profile?.profile_completed) {
+        const { count } = await supabase
+          .from('vehicles')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', data.user.id)
+
+        path = count ? '/garage' : '/garage-setup'
+      }
+
       return NextResponse.redirect(`${origin}${path}`)
     }
   }
