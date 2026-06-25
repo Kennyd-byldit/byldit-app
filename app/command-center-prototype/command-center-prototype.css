@@ -39,6 +39,42 @@
   cursor: pointer;
 }
 
+.loadingCommandCenter,
+.emptyCommandCenter {
+  align-content: center;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+
+.loadingCommandCenter img {
+  border: 3px solid var(--cc-orange);
+  border-radius: 50%;
+  height: 74px;
+  object-fit: cover;
+  width: 74px;
+}
+
+.loadingCommandCenter p,
+.emptyCommandCenter p {
+  color: var(--cc-muted);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 620px;
+}
+
+.emptyCommandCenter h1 {
+  color: var(--cc-blue);
+  font-size: clamp(2.1rem, 5vw, 4rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 0.96;
+  margin: 18px 0 8px;
+  max-width: 760px;
+}
+
 .ccLogo {
   align-items: baseline;
   background: rgba(255, 255, 255, 0.82);
@@ -500,6 +536,16 @@
   background: white;
   border: 2px solid var(--cc-line);
   color: var(--cc-blue);
+}
+
+.emptyCommandCenter .orangeButton {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  margin-top: 12px;
+  min-height: 46px;
+  padding: 0 22px;
+  text-decoration: none;
 }
 
 .railActions .quietButton {
@@ -1198,6 +1244,66 @@
   border: 1px solid var(--cc-line);
   border-radius: 12px;
   padding: 14px;
+}
+
+.projectListPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.projectListCard {
+  align-items: center;
+  background: var(--cc-blue-pale);
+  border: 1px solid var(--cc-line);
+  border-radius: 14px;
+  color: var(--cc-blue);
+  display: flex;
+  justify-content: space-between;
+  min-height: 72px;
+  padding: 14px 16px;
+  text-align: left;
+  width: 100%;
+}
+
+.projectListCard:hover,
+.projectListCard:focus-visible {
+  border-color: rgba(232, 117, 10, 0.5);
+  box-shadow: 0 10px 26px rgba(232, 117, 10, 0.12);
+}
+
+.projectListCard strong,
+.projectListCard span {
+  display: block;
+}
+
+.projectListCard strong {
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.projectListCard div > span {
+  color: var(--cc-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.projectListCard > span {
+  background: white;
+  border: 1px solid var(--cc-line);
+  border-radius: 999px;
+  color: var(--cc-orange);
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 7px 10px;
+}
+
+.emptyWorkbenchNote {
+  color: var(--cc-muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.55;
+  margin: 0;
 }
 
 .overviewGrid strong {
