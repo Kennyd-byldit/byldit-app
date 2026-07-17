@@ -112,7 +112,18 @@ export default function GaragePage() {
   const [activeTab, setActiveTab] = useState<WorkbenchTab>('Plan')
   const [activeVehicleId, setActiveVehicleId] = useState('')
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
-  const [isVehicleMenuOpen, setIsVehicleMenuOpen] = useState(true)
+  const [openVehicleIds, setOpenVehicleIds] = useState<string[]>([])
+  const [viewMode, setViewMode] = useState<'Balanced' | 'Workbench' | 'Walt Focus'>('Workbench')
+  const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false)
+  const [isDemoMode] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return (
+      window.sessionStorage.getItem('byldit-demo-mode') === 'true' ||
+      window.localStorage.getItem('byldit-demo-mode') === 'true'
+    )
+  })
+  const [resettingDemo, setResettingDemo] = useState(false)
+  const [demoResetError, setDemoResetError] = useState('')
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
@@ -155,6 +166,7 @@ export default function GaragePage() {
       setVehicles(savedVehicles)
       setProjects(projectData || [])
       setActiveVehicleId(savedVehicles[0]?.id || '')
+      setOpenVehicleIds(savedVehicles[0]?.id ? [savedVehicles[0].id] : [])
       setLoading(false)
     }
 
@@ -213,29 +225,83 @@ export default function GaragePage() {
       : ['Plan', 'Parts', 'Notes', 'History']
 
   const selectVehicle = (vehicleId: string) => {
-    if (vehicleId === activeVehicleId) {
-      setIsVehicleMenuOpen(current => !current)
-      return
-    }
-
     setActiveVehicleId(vehicleId)
-    setIsVehicleMenuOpen(true)
+    setOpenVehicleIds(current =>
+      current.includes(vehicleId) ? current : [...current, vehicleId],
+    )
     setActiveSection('overview')
     setActiveProjectId(null)
     setActiveTab('Plan')
   }
 
-  const selectSection = (sectionId: SectionId) => {
+  const toggleVehicleMenu = (vehicleId: string) => {
+    setOpenVehicleIds(current =>
+      current.includes(vehicleId)
+        ? current.filter(id => id !== vehicleId)
+        : [...current, vehicleId],
+    )
+  }
+
+  const selectSection = (vehicleId: string, sectionId: SectionId) => {
+    setActiveVehicleId(vehicleId)
+    setOpenVehicleIds(current =>
+      current.includes(vehicleId) ? current : [...current, vehicleId],
+    )
     setActiveSection(sectionId)
     setActiveProjectId(null)
     setActiveTab(sectionId === 'history' ? 'History' : 'Plan')
   }
 
   const selectProject = (project: Project, sectionId: SectionId) => {
+    setActiveVehicleId(project.vehicle_id)
+    setOpenVehicleIds(current =>
+      current.includes(project.vehicle_id) ? current : [...current, project.vehicle_id],
+    )
     setActiveSection(sectionId)
     setActiveProjectId(project.id)
     setActiveTab(sectionId === 'history' ? 'History' : 'Plan')
   }
+
+  const resetDemo = async () => {
+    if (!window.confirm('Reset this demo and start over? This will delete the fake demo account and garage data.')) {
+      return
+    }
+
+    setResettingDemo(true)
+    setDemoResetError('')
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session?.access_token) {
+      window.sessionStorage.removeItem('byldit-demo-mode')
+      window.localStorage.removeItem('byldit-demo-mode')
+      window.location.href = '/demo'
+      return
+    }
+
+    const response = await fetch('/api/demo/reset', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${session.access_token}`,
+      },
+    })
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ error: 'Demo reset failed.' }))
+      setDemoResetError(body.error || 'Demo reset failed.')
+      setResettingDemo(false)
+      return
+    }
+
+    await supabase.auth.signOut()
+    window.sessionStorage.removeItem('byldit-demo-mode')
+    window.localStorage.removeItem('byldit-demo-mode')
+    window.location.href = '/demo'
+  }
+
+  const waltWidth = viewMode === 'Balanced' ? 48 : viewMode === 'Walt Focus' ? 62 : 38
 
   if (loading) {
     return (
@@ -262,7 +328,18 @@ export default function GaragePage() {
       <aside className="garageRail" aria-label="Garage navigation">
         <div className="railHeader">
           <BYLDitLogo />
+          {isDemoMode ? (
+            <button
+              className="demoResetButton"
+              disabled={resettingDemo}
+              onClick={resetDemo}
+              type="button"
+            >
+              {resettingDemo ? 'Resetting...' : 'Reset Demo'}
+            </button>
+          ) : null}
         </div>
+        {demoResetError ? <p className="demoResetError">{demoResetError}</p> : null}
 
         <div className="railTitleBlock">
           <h1>{userLabel}&apos;s Garage</h1>
@@ -293,47 +370,62 @@ export default function GaragePage() {
                       <button
                         className="vehicleEditButton"
                         onClick={() => {
-                          window.location.href = `/vehicle/${vehicle.id}`
+                          window.location.href = `/garage-setup?edit=${vehicle.id}`
                         }}
                         type="button"
                       >
                         Edit
                       </button>
+                      <button
+                        className="vehicleToggleButton"
+                        onClick={() => toggleVehicleMenu(vehicle.id)}
+                        type="button"
+                      >
+                        {openVehicleIds.includes(vehicle.id) ? 'Hide' : 'Open'}
+                      </button>
                     </div>
                   </article>
 
-                  {vehicle.id === activeVehicle?.id && isVehicleMenuOpen ? (
-                    <nav className="vehicleSectionList" aria-label="Selected vehicle sections">
+                  {openVehicleIds.includes(vehicle.id) ? (
+                    <nav className="vehicleSectionList" aria-label={`${getVehicleName(vehicle)} sections`}>
                       <div className="sectionListHeader">
                         <div>
                           <span>{getVehicleName(vehicle)}</span>
-                          <strong>Selected Vehicle</strong>
+                          <strong>{vehicle.id === activeVehicle?.id ? 'Selected Vehicle' : 'Open Vehicle'}</strong>
                         </div>
-                        <button onClick={() => setIsVehicleMenuOpen(false)} type="button">
+                        <button onClick={() => toggleVehicleMenu(vehicle.id)} type="button">
                           Hide
                         </button>
                       </div>
                       {sections.map(section => {
                         const rows = sectionProjects(vehicleSpecificProjects, section.id)
                         const count = sectionCount(vehicleSpecificProjects, section.id)
-                        const sectionActive = activeSection === section.id && !activeProjectId
+                        const sectionActive =
+                          vehicle.id === activeVehicle?.id &&
+                          activeSection === section.id &&
+                          !activeProjectId
 
                         return (
                           <div className="sectionGroup" key={section.id}>
                             <button
                               className={sectionActive ? 'sectionLink active' : 'sectionLink'}
-                              onClick={() => selectSection(section.id)}
+                              onClick={() => selectSection(vehicle.id, section.id)}
                               type="button"
                             >
                               <span>{section.label}</span>
                               {count ? <strong>{count}</strong> : null}
                             </button>
-                            {activeSection === section.id && rows.length ? (
+                            {rows.length ? (
                               <div className="sectionChildren">
                                 {rows.map(project => (
                                   <button
                                     className="childLink"
-                                    data-active={activeProjectId === project.id ? 'true' : undefined}
+                                    data-active={
+                                      vehicle.id === activeVehicle?.id &&
+                                      activeProjectId === project.id
+                                        ? 'true'
+                                        : undefined
+                                    }
                                     key={project.id}
                                     onClick={() => selectProject(project, section.id)}
                                     type="button"
@@ -380,20 +472,17 @@ export default function GaragePage() {
               <span>Profile & billing</span>
             </div>
             <button
-              aria-label="Sign out"
-              onClick={async () => {
-                await supabase.auth.signOut()
-                window.location.replace('/')
-              }}
+              aria-label="Open account menu"
+              onClick={() => setIsAccountDrawerOpen(true)}
               type="button"
             >
-              Exit
+              Open
             </button>
           </div>
         </div>
       </aside>
 
-      <div className="mainWorkspace" style={{ '--first-panel-width': '40%' } as CSSProperties}>
+      <div className="mainWorkspace" style={{ '--first-panel-width': `${waltWidth}%` } as CSSProperties}>
         <header className="globalWorkspaceHeader">
           <div className="globalContext">
             <h2>
@@ -403,8 +492,27 @@ export default function GaragePage() {
           </div>
           <div className="layoutPresets" aria-label="Viewing options">
             <span>Viewing Options</span>
-            <button className="active" type="button">Workbench</button>
-            <button type="button">Walt Focus</button>
+            <button
+              className={viewMode === 'Balanced' ? 'active' : ''}
+              onClick={() => setViewMode('Balanced')}
+              type="button"
+            >
+              Balanced
+            </button>
+            <button
+              className={viewMode === 'Workbench' ? 'active' : ''}
+              onClick={() => setViewMode('Workbench')}
+              type="button"
+            >
+              Workbench
+            </button>
+            <button
+              className={viewMode === 'Walt Focus' ? 'active' : ''}
+              onClick={() => setViewMode('Walt Focus')}
+              type="button"
+            >
+              Walt Focus
+            </button>
           </div>
         </header>
 
@@ -571,6 +679,42 @@ export default function GaragePage() {
           </div>
         </aside>
       </div>
+      {isAccountDrawerOpen ? (
+        <div className="accountDrawerOverlay" role="presentation">
+          <aside className="accountDrawer" aria-label="Account menu">
+            <header>
+              <div>
+                <p className="eyebrow">Account</p>
+                <h2>{firstName}</h2>
+              </div>
+              <button
+                aria-label="Close account menu"
+                onClick={() => setIsAccountDrawerOpen(false)}
+                type="button"
+              >
+                ×
+              </button>
+            </header>
+            <div className="accountDrawerBody">
+              <button onClick={() => { window.location.href = '/profile-setup?from=garage' }} type="button">Profile Settings</button>
+              <button onClick={() => { window.location.href = '/billing' }} type="button">Billing</button>
+              <button onClick={() => { window.location.href = '/account-settings' }} type="button">Account Settings</button>
+              <button onClick={() => { window.location.href = '/help-support' }} type="button">Help & Support</button>
+            </div>
+            <footer>
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut()
+                  window.location.replace('/')
+                }}
+                type="button"
+              >
+                Sign Out
+              </button>
+            </footer>
+          </aside>
+        </div>
+      ) : null}
     </main>
   )
 }

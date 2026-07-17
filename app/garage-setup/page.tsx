@@ -32,6 +32,16 @@ type GarageVehicle = {
   make: string
   model: string
   trim: string | null
+  vin?: string | null
+  color?: string | null
+  engine?: string | null
+  transmission?: string | null
+  drivetrain?: string | null
+  fuel_type?: string | null
+  mileage?: number | null
+  condition?: string | null
+  title_status?: string | null
+  notes?: string | null
   nickname: string
   cover_photo_url: string | null
   is_primary: boolean | null
@@ -338,6 +348,7 @@ export default function GarageSetupPrototype() {
   const [activeStep, setActiveStep] = useState<StepId>('identity')
   const [form, setForm] = useState<GarageForm>(initialForm)
   const [savedVehicles, setSavedVehicles] = useState<GarageVehicle[]>([])
+  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null)
   const [openPicker, setOpenPicker] = useState<string | null>(null)
   const [photoFileName, setPhotoFileName] = useState('')
   const [photoFile, setPhotoFile] = useState<File | null>(null)
@@ -350,6 +361,7 @@ export default function GarageSetupPrototype() {
   const vehicleSummary = [form.year, form.make, form.model, form.trim].filter(Boolean).join(' ')
   const mechanicalSummary = [form.engine, form.transmission, form.drivetrain].filter(Boolean).join(' / ')
   const hasSavedVehicles = savedVehicles.length > 0
+  const isEditingVehicle = Boolean(editingVehicleId)
 
   const updateField = (field: keyof GarageForm, value: string) => {
     setForm(current => ({ ...current, [field]: value }))
@@ -357,7 +369,7 @@ export default function GarageSetupPrototype() {
   }
 
   const goToPreviousPage = () => {
-    window.location.href = '/profile-setup'
+    window.location.href = isEditingVehicle ? '/garage' : '/profile-setup'
   }
 
   const goNext = () => {
@@ -389,6 +401,38 @@ export default function GarageSetupPrototype() {
           .order('created_at', { ascending: true })
 
         setSavedVehicles((data || []) as GarageVehicle[])
+
+        const vehicleToEdit = new URLSearchParams(window.location.search).get('edit')
+        if (vehicleToEdit) {
+          const { data: editVehicle } = await supabase
+            .from('vehicles')
+            .select('id, year, make, model, trim, vin, color, engine, transmission, drivetrain, fuel_type, mileage, condition, title_status, notes, nickname, cover_photo_url, is_primary')
+            .eq('id', vehicleToEdit)
+            .eq('user_id', user.id)
+            .maybeSingle()
+
+          if (editVehicle) {
+            setEditingVehicleId(editVehicle.id)
+            setForm({
+              year: editVehicle.year ? String(editVehicle.year) : '',
+              make: editVehicle.make || '',
+              model: editVehicle.model || '',
+              trim: editVehicle.trim || '',
+              vin: editVehicle.vin || '',
+              nickname: editVehicle.nickname || '',
+              color: editVehicle.color || '',
+              engine: editVehicle.engine || '',
+              transmission: editVehicle.transmission || '',
+              drivetrain: editVehicle.drivetrain || '',
+              fuelType: editVehicle.fuel_type || '',
+              mileage: editVehicle.mileage ? String(editVehicle.mileage) : '',
+              condition: editVehicle.condition || '',
+              titleStatus: editVehicle.title_status || '',
+              notes: editVehicle.notes || '',
+              primaryVehicle: Boolean(editVehicle.is_primary),
+            })
+          }
+        }
       }
     }
 
@@ -453,30 +497,42 @@ export default function GarageSetupPrototype() {
           .eq('user_id', user.id)
       }
 
-      const { data: vehicle, error: insertError } = await supabase
-        .from('vehicles')
-        .insert({
-          user_id: user.id,
-          year: Number(form.year),
-          make: form.make.trim(),
-          model: form.model.trim(),
-          trim: form.trim.trim() || null,
-          vin: form.vin.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || null,
-          nickname: form.nickname.trim(),
-          color: form.color.trim() || null,
-          engine: form.engine.trim() || null,
-          transmission: form.transmission.trim() || null,
-          drivetrain: form.drivetrain.trim() || null,
-          fuel_type: form.fuelType.trim() || null,
-          mileage: form.mileage ? Number(form.mileage) : null,
-          condition: form.condition.trim() || null,
-          title_status: form.titleStatus || null,
-          notes: form.notes.trim() || null,
-          is_primary: form.primaryVehicle,
-          type: 'garage',
-        })
-        .select('id, year, make, model, trim, nickname, cover_photo_url, is_primary')
-        .single()
+      const vehiclePayload = {
+        user_id: user.id,
+        year: Number(form.year),
+        make: form.make.trim(),
+        model: form.model.trim(),
+        trim: form.trim.trim() || null,
+        vin: form.vin.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || null,
+        nickname: form.nickname.trim(),
+        color: form.color.trim() || null,
+        engine: form.engine.trim() || null,
+        transmission: form.transmission.trim() || null,
+        drivetrain: form.drivetrain.trim() || null,
+        fuel_type: form.fuelType.trim() || null,
+        mileage: form.mileage ? Number(form.mileage) : null,
+        condition: form.condition.trim() || null,
+        title_status: form.titleStatus || null,
+        notes: form.notes.trim() || null,
+        is_primary: form.primaryVehicle,
+        type: 'garage',
+      }
+
+      const vehicleMutation = editingVehicleId
+        ? supabase
+          .from('vehicles')
+          .update(vehiclePayload)
+          .eq('id', editingVehicleId)
+          .eq('user_id', user.id)
+          .select('id, year, make, model, trim, nickname, cover_photo_url, is_primary')
+          .single()
+        : supabase
+          .from('vehicles')
+          .insert(vehiclePayload)
+          .select('id, year, make, model, trim, nickname, cover_photo_url, is_primary')
+          .single()
+
+      const { data: vehicle, error: insertError } = await vehicleMutation
 
       if (insertError) throw insertError
 
@@ -494,12 +550,20 @@ export default function GarageSetupPrototype() {
       }
 
       setSavedVehicles(current => (
-        form.primaryVehicle
-          ? [...current.map(item => ({ ...item, is_primary: false })), savedVehicle]
-          : [...current, savedVehicle]
+        editingVehicleId
+          ? current.map(item => (
+            item.id === savedVehicle.id
+              ? savedVehicle
+              : form.primaryVehicle
+                ? { ...item, is_primary: false }
+                : item
+          ))
+          : form.primaryVehicle
+            ? [...current.map(item => ({ ...item, is_primary: false })), savedVehicle]
+            : [...current, savedVehicle]
       ))
 
-      if (destination === 'garage') {
+      if (destination === 'garage' || editingVehicleId) {
         await supabase
           .from('profiles')
           .update({ onboarded: true, updated_at: new Date().toISOString() })
@@ -530,10 +594,12 @@ export default function GarageSetupPrototype() {
       <section className="garageShell">
         <div className="garageIntro">
           <div>
-            <p className="garageEyebrow">{hasSavedVehicles ? 'Garage Setup' : 'Next Step: Garage Setup'}</p>
-            <h1>{hasSavedVehicles ? 'Add another vehicle.' : 'Add your first vehicle.'}</h1>
+            <p className="garageEyebrow">{isEditingVehicle ? 'Vehicle Settings' : hasSavedVehicles ? 'Garage Setup' : 'Next Step: Garage Setup'}</p>
+            <h1>{isEditingVehicle ? 'Edit this vehicle.' : hasSavedVehicles ? 'Add another vehicle.' : 'Add your first vehicle.'}</h1>
             <p>
-              {hasSavedVehicles
+              {isEditingVehicle
+                ? 'Update the saved details for this vehicle. Walt will use the latest information when helping with projects, parts decisions, and diagnostics.'
+                : hasSavedVehicles
                 ? 'Keep building your garage. Walt will use every saved vehicle for project planning, parts decisions, service history, and future diagnostics.'
                 : 'Your profile is saved. Now build the garage Walt will use for project planning, parts decisions, service history, and future diagnostics.'}
             </p>
@@ -592,7 +658,7 @@ export default function GarageSetupPrototype() {
             </div>
 
             <div className="vehicleCardPreview">
-              <span className="previewEyebrow">{hasSavedVehicles ? 'New Vehicle Preview' : 'Garage Card Preview'}</span>
+              <span className="previewEyebrow">{isEditingVehicle ? 'Updated Card Preview' : hasSavedVehicles ? 'New Vehicle Preview' : 'Garage Card Preview'}</span>
               <div className="previewPhoto">
                 {form.primaryVehicle && <span className="primaryPreviewCheck" aria-label="Primary vehicle">✓</span>}
               </div>
@@ -829,12 +895,16 @@ export default function GarageSetupPrototype() {
                   Back
                 </button>
 
-                {activeStep !== 'details' ? (
-                  <button className="garagePrimaryButton" onClick={goNext} type="button">
-                    Next Step
-                  </button>
-                ) : (
-                  <div className="garageFinalActions">
+	                {activeStep !== 'details' ? (
+	                  <button className="garagePrimaryButton" onClick={goNext} type="button">
+	                    Next Step
+	                  </button>
+	                ) : isEditingVehicle ? (
+	                  <button className="garagePrimaryButton" disabled={saving} onClick={() => saveVehicle('garage')} type="button">
+	                    {saving ? 'Saving...' : 'Save Vehicle'}
+	                  </button>
+	                ) : (
+	                  <div className="garageFinalActions">
                     <button className="garageSecondaryButton saveAnotherButton" disabled={saving} onClick={() => saveVehicle('again')} type="button">
                       {saving ? 'Saving...' : 'Save & Add Another'}
                     </button>

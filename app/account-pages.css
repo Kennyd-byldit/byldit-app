@@ -1,0 +1,223 @@
+.accountPageShell {
+  background: #eaf4fb;
+  color: #24507a;
+  font-family: var(--font-nunito), system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+.accountPageNav {
+  align-items: center;
+  border-bottom: 1px solid #d5e5f1;
+  display: flex;
+  justify-content: space-between;
+  padding: 18px 38px;
+}
+
+.accountPageLogo {
+  align-items: baseline;
+  border: 2px solid #4da8da;
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 1px;
+  padding: 5px 15px;
+  text-decoration: none;
+}
+
+.accountPageLogoByld {
+  color: #24507a;
+  font-family: var(--font-barlow), system-ui, sans-serif;
+  font-size: 1.35rem;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.accountPageLogoIt {
+  color: #4da8da;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.accountPageBack {
+  background: #24507a;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 900;
+  padding: 11px 18px;
+  text-decoration: none;
+}
+
+.accountPageMain {
+  display: grid;
+  gap: 24px;
+  margin: 0 auto;
+  max-width: 980px;
+  padding: 54px 32px;
+}
+
+.accountPageHero {
+  display: grid;
+  gap: 8px;
+}
+
+.accountPageHero p {
+  color: #e8750a;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.accountPageHero h1 {
+  color: #24507a;
+  font-family: var(--font-barlow), system-ui, sans-serif;
+  font-size: clamp(2.6rem, 6vw, 5rem);
+  font-weight: 900;
+  line-height: 0.92;
+  margin: 0;
+}
+
+.settingsNav {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid #d5e5f1;
+  border-radius: 14px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 8px;
+}
+
+.settingsNav a {
+  align-items: center;
+  background: #f4f9fd;
+  border: 1px solid #d5e5f1;
+  border-radius: 10px;
+  color: #24507a;
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 12px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.settingsNav a.active {
+  background: #24507a;
+  border-color: #24507a;
+  color: white;
+}
+
+.accountCardGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.accountCard {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #d5e5f1;
+  border-radius: 16px;
+  box-shadow: 0 18px 48px rgba(36, 80, 122, 0.08);
+  padding: 22px;
+}
+
+.accountCard.full {
+  grid-column: 1 / -1;
+}
+
+.accountCardLabel {
+  color: #e8750a;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 3px;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.accountCard h2 {
+  color: #24507a;
+  font-size: 1.35rem;
+  font-weight: 900;
+  margin: 0 0 8px;
+}
+
+.accountCard p {
+  color: #6388a9;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.accountButtonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.accountPrimaryButton,
+.accountSecondaryButton {
+  align-items: center;
+  border-radius: 10px;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  text-decoration: none;
+}
+
+.accountPrimaryButton {
+  background: #e8750a;
+  border: 2px solid #e8750a;
+  color: white;
+}
+
+.accountSecondaryButton {
+  background: white;
+  border: 2px solid #d5e5f1;
+  color: #24507a;
+}
+
+.qaList {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.qaList details {
+  background: #f4f9fd;
+  border: 1px solid #d5e5f1;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.qaList summary {
+  color: #24507a;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.qaList p {
+  margin-top: 8px;
+}
+
+@media (max-width: 740px) {
+  .accountPageNav {
+    padding: 14px 18px;
+  }
+
+  .accountCardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .settingsNav {
+    grid-template-columns: 1fr 1fr;
+  }
+}

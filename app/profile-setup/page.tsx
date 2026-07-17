@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { WALT_AVATAR_URL } from '@/lib/app-constants'
 import { supabase } from '@/lib/supabase'
 import './profile-setup-prototype.css'
@@ -23,6 +24,10 @@ type ProfileForm = {
   projectInterests: string[]
   vehicleInterests: string[]
   waltNotes: string
+}
+
+function RequiredMark() {
+  return <span className="requiredDot" aria-label="required field" />
 }
 
 const steps: Array<{ id: StepId; title: string; hint: string }> = [
@@ -141,6 +146,7 @@ function PickerField({
   setOpenPicker,
   selected,
   onChange,
+  required = false,
 }: {
   id: string
   label: string
@@ -150,6 +156,7 @@ function PickerField({
   setOpenPicker: (id: string | null) => void
   selected: string | string[]
   onChange: (value: string | string[]) => void
+  required?: boolean
 }) {
   const open = openPicker === id
   const selectedValues = Array.isArray(selected) ? selected : selected ? [selected] : []
@@ -178,7 +185,10 @@ function PickerField({
 
   return (
     <div className="profilePicker">
-      <span className="profilePickerLabel">{label}</span>
+      <span className="profilePickerLabel">
+        {label}
+        {required && <RequiredMark />}
+      </span>
       <button
         className={open ? 'profilePickerButton open' : 'profilePickerButton'}
         type="button"
@@ -224,7 +234,8 @@ function PickerField({
   )
 }
 
-export default function ProfileSetupPrototype() {
+function ProfileSetupContent() {
+  const searchParams = useSearchParams()
   const [activeStep, setActiveStep] = useState<StepId>('identity')
   const [form, setForm] = useState<ProfileForm>(initialForm)
   const [openPicker, setOpenPicker] = useState<string | null>(null)
@@ -237,6 +248,16 @@ export default function ProfileSetupPrototype() {
   const firstName = form.firstName.trim() || 'your first name'
   const handle = form.handle.trim() || 'your handle'
   const garageName = `${handle}'s Garage`
+  const openedFromGarage = searchParams.get('from') === 'garage'
+  const pageEyebrow = openedFromGarage ? 'Settings' : 'Get Started'
+  const pageTitle = openedFromGarage ? 'Profile settings.' : <>Create your <BYLDitWord /> profile.</>
+  const pageIntro = openedFromGarage
+    ? <>Update your identity, background, and workspace details that Walt uses across <BYLDitWord />.</>
+    : <>Set up your private account details, display name, and garage background Walt will use across <BYLDitWord />.</>
+  const waltTitle = openedFromGarage ? 'Walt Context' : 'Walt Ready'
+  const waltIntro = openedFromGarage
+    ? 'Update anything that has changed. I will use the latest profile details when helping in your garage.'
+    : 'Tell me a little about yourself so I can understand how you work and what kind of help you need.'
 
   const updateField = <K extends keyof ProfileForm>(field: K, value: ProfileForm[K]) => {
     setForm(current => ({ ...current, [field]: value }))
@@ -374,13 +395,13 @@ export default function ProfileSetupPrototype() {
       return
     }
 
-    window.location.href = '/garage-setup'
+    window.location.href = openedFromGarage ? '/garage' : '/garage-setup'
   }
 
   return (
     <main className="profilePrototype">
       <nav className="profileNav">
-        <a href="/landing-prototype" aria-label="Back to BYLDit landing page">
+	        <a href={openedFromGarage ? '/garage' : '/landing-prototype'} aria-label={openedFromGarage ? 'Back to garage' : 'Back to BYLDit landing page'}>
           <BYLDitLogo />
         </a>
       </nav>
@@ -388,29 +409,32 @@ export default function ProfileSetupPrototype() {
       <section className="profileShell">
         <div className="profileIntro">
           <div>
-            <p className="profileEyebrow">Get Started</p>
-            <h1>Create your <BYLDitWord /> profile.</h1>
-            <p>
-              Set up your private account details, display name, and garage
-              background Walt will use across <BYLDitWord />.
-            </p>
+            <p className="profileEyebrow">{pageEyebrow}</p>
+            <h1>{pageTitle}</h1>
+            <p>{pageIntro}</p>
           </div>
 
           <aside className="waltIntroCard">
             <img src={WALT_AVATAR_URL} alt="Walt" />
             <div>
-              <strong>Walt Ready</strong>
-              <p>
-                Tell me a little about yourself so I can understand how you
-                work and what kind of help you need.
-              </p>
+              <strong>{waltTitle}</strong>
+              <p>{waltIntro}</p>
             </div>
           </aside>
         </div>
 
+        {openedFromGarage && (
+          <nav className="profileSettingsNav" aria-label="Settings sections">
+            <a className="active" href="/profile-setup?from=garage">Profile</a>
+            <a href="/billing">Billing</a>
+            <a href="/account-settings">Account</a>
+            <a href="/help-support">Help & Support</a>
+          </nav>
+        )}
+
         <div className="profileLayout">
           <aside>
-            <div className="profileStepper" aria-label="Profile setup steps">
+            <div className="profileStepper" aria-label={openedFromGarage ? 'Profile settings sections' : 'Profile setup steps'}>
               {steps.map((step, index) => (
                 <button
                   className={step.id === activeStep ? 'stepButton active' : 'stepButton'}
@@ -443,10 +467,10 @@ export default function ProfileSetupPrototype() {
               {activeStep === 'identity' && (
                 <>
                   <div className="formGrid">
-                    <div className="field">
-                      <label htmlFor="firstName">
-                        First name <span className="fieldNote">(Walt will refer to you as this)</span> <span className="required">*</span>
-                      </label>
+	                    <div className="field">
+	                      <label htmlFor="firstName">
+	                        First name <span className="fieldNote">(Walt will refer to you as this)</span> <RequiredMark />
+	                      </label>
                       <input
                         id="firstName"
                         onChange={event => updateField('firstName', event.target.value)}
@@ -456,8 +480,8 @@ export default function ProfileSetupPrototype() {
                       />
                     </div>
 
-                    <div className="field">
-                      <label htmlFor="lastName">Last name <span className="required">*</span></label>
+	                    <div className="field">
+	                      <label htmlFor="lastName">Last name <RequiredMark /></label>
                       <input
                         id="lastName"
                         onChange={event => updateField('lastName', event.target.value)}
@@ -467,8 +491,8 @@ export default function ProfileSetupPrototype() {
                       />
                     </div>
 
-                    <div className="field">
-                      <label htmlFor="handle">Display name / handle <span className="required">*</span></label>
+	                    <div className="field">
+	                      <label htmlFor="handle">Display name / handle <RequiredMark /></label>
                       <input
                         id="handle"
                         onChange={event => updateField('handle', event.target.value)}
@@ -480,12 +504,13 @@ export default function ProfileSetupPrototype() {
 
                     <div className="field">
                       <PickerField
-                        id="state"
-                        label="State / region *"
-                        onChange={value => updateField('state', value as string)}
-                        openPicker={openPicker}
-                        options={states}
-                        selected={form.state}
+	                        id="state"
+	                        label="State / region"
+	                        onChange={value => updateField('state', value as string)}
+	                        openPicker={openPicker}
+	                        options={states}
+                          required
+	                        selected={form.state}
                         setOpenPicker={setOpenPicker}
                       />
                     </div>
@@ -553,12 +578,13 @@ export default function ProfileSetupPrototype() {
                   <div className="formGrid">
                     <div className="field">
                       <PickerField
-                        id="experience"
-                        label="Experience level *"
-                        onChange={value => updateField('experience', value as string)}
-                        openPicker={openPicker}
-                        options={['Beginner', 'Comfortable with basics', 'Experienced DIY', 'Advanced builder', 'Professional']}
-                        selected={form.experience}
+	                        id="experience"
+	                        label="Experience level"
+	                        onChange={value => updateField('experience', value as string)}
+	                        openPicker={openPicker}
+	                        options={['Beginner', 'Comfortable with basics', 'Experienced DIY', 'Advanced builder', 'Professional']}
+                          required
+	                        selected={form.experience}
                         setOpenPicker={setOpenPicker}
                       />
                     </div>
@@ -659,12 +685,12 @@ export default function ProfileSetupPrototype() {
                   <div className="completionPanel">
                     <img src={WALT_AVATAR_URL} alt="Walt" />
                     <div>
-                      <strong>Profile Ready</strong>
-                      <p>
-                        Once this is wired into the real app, Walt can talk to
-                        {` ${firstName}`} while {garageName} becomes the
-                        starting point for the garage.
-                      </p>
+	                    <strong>Profile Ready</strong>
+	                      <p>
+	                        {openedFromGarage
+                            ? `Save these changes and I will use the latest details when helping ${firstName} in ${garageName}.`
+                            : `Once this is wired into the real app, Walt can talk to ${firstName} while ${garageName} becomes the starting point for the garage.`}
+	                      </p>
                     </div>
                   </div>
                 </>
@@ -681,14 +707,14 @@ export default function ProfileSetupPrototype() {
                   Back
                 </button>
 
-                {activeStep !== 'workspace' ? (
-                  <button className="primaryButton" onClick={goNext} type="button">
-                    Continue
-                  </button>
-                ) : (
-                  <button className="primaryButton" disabled={saving} onClick={saveProfile} type="button">
-                    {saving ? 'Saving...' : 'Save Profile & Build Garage'}
-                  </button>
+	                {activeStep !== 'workspace' ? (
+	                  <button className="primaryButton" onClick={goNext} type="button">
+	                    {openedFromGarage ? 'Next Section' : 'Continue'}
+	                  </button>
+	                ) : (
+	                  <button className="primaryButton" disabled={saving} onClick={saveProfile} type="button">
+	                    {saving ? 'Saving...' : openedFromGarage ? 'Save Profile' : 'Save Profile & Build Garage'}
+	                  </button>
                 )}
               </div>
               {error && <p className="formError">{error}</p>}
@@ -697,5 +723,13 @@ export default function ProfileSetupPrototype() {
         </div>
       </section>
     </main>
+  )
+}
+
+export default function ProfileSetupPrototype() {
+  return (
+    <Suspense fallback={null}>
+      <ProfileSetupContent />
+    </Suspense>
   )
 }

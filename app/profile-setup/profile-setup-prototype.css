@@ -159,6 +159,39 @@
   max-width: 700px;
 }
 
+.profileSettingsNav {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--byld-border);
+  border-radius: 14px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: -8px 0 24px;
+  padding: 8px;
+}
+
+.profileSettingsNav a {
+  align-items: center;
+  background: var(--byld-panel);
+  border: 1px solid var(--byld-border);
+  border-radius: 10px;
+  color: var(--byld-dark);
+  display: flex;
+  font-size: 13px;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 12px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.profileSettingsNav a.active {
+  background: var(--byld-dark);
+  border-color: var(--byld-dark);
+  color: white;
+}
+
 .waltIntroCard {
   align-items: center;
   background: rgba(255, 255, 255, 0.82);
@@ -347,15 +380,25 @@
 
 .field label,
 .profilePickerLabel {
+  align-items: center;
   color: var(--byld-dark);
+  display: flex;
   font-size: 12px;
   font-weight: 900;
+  gap: 5px;
   letter-spacing: 0.12em;
+  min-height: 16px;
   text-transform: uppercase;
 }
 
-.required {
-  color: var(--byld-accent);
+.requiredDot {
+  background: var(--byld-accent);
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 5px;
+  transform: translateY(-1px);
+  width: 5px;
 }
 
 .fieldNote {

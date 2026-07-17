@@ -113,9 +113,15 @@ function LoginContent() {
     if (!email || !password) return
     setLoading(true)
     setError('')
+    const isDemoMode =
+      window.sessionStorage.getItem('byldit-demo-mode') === 'true' ||
+      window.localStorage.getItem('byldit-demo-mode') === 'true'
     const { data, error } = await supabase.auth.signUp({
       email, password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
+      options: {
+        data: isDemoMode ? { demo_mode: true } : undefined,
+        emailRedirectTo: `${window.location.origin}/auth/callback`
+      }
     })
     if (error) {
       setError(error.message)
